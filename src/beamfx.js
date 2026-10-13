@@ -278,7 +278,7 @@ const bfxCl = document.createElement('canvas'), bfxClG = bfxCl.getContext('2d');
 bfxCl.width = bfxCl.height = 128;
 function bfxClash(k, a, c) {
   const pa = bfxStyle(a.move).pal, pc = bfxStyle(c.move).pal, t = B.time, seed = Math.floor(t * 30);
-  const R = Math.min(26, (a.w + c.w) * 0.7 / BFX_PX) * (1 + 0.12 * Math.sin(t * 50));
+  const R = Math.min(32, (a.w + c.w) * 0.95 / BFX_PX) * (1 + 0.12 * Math.sin(t * 50));
   const prev = ctx; ctx = bfxClG;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, 128, 128); ctx.setTransform(1, 0, 0, 1, 64, 64);
   ell(-3, 0, R * 1.2, R, pa[4]); ell(3, 0, R * 1.2, R, pc[4]);
@@ -292,4 +292,6 @@ function bfxClash(k, a, c) {
   for (let i = 0; i < 20; i++) { const q = (t * 2 + bfxH(i, 61)) % 1, an = bfxH(i, 62) * TAU, d = R * (0.5 + q * 1.5); sq(Math.cos(an) * d, Math.sin(an) * d * 0.8, q < 0.5 ? 2 : 1, (i % 2 ? pa : pc)[i % 3]); }
   ctx = prev;
   ctx.save(); ctx.translate(Math.round(k.x), Math.round(k.y)); ctx.scale(BFX_PX, BFX_PX); ctx.drawImage(bfxCl, -64, -64); ctx.restore();
+  // anime speed lines blasting out of the contact point, in both beams' colours
+  for (let i = 0; i < 22; i++) { const an = bfxH(i, seed) * TAU, d0 = 40 + bfxH(i, seed + 7) * 50, d1 = d0 + 70 + bfxH(i, seed + 3) * 190, cx = Math.cos(an), cy = Math.sin(an) * 0.8; pline(k.x + cx * d0, k.y + cy * d0, k.x + cx * d1, k.y + cy * d1, i % 3 === 0 ? '#ffffff' : (i % 2 ? pa : pc)[1], i % 4 === 0 ? 3 : 2); }
 }

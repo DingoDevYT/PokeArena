@@ -1385,7 +1385,11 @@ function updateClash(dt) {
     const hit = segDist(ha.x, ha.y, c.x, c.y, c.ang, c.len) < touch ? ha : segDist(hc.x, hc.y, a.x, a.y, a.ang, a.len) < touch ? hc : null;
     if (!hit) return;
     a.clash = c.clash = { x: hit.x, y: hit.y, fxT: 0 };
-    floatText(hit.x, hit.y - 20, 'CLASH!', '#fff', 16); shake(5); B.cam.punch = Math.max(B.cam.punch, 0.2);
+    // the moment of impact: freeze-frame, colour flash, shockwave rings and a spray of sparks in both beams' colours
+    const ca = TYPE_COLOR[a.move.type], cc = TYPE_COLOR[c.move.type];
+    floatText(hit.x, hit.y - 28, 'CLASH!', '#fff', 26); impact(hit.x, hit.y, 0.14); flash(0.18, ca); shake(11); B.cam.punch = Math.max(B.cam.punch, 0.4);
+    for (let i = 0; i < 3; i++) after(i * 0.07, () => ring(hit.x, hit.y, 36 + i * 30, [ca, cc, '#fff'][i]));
+    sparks(hit.x, hit.y, 0, Math.PI, 14, ca, 420, 0.7); sparks(hit.x, hit.y, 0, Math.PI, 14, cc, 420, 0.7);
   }
   const k = a.clash;
   // a beam swung more than ~30 degrees off the contact point breaks the clash
@@ -1395,10 +1399,14 @@ function updateClash(dt) {
   k.x += dx / dl * v * dt; k.y += dy / dl * v * dt;
   for (const b of [a, c]) { b.len = Math.hypot(k.x - b.x, k.y - b.y); b.ang += clamp(angDiff(Math.atan2(k.y - b.y, k.x - b.x), b.ang), -3 * dt, 3 * dt); }
   if ((k.fxT -= dt) <= 0) { k.fxT = 0.07; clashFx(a, c, k); }
+  // sustained: constant rumble, sparks thrown out of the contact point, a shockwave ring every beat
+  shake(3.5); k.waveT = (k.waveT ?? 0) - dt;
+  if (k.waveT <= 0) { k.waveT = 0.28; const col = TYPE_COLOR[(k.alt = !k.alt) ? a.move.type : c.move.type]; ring(k.x, k.y, 34 + Math.random() * 20, col); flash(0.05, col); sparks(k.x, k.y, Math.random() * 6.28, 0.5, 6, col, 380, 0.5); }
   // pushed all the way back: the loser's beam collapses and the winner's carries on into them
   for (const [w, l] of [[a, c], [c, a]]) if (l.len < bodyRadius(spriteKey(activeMon(B.sides[l.side]))) * 0.5 + 6) {
     l.dead = true; w.clash = l.clash = null; B.sides[l.side].ent.act = null;
-    burst(k.x, k.y, TYPE_COLOR[w.move.type], 24, 220, 0.5, 3); impact(k.x, k.y, 0.12);
+    burst(k.x, k.y, TYPE_COLOR[w.move.type], 24, 220, 0.5, 3); impact(k.x, k.y, 0.16); flash(0.25, TYPE_COLOR[w.move.type]); shake(16);
+    for (let i = 0; i < 3; i++) after(i * 0.06, () => ring(k.x, k.y, 40 + i * 34, i ? TYPE_COLOR[w.move.type] : '#fff')); sparks(k.x, k.y, Math.atan2(l.y - w.y, l.x - w.x), 0.9, 30, TYPE_COLOR[w.move.type], 520, 0.8);
   }
 }
 // Type pairs get their own pixel effect at the contact point; anything else alternates both moves' hit sprites.
@@ -1557,10 +1565,22 @@ function startSweep(side, move, ax, ay, sc) {
   B.sweeps.push({ side: side.idx, move, kind: bh.kind || 'water', horiz, dir, u: dir > 0 ? lo - 24 : hi + 24, end: dir > 0 ? hi + depth + 24 : lo - depth - 24, entry: dir > 0 ? lo : hi,
     gaps, spd: bh.spd || 300, thick: bh.thick || 30, depth, push: bh.push || 0, warn: bh.warn || 0.8, t: 0, hit: false, fxT: 0 });
 }
+// Earthquake leaves fissures that stay behind the front and rocks that are thrown up and bounce; both are drawn analytically from their spawn time (see fieldfx.js)
+function quakeDebris(w) {
+  const wall = B.arena.wall, span = w.horiz ? B.arena.h : B.arena.w, cr = w.cr ||= [], rk = w.rk ||= [];
+  for (let i = 0; i < 2; i++) {
+    const p = rand(wall, span - wall); if (inSweepGap(w, p)) continue;
+    const x = w.horiz ? w.u - w.dir * rand(0, 30) : p, y = w.horiz ? p : w.u - w.dir * rand(0, 30);
+    cr.push({ x, y, ts: B.time, seed: Math.random() * 1e4, len: rand(46, 110) });
+    if (Math.random() < 0.7) rk.push({ x, y, ts: B.time, seed: Math.random() * 1e4, vx: (w.horiz ? w.dir : 0) * rand(40, 120) + rand(-50, 50), vy: (w.horiz ? 0 : w.dir) * rand(40, 120) + rand(-50, 50) });
+  }
+  while (cr.length > 50) cr.shift(); while (rk.length > 44) rk.shift();
+}
 const inSweepGap = (w, p) => w.gaps.some(([a, b]) => p > a + 4 && p < b - 4);
 function updateSweeps(dt) {
   if (B.soakT > 0) B.soakT -= dt;
   for (const w of B.sweeps) {
+    if (w.dead) continue;
     w.t += dt;
     if (w.t < w.warn) continue;
     const prev = w.u; w.u += w.dir * w.spd * dt;
@@ -1573,7 +1593,8 @@ function updateSweeps(dt) {
     if ((w.fxT -= dt) <= 0) {
       w.fxT = 0.05;
       const p = rand(B.arena.wall, w.horiz ? B.arena.h - B.arena.wall : B.arena.w - B.arena.wall);
-      if (!inSweepGap(w, p)) { const nm = { water: 'Puff_White', mud: 'Puff_Brown', sludge: 'Bubbles_Purple', quake: 'Rock_Pieces', heat: 'Lava_Plume_Fire' }[w.kind] || 'Puff_White', x = w.horiz ? w.u : p, y = w.horiz ? p : w.u; spawnFx(nm, x, y - 10 * SS, { scale: sheetScale(nm), ft: 3 }); if (w.kind === 'quake') { decal('crack', x, y, 30); spawnFx('Puff_Brown', x, y - 4 * SS, { scale: SS }); spawnFx('Rock_Pieces', x - w.dir * 8, y - 18 * SS, { scale: SS, ft: 2 }); } }
+      if (!inSweepGap(w, p)) { const nm = { water: 'Puff_White', mud: 'Puff_Brown', sludge: 'Bubbles_Purple', quake: 'Rock_Pieces', heat: 'Lava_Plume_Fire' }[w.kind] || 'Puff_White', x = w.horiz ? w.u : p, y = w.horiz ? p : w.u; spawnFx(nm, x, y - 10 * SS, { scale: sheetScale(nm), ft: 3 }); if (w.kind === 'quake') { if (Math.random() < 0.3) decal('crack', x, y, 30); spawnFx('Puff_Brown', x, y - 4 * SS, { scale: SS }); } }
+      if (w.kind === 'quake') quakeDebris(w);
     }
     // field combos as the front passes
     for (const rk of B.rocks) if (w.kind === 'quake' && passed(rk)) { hitRock(rk, w.move); hitRock(rk, w.move); }
@@ -1590,7 +1611,8 @@ function updateSweeps(dt) {
     const ux = w.horiz ? w.dir : 0, uy = w.horiz ? 0 : w.dir;
     if (hitFoe(side, w.move, { x: fe.x, y: fe.y, ox: fe.x - ux * 60, oy: fe.y - uy * 60 }) && w.push) { fe.kx += ux * w.push; fe.ky += uy * w.push; }
   }
-  B.sweeps = B.sweeps.filter(w => !w.dead);
+  for (const w of B.sweeps) if (w.cr) { w.cr = w.cr.filter(c => B.time - c.ts < 4); w.rk = w.rk.filter(r => B.time - r.ts < 2.4); }
+  B.sweeps = B.sweeps.filter(w => !w.dead || ((w.cr?.length || w.rk?.length) && B.time - (w.endT ??= B.time) < 4));
 }
 function confirmChoose() {
   if (B.guest) { NETSYNC.send({ t: 'pick', sel: B.choose.sel }); B.choose = null; return; }

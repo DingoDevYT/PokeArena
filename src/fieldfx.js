@@ -13,10 +13,10 @@ function drawFieldFx() {
 // Each kind is a cached procedural pixel strip (front at the right edge, tail dithering away to the left), tiled along
 // the whole arena and flipped/transposed into the travel direction. Only 90-degree transforms, so pixels stay square.
 const SWEEP_PAL = {
-  water: { body: ['#163574', '#1f4fa8', '#2b68cc', '#4688ea', '#78b0ff'], foam: ['#ffffff', '#cfe8ff'], edge: '#0b1838', amp: 5 },
-  mud: { body: ['#3a2210', '#53331a', '#6c4524', '#8a5c30', '#a97a48'], foam: ['#e2c79a', '#c9a874'], edge: '#1c1006', amp: 4 },
-  sludge: { body: ['#2a0e3a', '#3f1958', '#5a297c', '#7a3ea2', '#9c62c6'], foam: ['#e6c2ff', '#b6ff5a'], edge: '#130519', amp: 5 },
-  heat: { body: ['#5a1606', '#9a2a0a', '#d8480e', '#ff7a1a', '#ffb02e'], foam: ['#fff6b0', '#ffe066'], edge: '#2a0a02', amp: 10 },
+  water: { body: ['#163574', '#1f4fa8', '#2b68cc', '#4688ea', '#78b0ff'], foam: ['#ffffff', '#cfe8ff'], edge: '#0b1838', amp: 12 },
+  mud: { body: ['#3a2210', '#53331a', '#6c4524', '#8a5c30', '#a97a48'], foam: ['#e2c79a', '#c9a874'], edge: '#1c1006', amp: 9 },
+  sludge: { body: ['#2a0e3a', '#3f1958', '#5a297c', '#7a3ea2', '#9c62c6'], foam: ['#e6c2ff', '#b6ff5a'], edge: '#130519', amp: 11 },
+  heat: { body: ['#5a1606', '#9a2a0a', '#d8480e', '#ff7a1a', '#ffb02e'], foam: ['#fff6b0', '#ffe066'], edge: '#2a0a02', amp: 16 },
   quake: { body: ['#3e3020', '#5c4a32', '#7e6646'], foam: ['#e8d6b0', '#c9b08a'], edge: '#140d06', amp: 3 },
 };
 const SWEEP_TEX = new Map(), STH = 48;
@@ -60,7 +60,63 @@ function sweepFrame(w, front) {
   const D = w.depth, f = Math.round(front);
   if (w.horiz) ctx.transform(w.dir, 0, 0, 1, f - w.dir * D, 0); else ctx.transform(0, w.dir, 1, 0, 0, f - w.dir * D);
 }
+const sh = (i, k) => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); }; // stable pseudo-random 0..1
+// What the wave leaves behind: a wash that fades with distance (foam streaks, bubbles; embers for heat), drawn in the sweep's local frame behind the body.
+function drawWake(w, segs, P) {
+  const wake = clamp(Math.abs(w.u - w.entry) - 10, 0, 300), tick = Math.floor(B.time * 7);
+  if (wake < 6) return;
+  for (const [a, b] of segs) {
+    for (let i = 0; i < 6; i++) { ctx.globalAlpha = 0.22 * (6 - i) / 6 + 0.06; ctx.fillStyle = P.body[2]; ctx.fillRect(-wake * (i + 1) / 6, Math.round(a), wake / 6 + 1, Math.round(b - a)); }
+    for (let y = Math.ceil(a / 5) * 5; y < b; y += 5) {
+      const r = sh(y, tick % 5), len = 8 + sh(y, 9) * 30, x = -sh(y, 3 + (tick % 3)) * wake, q = 1 - -x / wake;
+      if (-x > wake - len) continue;
+      ctx.globalAlpha = Math.min(1, q * 1.1); ctx.fillStyle = r < 0.35 ? P.foam[0] : r < 0.7 ? P.foam[1] : P.body[3];
+      if (w.kind === 'heat') { ctx.fillRect(Math.round(x), y - Math.round(((B.time * 40 + y * 3) % 18)), 2, 2); continue; }
+      ctx.fillRect(Math.round(x), y, Math.round(len * q + 2), 1);
+      if (r > 0.9) { ctx.strokeStyle = P.foam[0]; ctx.lineWidth = 1; ctx.strokeRect(Math.round(x), y - 2, 4, 4); } // popping bubble
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// Spray thrown off the crest, in world space so it can fly "up" the screen
+function drawSpray(w, P) {
+  const ar = B.arena, lo = ar.wall, hi = (w.horiz ? ar.h : ar.w) - ar.wall;
+  for (let i = 0; i < 80; i++) {
+    const p = lo + sh(i, 1) * (hi - lo); if (inSweepGap(w, p)) continue;
+    const ph = (B.time * (1.4 + sh(i, 2)) + sh(i, 3)) % 1, ahead = (sh(i, 4) * 26 - 8) + ph * 30, h = Math.sin(ph * Math.PI) * (18 + sh(i, 5) * 34);
+    const x = w.horiz ? w.u + w.dir * ahead : p, y = (w.horiz ? p : w.u + w.dir * ahead) - h;
+    ctx.globalAlpha = 1 - ph * 0.5; ctx.fillStyle = sh(i, 6) < 0.6 ? P.foam[0] : P.foam[1];
+    ctx.fillRect(Math.round(x), Math.round(y), sh(i, 7) < 0.4 ? 4 : 2, sh(i, 7) < 0.4 ? 4 : 2);
+  }
+  ctx.globalAlpha = 1;
+}
+// Earthquake: fissures that open behind the front and fade, and rocks flung up that bounce along the ground
+function drawQuakeDebris(w) {
+  for (const c of w.cr || []) {
+    const age = B.time - c.ts, g = clamp(age / 0.2, 0, 1), fade = age > 2.6 ? clamp((4 - age) / 1.4, 0, 1) : 1; if (fade <= 0) continue;
+    const segs = 7, shown = Math.ceil(segs * g), step = c.len / segs; let x = c.x, y = c.y, a = (sh(c.seed, 1) - 0.5) * 6.28;
+    for (let i = 0; i < shown; i++) {
+      const na = a + (sh(c.seed, 10 + i) - 0.5) * 1.3, nx = x + Math.cos(na) * step, ny = y + Math.sin(na) * step * 0.6;
+      ctx.globalAlpha = fade; pline(x + 1, y + 1, nx + 1, ny + 1, '#e8d6b0', 1); pline(x, y, nx, ny, '#140d06', i < 2 ? 4 : 3);
+      if (i === 2 || i === 4) { const ba = na + (i === 2 ? 0.9 : -0.9), bl = step * 2.2; pline(x, y, x + Math.cos(ba) * bl, y + Math.sin(ba) * bl * 0.6, '#140d06', 2); }
+      x = nx; y = ny; a = na;
+    }
+  }
+  for (const r of w.rk || []) {
+    const age = B.time - r.ts; if (age < 0 || age > 2.3) continue;
+    // ballistic with bounces: launched at v0, loses 45% of its speed each time it lands
+    let t = age, v = 230 + sh(r.seed, 1) * 160;
+    while (v > 25 && t > 2 * v / 900) { t -= 2 * v / 900; v *= 0.55; }
+    const h = v > 25 ? Math.max(0, v * t - 450 * t * t) : 0, run = Math.min(age, 1.3), x = r.x + r.vx * run * 0.9, y = r.y + r.vy * run * 0.9;
+    const sz = 3 + Math.floor(sh(r.seed, 2) * 4), fade = age > 1.8 ? clamp((2.3 - age) / 0.5, 0, 1) : 1;
+    ctx.globalAlpha = fade * 0.4; ell(x, y, sz + 1, (sz + 1) * 0.5, '#000');
+    ctx.globalAlpha = fade; ell(x, y - h - sz * 0.6, sz, sz * 0.8, sh(r.seed, 3) < 0.5 ? '#7e6646' : '#5c4a32', '#2a1d10', 1);
+    ctx.fillStyle = '#c9b08a'; ctx.fillRect(Math.round(x - sz * 0.4), Math.round(y - h - sz * 1.1), 2, 1);
+  }
+  ctx.globalAlpha = 1;
+}
 function drawSweep(w) {
+  if (w.dead) { if (w.kind === 'quake') drawQuakeDebris(w); return; }
   const ar = B.arena, span = w.horiz ? ar.h : ar.w, D = w.depth, P = SWEEP_PAL[w.kind] || SWEEP_PAL.water;
   const segs = []; let s0 = 0;
   for (const [a, b] of [...w.gaps].sort((x, y) => x[0] - y[0])) { segs.push([s0, a]); s0 = b; }
@@ -80,6 +136,7 @@ function drawSweep(w) {
     for (const [a, b] of w.gaps) for (const v of [a, b]) { ctx.fillStyle = '#fff'; ctx.fillRect(D - 40, Math.round(v) - 1, 40, 2); }
   } else {
     sweepFrame(w, w.u);
+    if (w.kind !== 'quake') drawWake(w, segs, P);
     const tex = sweepTex(w.kind, D, Math.floor(B.time * 8) % 3);
     for (const [a, b] of segs) {
       if (b - a < 1) continue;
@@ -91,6 +148,7 @@ function drawSweep(w) {
     for (const [a, b] of w.gaps) for (const v of [a, b]) { ctx.fillStyle = P.edge; ctx.fillRect(0, Math.round(v) - 2, D, 4); ctx.fillStyle = '#fff'; ctx.fillRect(D - 36, Math.round(v) - 1, 36, 2); }
   }
   ctx.restore(); ctx.globalAlpha = 1;
+  if (w.t >= w.warn) { if (w.kind === 'quake') drawQuakeDebris(w); else drawSpray(w, P); }
 }
 // Soaked floor after a water sweep: a hard 4x4 dither of wet blues over the fighting area, fading out.
 let WET_PAT = null, WET_CTX = null;

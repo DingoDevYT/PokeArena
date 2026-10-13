@@ -34,42 +34,90 @@ function blankSet(species = 'bulbasaur') {
 }
 
 // ---------- title ----------
-// The title screen is a live cinematic: the real engine, CPU against CPU, one famous pair per arena, no HUD.
+// The title screen is a directed cinematic: a versus card (portraits over scrolling speed lines), then the real engine, CPU against CPU.
+// Each pair opens with a scripted laser clash from opposite ends of the arena, then fights on its own.
 const TITLE_DUOS = [
-  [{ species: 'gengar', level: 50, moves: ['shadowball', 'lick', 'nightshade', 'confuseray'] }, { species: 'nidorino', level: 50, moves: ['hornattack', 'doublekick', 'poisonsting', 'furyattack'] }],
-  [{ species: 'charizard', level: 60, moves: ['flamethrower', 'airslash', 'dragonclaw', 'fireblast'] }, { species: 'blastoise', level: 60, moves: ['hydropump', 'icebeam', 'surf', 'flashcannon'] }],
-  [{ species: 'pikachu', level: 60, moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'] }, { species: 'raichu', level: 60, moves: ['thunderbolt', 'surf', 'quickattack', 'thunder'] }],
-  [{ species: 'mew', level: 70, moves: ['psychic', 'aurasphere', 'shadowball', 'flamethrower'] }, { species: 'mewtwo', level: 70, moves: ['psystrike', 'aurasphere', 'shadowball', 'icebeam'] }],
-  [{ species: 'kyogre', level: 70, moves: ['hydropump', 'surf', 'icebeam', 'thunder'] }, { species: 'groudon', level: 70, moves: ['earthquake', 'eruption', 'fireblast', 'rockslide'] }],
+  [{ species: 'gengar', level: 50, moves: ['thunderbolt', 'shadowball', 'lick', 'nightshade'] }, { species: 'nidorino', level: 50, moves: ['icebeam', 'hornattack', 'doublekick', 'furyattack'] }],
+  [{ species: 'charizard', level: 60, moves: ['blastburn', 'flamethrower', 'airslash', 'dragonclaw'] }, { species: 'blastoise', level: 60, moves: ['hydrocannon', 'hydropump', 'icebeam', 'flashcannon'] }],
+  [{ species: 'pikachu', level: 60, moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'] }, { species: 'raichu', level: 60, moves: ['zapcannon', 'thunderbolt', 'quickattack', 'thunder'] }],
+  [{ species: 'mew', level: 70, moves: ['meteorbeam', 'psychic', 'aurasphere', 'shadowball'] }, { species: 'mewtwo', level: 70, moves: ['hyperbeam', 'psystrike', 'aurasphere', 'shadowball'] }],
+  [{ species: 'kyogre', level: 70, moves: ['hydropump', 'surf', 'icebeam', 'thunder'] }, { species: 'groudon', level: 70, moves: ['flamethrower', 'earthquake', 'eruption', 'rockslide'] }],
 ];
 const demoCfg = (i, arena) => ({ arena: ARENAS[arena % ARENAS.length], weather: '', player: { name: '', cpu: true, tier: 'hard', team: [TITLE_DUOS[i][0]] }, cpu: { name: '', cpu: true, tier: 'hard', team: [TITLE_DUOS[i][1]] } });
+// both fighters turn to face each other and open with their first move together; after that the normal CPU takes over
+function titleScript(s, dt) {
+  if (B.time > 5) { delete s.script; return; }
+  const e = s.ent, fe = foeOf(s).ent, d = Math.hypot(fe.x - e.x, fe.y - e.y) || 1, I = s.intent;
+  e.aimX = (fe.x - e.x) / d; e.aimY = (fe.y - e.y) / d; e.aimIdle = 0;
+  I.mx = I.my = 0; I.dodge = I.mega = false; I.hold = -1; I.use = -1;
+  if (B.time > 0.9 && !s.opened && canUse(s, 0)) { s.opened = true; I.use = 0; }
+  else if (s.opened && !e.act && !e.laser) cpuThink(s, dt);
+}
+const CARD_T = 2.2, ease3 = x => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
 const TitleScene = {
   t: 0,
-  enter() { AUDIO.playMusic(MUSIC.menu); this.t = 0; this.i = -1; this.mode = 'load'; this.fade = 1; this.base = Math.random() * ARENAS.length | 0; this.prep(); },
-  // load the next pair's art while the current one fights
+  enter() { AUDIO.playMusic(MUSIC.menu); this.t = 0; this.i = -1; this.mode = 'load'; this.fade = 1; this.fadeCol = '#000'; this.base = Math.random() * ARENAS.length | 0; this.prep(); },
+  // load the next pair's art while the current one plays
   prep() { this.i = (this.i + 1) % TITLE_DUOS.length; const cfg = this.nextCfg = demoCfg(this.i, this.base + this.i * 3); this.nextReady = false; preload(assetSrcs(cfg)).then(() => { if (this.nextCfg === cfg) this.nextReady = true; }); },
+  card() { this.cur = this.nextCfg; this.duo = TITLE_DUOS[this.i]; this.cardT = 0; this.mode = 'card'; this.fade = 0; this.prep(); },
   begin() {
-    startBattle(this.nextCfg); B.demo = true; // long fights: nobody should die in the first seconds
-    for (const sd of B.sides) for (const m of sd.team) { m.maxHp *= 2.5; m.hp = m.maxHp; }
-    this.clock = 0; this.prep();
+    startBattle(this.cur); B.demo = true;
+    for (const sd of B.sides) { sd.script = titleScript; for (const m of sd.team) { m.maxHp *= 2.5; m.hp = m.maxHp; } } // long fights: nobody dies in the first seconds
+    this.clock = 0; this.mode = 'in'; this.fade = 1; this.fadeCol = '#fff';
   },
   update(dt) {
     this.t += dt;
     if (okHit() || INPUT.hit('START') || MOUSE.down) { setScene(MenuScene); return; }
-    if (this.mode === 'load') { if (this.nextReady) { this.begin(); this.mode = 'in'; } return; }
+    if (this.mode === 'load') { if (this.nextReady) this.card(); return; }
+    if (this.mode === 'card') { this.cardT += dt; if (this.cardT > CARD_T) this.begin(); return; }
     this.clock += dt; updateBattle(dt);
-    if (this.mode === 'in') { this.fade -= dt * 2; if (this.fade <= 0) { this.fade = 0; this.mode = 'play'; } }
-    else if (this.mode === 'play' && (this.clock > 16 || (B.over && B.endT > 0.8))) this.mode = 'out';
-    else if (this.mode === 'out') { this.fade += dt * 2; if (this.fade >= 1 && this.nextReady) { this.begin(); this.mode = 'in'; } }
+    if (this.mode === 'in') { this.fade -= dt * 2.5; if (this.fade <= 0) { this.fade = 0; this.mode = 'play'; } }
+    else if (this.mode === 'play' && (this.clock > 18 || (B.over && B.endT > 0.8))) { this.mode = 'out'; this.fadeCol = '#000'; }
+    else if (this.mode === 'out') { this.fade += dt * 2; if (this.fade >= 1 && this.nextReady) this.card(); }
+  },
+  drawCard() {
+    const s = S(), t = this.cardT, ids = this.duo.map(m => toId(m.species)), sps = ids.map(id => DEX.species[id]);
+    bgFill('#0a0a14', '#14101e');
+    const cols = sps.map(sp => TYPE_COLOR[sp.types[0]]), sk = 0.22 * VH;
+    // two slanted colour panels meeting at a diagonal
+    for (let k = 0; k < 2; k++) {
+      ctx.fillStyle = cols[k] + '66'; ctx.beginPath();
+      if (!k) { ctx.moveTo(0, 0); ctx.lineTo(VW / 2 + sk, 0); ctx.lineTo(VW / 2 - sk, VH); ctx.lineTo(0, VH); }
+      else { ctx.moveTo(VW / 2 + sk, 0); ctx.lineTo(VW, 0); ctx.lineTo(VW, VH); ctx.lineTo(VW / 2 - sk, VH); }
+      ctx.closePath(); ctx.fill();
+    }
+    // scrolling speed lines, fast and slightly diagonal, the way anime does a power-up
+    ctx.save(); ctx.rotate(-0.16);
+    for (let i = 0; i < 46; i++) {
+      const sp = 900 + (i * 37 % 500), len = 140 + (i * 71 % 320), y = ((i * 97) % (VH * 1.4)) - 40, x = ((this.t * sp * (i % 2 ? 1 : -1) + i * 211) % (VW + 600) + VW + 600) % (VW + 600) - 300;
+      ctx.globalAlpha = 0.3 + (i % 5) * 0.1; ctx.fillStyle = i % 7 === 0 ? cols[i % 2] : '#fff'; ctx.fillRect(x, y, len, (1 + i % 3) * s);
+    }
+    ctx.restore(); ctx.globalAlpha = 1;
+    // portraits slide in from the edges and settle
+    const p = ease3(t / 0.4), PW = Math.min(VW * 0.3, VH * 0.5), bob = Math.sin(t * 3) * 3 * s;
+    sps.forEach((sp, k) => {
+      const im = portrait(sp.id), x = k ? lerp(VW + PW, VW - PW - VW * 0.08, p) : lerp(-PW * 2, VW * 0.08, p), y = VH * 0.43 - PW * 0.5 + bob * (k ? -1 : 1);
+      if (im) { ctx.fillStyle = '#00000055'; ctx.fillRect(x + 6 * s, y + 6 * s, PW, PW); ctx.drawImage(im, x, y, PW, PW); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4 * s; ctx.strokeRect(x, y, PW, PW); }
+      const nx = x + PW / 2, ny = y + PW + 30 * s;
+      text(sp.name.toUpperCase(), nx, ny, 34 * s, '#fff', 'center', '#000');
+      let cx = nx - (sp.types.length * 100 * s) / 2 + 6 * s; for (const ty of sp.types) cx += hudChip(cx, ny + 22 * s, ty.toUpperCase(), TYPE_COLOR[ty], 22 * s) + 6 * s;
+    });
+    // VS slams in between them
+    const v = clamp((t - 0.35) / 0.15, 0, 1), vs = (1 + (1 - v) * 3) * (1 + Math.sin(t * 14) * 0.03);
+    if (v > 0) { ctx.globalAlpha = v; text('VS', VW / 2, VH * 0.5, 120 * s * vs, '#ffde3b', 'center', '#1a0a00'); ctx.globalAlpha = 1; }
+    if (t > 0.35 && t < 0.5) { ctx.globalAlpha = 0.5 * (1 - (t - 0.35) / 0.15); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+    const out = clamp((t - (CARD_T - 0.25)) / 0.25, 0, 1); // flash to white into the fight
+    if (out > 0) { ctx.globalAlpha = out; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
   },
   draw() {
     const s = S();
-    if (B && B.demo && this.mode !== 'load') drawBattle(1 / 60); else bgFill('#101830', '#2c1838');
+    if (this.mode === 'card') this.drawCard();
+    else if (B && B.demo && this.mode !== 'load') drawBattle(1 / 60); else bgFill('#101830', '#2c1838');
     // letterbox + title
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH * 0.14); ctx.fillRect(0, VH * 0.86, VW, VH * 0.14);
     text('POKEARENA', VW / 2, VH * 0.07, 54 * s, '#ffde3b', 'center', '#1a2a6c');
     if (Math.floor(this.t * 2) % 2 === 0) text(INPUT.pad ? 'PRESS A' : 'PRESS ENTER', VW / 2, VH * 0.93, 26 * s, '#fff', 'center');
-    if (this.fade > 0) { ctx.globalAlpha = clamp(this.fade, 0, 1); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+    if (this.fade > 0) { ctx.globalAlpha = clamp(this.fade, 0, 1); ctx.fillStyle = this.fadeCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
   },
 };
 
@@ -206,11 +254,23 @@ function assetSrcs(cfg) {
 }
 function LoadingScene(cfg) {
   let done = false;
-  preload(assetSrcs(cfg)).then(() => done = true);
+  let got = 0, total = 1, sentP = -1;
+  // online: each side tells the other how far its loading has got
+  preload(assetSrcs(cfg), (d, n) => { got = d; total = n; const p = Math.floor(d / n * 20) / 20; if (NET.role && p !== sentP) { sentP = p; NETSYNC.send({ t: 'load', p }); } }).then(() => done = true);
   return {
     t: 0,
-    update(dt) { this.t += dt; if (done && this.t > 0.3) { startBattle(cfg); setScene(BattleScene(cfg)); } },
-    draw() { bgFill('#000', '#111'); text('Loading...', VW / 2, VH / 2, 30 * S(), '#fff', 'center'); },
+    update(dt) {
+      this.t += dt;
+      if (NET.role && backHit()) return netLeave('');
+      if (done && this.t > 0.3) { try { startBattle(cfg); } catch (e) { if (NET.role) return netLeave('Could not start the match: ' + e.message); throw e; } setScene(BattleScene(cfg)); }
+    },
+    draw() {
+      bgFill('#000', '#111'); const s = S(), f = got / total;
+      text('Loading...', VW / 2, VH / 2 - 40 * s, 30 * s, '#fff', 'center');
+      rrect(VW / 2 - 220 * s, VH / 2, 440 * s, 18 * s, 9 * s, '#ffffff18', '#ffffff55', 2); rrect(VW / 2 - 218 * s, VH / 2 + 2 * s, 436 * s * f, 14 * s, 7 * s, '#ffde3b');
+      text(Math.round(f * 100) + '%', VW / 2, VH / 2 + 44 * s, 16 * s, '#fff', 'center');
+      if (NET.role) text(`Opponent: ${Math.round(NET.peerLoad * 100)}%`, VW / 2, VH / 2 + 76 * s, 15 * s, '#aab4c8', 'center', null);
+    },
   };
 }
 
@@ -252,6 +312,7 @@ function BattleScene(cfg) {
     },
     draw() {
       drawBattle(B.paused ? 0 : 1 / 60);
+      if (NET.role === 'host' && !NET.guestReady) { onlineOverlay(); return; }
       const s = S();
       if (B.choose && NET.role && B.choose.side !== meIdx()) text('Opponent is choosing...', VW / 2, VH * 0.3, 28 * s, '#fff', 'center');
       else if (B.choose) {

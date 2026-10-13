@@ -30,11 +30,18 @@ function img(src) {
   if (!i) { i = IMG[src] = new Image(); i.src = src; }
   return i.complete && i.naturalWidth ? i : null;
 }
-function preload(srcs) {
-  return Promise.all(srcs.filter(Boolean).map(s => new Promise(res => {
+// Resolves once every image has loaded, failed, or taken 20 s; onProgress(done, total) reports along the way.
+// Listeners (not onload=) so two preloads of the same image never steal each other's callback; already-failed images count as done.
+function preload(srcs, onProgress) {
+  const list = [...new Set(srcs.filter(Boolean))]; let done = 0;
+  return Promise.all(list.map(s => new Promise(res => {
     const i = IMG[s] || (IMG[s] = new Image());
-    if (i.complete && i.naturalWidth) return res();
-    i.onload = i.onerror = res; if (!i.src) i.src = s;
+    let fired = false;
+    const fin = () => { if (fired) return; fired = true; done++; if (onProgress) onProgress(done, list.length); res(); };
+    if (!i.src) i.src = s;
+    if (i.complete) return fin();
+    i.addEventListener('load', fin, { once: true }); i.addEventListener('error', fin, { once: true });
+    setTimeout(fin, 20000);
   })));
 }
 

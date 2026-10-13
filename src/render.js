@@ -8,11 +8,13 @@ function screenToWorld(sx, sy) { const c = B.cam; return { x: c.x + (sx - VW / 2
 function worldToScreen(wx, wy) { const c = B.cam; return { x: (wx - c.x) * c.z + VW / 2, y: (wy - c.y) * c.z + VH / 2 }; }
 function updateCamera(dt) {
   const c = B.cam, ar = B.arena, [a, b] = B.sides.map(s => s.ent);
-  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 12 * SS;
+  let mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 12 * SS;
+  const ck = B.beams.find(q => q.clash)?.clash; // a laser clash pulls the camera onto the contact point
+  if (ck) { mx = lerp(mx, ck.x, 0.55); my = lerp(my, ck.y, 0.55); }
   // zoom limits come from the fighting area plus a 48px rim, not the decorated border around it
   const zMin = Math.max(VW / (ar.w - ar.wall * 2 + 96), VH / (ar.h - ar.wall * 2 + 96)), zMax = zMin * 1.7;
   let z = Math.min(VW / (Math.abs(a.x - b.x) + 420), VH / (Math.abs(a.y - b.y) + 360));
-  z = clamp(z, zMin, zMax) * (1 + c.punch * 0.6);
+  z = clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
   c.punch = Math.max(0, c.punch - dt * 0.8);
   c.z = lerp(c.z, z, 1 - Math.pow(0.02, dt));
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
