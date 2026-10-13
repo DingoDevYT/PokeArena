@@ -1,0 +1,62 @@
+{
+ "Walk": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 40
+ },
+ "Attack": {
+  "fw": 88,
+  "fh": 88,
+  "footY": 51
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 38
+ },
+ "Twirl": {
+  "fw": 40,
+  "fh": 64,
+  "footY": 40
+ },
+ "Sleep": {
+  "fw": 40,
+  "fh": 60,
+  "footY": 36
+ },
+ "Hurt": {
+  "fw": 48,
+  "fh": 60,
+  "footY": 32
+ },
+ "Swing": {
+  "fw": 88,
+  "fh": 84,
+  "footY": 48
+ },
+ "Double": {
+  "fw": 72,
+  "fh": 80,
+  "footY": 48
+ },
+ "Hop": {
+  "fw": 48,
+  "fh": 100,
+  "footY": 56
+ },
+ "Charge": {
+  "fw": 40,
+  "fh": 56,
+  "footY": 36
+ },
+ "Eat": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Pose": {
+  "fw": 40,
+  "fh": 60,
+  "footY": 36
+ }
+}

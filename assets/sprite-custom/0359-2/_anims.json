@@ -1,0 +1,177 @@
+{
+ "Walk": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 28
+ },
+ "Attack": {
+  "fw": 72,
+  "fh": 88,
+  "footY": 47
+ },
+ "QuickStrike": {
+  "fw": 120,
+  "fh": 136,
+  "footY": 71
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 56,
+  "footY": 30
+ },
+ "SpAttack": {
+  "fw": 56,
+  "fh": 64,
+  "footY": 35
+ },
+ "Sleep": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Hurt": {
+  "fw": 48,
+  "fh": 56,
+  "footY": 30
+ },
+ "Idle": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 28
+ },
+ "Swing": {
+  "fw": 72,
+  "fh": 96,
+  "footY": 52
+ },
+ "Double": {
+  "fw": 64,
+  "fh": 72,
+  "footY": 40
+ },
+ "Hop": {
+  "fw": 40,
+  "fh": 96,
+  "footY": 52
+ },
+ "Charge": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 28
+ },
+ "Rotate": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 28
+ },
+ "EventSleep": {
+  "fw": 40,
+  "fh": 32,
+  "footY": 24
+ },
+ "Wake": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "Eat": {
+  "fw": 24,
+  "fh": 44,
+  "footY": 28
+ },
+ "Tumble": {
+  "fw": 24,
+  "fh": 52,
+  "footY": 32
+ },
+ "Pose": {
+  "fw": 40,
+  "fh": 56,
+  "footY": 32
+ },
+ "Pull": {
+  "fw": 32,
+  "fh": 52,
+  "footY": 32
+ },
+ "Pain": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Float": {
+  "fw": 40,
+  "fh": 32,
+  "footY": 24
+ },
+ "DeepBreath": {
+  "fw": 32,
+  "fh": 48,
+  "footY": 28
+ },
+ "Nod": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 28
+ },
+ "Sit": {
+  "fw": 24,
+  "fh": 52,
+  "footY": 32
+ },
+ "LookUp": {
+  "fw": 24,
+  "fh": 52,
+  "footY": 32
+ },
+ "Sink": {
+  "fw": 32,
+  "fh": 56,
+  "footY": 32
+ },
+ "Trip": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Laying": {
+  "fw": 40,
+  "fh": 32,
+  "footY": 24
+ },
+ "LeapForth": {
+  "fw": 24,
+  "fh": 100,
+  "footY": 56
+ },
+ "Head": {
+  "fw": 40,
+  "fh": 56,
+  "footY": 36
+ },
+ "Cringe": {
+  "fw": 32,
+  "fh": 56,
+  "footY": 30
+ },
+ "LostBalance": {
+  "fw": 32,
+  "fh": 56,
+  "footY": 32
+ },
+ "TumbleBack": {
+  "fw": 24,
+  "fh": 52,
+  "footY": 34
+ },
+ "Faint": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "HitGround": {
+  "fw": 40,
+  "fh": 60,
+  "footY": 36
+ }
+}

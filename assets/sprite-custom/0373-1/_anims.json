@@ -1,0 +1,172 @@
+{
+ "Walk": {
+  "fw": 56,
+  "fh": 80,
+  "footY": 44
+ },
+ "Attack": {
+  "fw": 72,
+  "fh": 80,
+  "footY": 44
+ },
+ "Shoot": {
+  "fw": 56,
+  "fh": 80,
+  "footY": 44
+ },
+ "Emit": {
+  "fw": 56,
+  "fh": 72,
+  "footY": 40
+ },
+ "Sleep": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "Hurt": {
+  "fw": 80,
+  "fh": 84,
+  "footY": 44
+ },
+ "Idle": {
+  "fw": 56,
+  "fh": 56,
+  "footY": 32
+ },
+ "Swing": {
+  "fw": 104,
+  "fh": 88,
+  "footY": 48
+ },
+ "Double": {
+  "fw": 80,
+  "fh": 88,
+  "footY": 48
+ },
+ "Hop": {
+  "fw": 56,
+  "fh": 104,
+  "footY": 56
+ },
+ "Charge": {
+  "fw": 56,
+  "fh": 56,
+  "footY": 32
+ },
+ "Rotate": {
+  "fw": 56,
+  "fh": 48,
+  "footY": 28
+ },
+ "EventSleep": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "Wake": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "Eat": {
+  "fw": 56,
+  "fh": 56,
+  "footY": 32
+ },
+ "Tumble": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 36
+ },
+ "Pose": {
+  "fw": 56,
+  "fh": 72,
+  "footY": 40
+ },
+ "Pull": {
+  "fw": 48,
+  "fh": 76,
+  "footY": 44
+ },
+ "Pain": {
+  "fw": 48,
+  "fh": 72,
+  "footY": 40
+ },
+ "Float": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "DeepBreath": {
+  "fw": 56,
+  "fh": 56,
+  "footY": 32
+ },
+ "Nod": {
+  "fw": 56,
+  "fh": 48,
+  "footY": 28
+ },
+ "Sit": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "LookUp": {
+  "fw": 48,
+  "fh": 56,
+  "footY": 32
+ },
+ "Sink": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 36
+ },
+ "Trip": {
+  "fw": 56,
+  "fh": 56,
+  "footY": 32
+ },
+ "Laying": {
+  "fw": 48,
+  "fh": 48,
+  "footY": 28
+ },
+ "LeapForth": {
+  "fw": 48,
+  "fh": 112,
+  "footY": 60
+ },
+ "Head": {
+  "fw": 24,
+  "fh": 40,
+  "footY": 24
+ },
+ "Cringe": {
+  "fw": 48,
+  "fh": 72,
+  "footY": 40
+ },
+ "LostBalance": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 36
+ },
+ "TumbleBack": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 38
+ },
+ "Faint": {
+  "fw": 56,
+  "fh": 48,
+  "footY": 28
+ },
+ "HitGround": {
+  "fw": 56,
+  "fh": 64,
+  "footY": 36
+ }
+}

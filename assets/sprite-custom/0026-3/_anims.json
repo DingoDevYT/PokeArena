@@ -1,0 +1,177 @@
+{
+ "Attack": {
+  "fw": 80,
+  "fh": 84,
+  "footY": 47
+ },
+ "Hop": {
+  "fw": 40,
+  "fh": 100,
+  "footY": 56
+ },
+ "Hurt": {
+  "fw": 56,
+  "fh": 64,
+  "footY": 34
+ },
+ "Idle": {
+  "fw": 40,
+  "fh": 60,
+  "footY": 36
+ },
+ "Sleep": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Walk": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Charge": {
+  "fw": 48,
+  "fh": 56,
+  "footY": 36
+ },
+ "Cringe": {
+  "fw": 40,
+  "fh": 64,
+  "footY": 34
+ },
+ "DeepBreath": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Double": {
+  "fw": 72,
+  "fh": 80,
+  "footY": 48
+ },
+ "Eat": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "EventSleep": {
+  "fw": 40,
+  "fh": 28,
+  "footY": 20
+ },
+ "Faint": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Float": {
+  "fw": 40,
+  "fh": 32,
+  "footY": 20
+ },
+ "Head": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "HitGround": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 32
+ },
+ "Laying": {
+  "fw": 40,
+  "fh": 28,
+  "footY": 20
+ },
+ "LeapForth": {
+  "fw": 40,
+  "fh": 80,
+  "footY": 44
+ },
+ "LookUp": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "LostBalance": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 36
+ },
+ "Nod": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Pain": {
+  "fw": 48,
+  "fh": 56,
+  "footY": 36
+ },
+ "Pose": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Pull": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "QuickStrike": {
+  "fw": 128,
+  "fh": 140,
+  "footY": 75
+ },
+ "Rotate": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Shock": {
+  "fw": 56,
+  "fh": 64,
+  "footY": 36
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 60,
+  "footY": 35
+ },
+ "Sink": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Sit": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Swing": {
+  "fw": 80,
+  "fh": 84,
+  "footY": 48
+ },
+ "Trip": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ },
+ "Tumble": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "TumbleBack": {
+  "fw": 40,
+  "fh": 48,
+  "footY": 34
+ },
+ "Wake": {
+  "fw": 40,
+  "fh": 52,
+  "footY": 32
+ }
+}

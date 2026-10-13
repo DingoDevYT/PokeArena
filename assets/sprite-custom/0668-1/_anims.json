@@ -1,0 +1,27 @@
+{
+ "Walk": {
+  "fw": 56,
+  "fh": 66,
+  "footY": 42
+ },
+ "Idle": {
+  "fw": 56,
+  "fh": 66,
+  "footY": 42
+ },
+ "Rotate": {
+  "fw": 56,
+  "fh": 66,
+  "footY": 42
+ },
+ "Double": {
+  "fw": 80,
+  "fh": 82,
+  "footY": 50
+ },
+ "Swing": {
+  "fw": 112,
+  "fh": 106,
+  "footY": 62
+ }
+}

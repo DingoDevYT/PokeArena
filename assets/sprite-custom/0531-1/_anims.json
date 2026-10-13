@@ -1,0 +1,87 @@
+{
+ "Idle": {
+  "fw": 32,
+  "fh": 52,
+  "footY": 32
+ },
+ "Walk": {
+  "fw": 32,
+  "fh": 52,
+  "footY": 32
+ },
+ "Attack": {
+  "fw": 64,
+  "fh": 92,
+  "footY": 51
+ },
+ "Slam": {
+  "fw": 64,
+  "fh": 84,
+  "footY": 47
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 68,
+  "footY": 38
+ },
+ "Withdraw": {
+  "fw": 32,
+  "fh": 60,
+  "footY": 34
+ },
+ "Sleep": {
+  "fw": 32,
+  "fh": 36,
+  "footY": 26
+ },
+ "Hurt": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 34
+ },
+ "Swing": {
+  "fw": 72,
+  "fh": 84,
+  "footY": 48
+ },
+ "Double": {
+  "fw": 64,
+  "fh": 76,
+  "footY": 44
+ },
+ "Hop": {
+  "fw": 32,
+  "fh": 92,
+  "footY": 52
+ },
+ "Charge": {
+  "fw": 40,
+  "fh": 44,
+  "footY": 28
+ },
+ "Rotate": {
+  "fw": 32,
+  "fh": 44,
+  "footY": 28
+ },
+ "EventSleep": {
+  "fw": 32,
+  "fh": 32,
+  "footY": 20
+ },
+ "Eat": {
+  "fw": 32,
+  "fh": 44,
+  "footY": 28
+ },
+ "Pose": {
+  "fw": 32,
+  "fh": 52,
+  "footY": 32
+ },
+ "Cringe": {
+  "fw": 32,
+  "fh": 64,
+  "footY": 34
+ }
+}

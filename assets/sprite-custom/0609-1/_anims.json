@@ -1,0 +1,62 @@
+{
+ "Idle": {
+  "fw": 40,
+  "fh": 76,
+  "footY": 52
+ },
+ "Walk": {
+  "fw": 40,
+  "fh": 80,
+  "footY": 52
+ },
+ "Attack": {
+  "fw": 80,
+  "fh": 100,
+  "footY": 62
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 76,
+  "footY": 50
+ },
+ "Emit": {
+  "fw": 40,
+  "fh": 76,
+  "footY": 52
+ },
+ "Sleep": {
+  "fw": 32,
+  "fh": 72,
+  "footY": 48
+ },
+ "Hurt": {
+  "fw": 40,
+  "fh": 80,
+  "footY": 50
+ },
+ "Swing": {
+  "fw": 80,
+  "fh": 104,
+  "footY": 66
+ },
+ "Double": {
+  "fw": 64,
+  "fh": 92,
+  "footY": 60
+ },
+ "Hop": {
+  "fw": 40,
+  "fh": 108,
+  "footY": 68
+ },
+ "Charge": {
+  "fw": 40,
+  "fh": 68,
+  "footY": 48
+ },
+ "Rotate": {
+  "fw": 40,
+  "fh": 72,
+  "footY": 48
+ }
+}

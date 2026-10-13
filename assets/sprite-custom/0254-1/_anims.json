@@ -1,0 +1,47 @@
+{
+ "Attack": {
+  "fw": 72,
+  "fh": 84,
+  "footY": 47
+ },
+ "Strike": {
+  "fw": 80,
+  "fh": 116,
+  "footY": 64
+ },
+ "Shoot": {
+  "fw": 48,
+  "fh": 68,
+  "footY": 40
+ },
+ "Sleep": {
+  "fw": 32,
+  "fh": 36,
+  "footY": 24
+ },
+ "Hurt": {
+  "fw": 48,
+  "fh": 64,
+  "footY": 34
+ },
+ "Swing": {
+  "fw": 88,
+  "fh": 84,
+  "footY": 48
+ },
+ "Double": {
+  "fw": 64,
+  "fh": 64,
+  "footY": 36
+ },
+ "Hop": {
+  "fw": 48,
+  "fh": 100,
+  "footY": 56
+ },
+ "Charge": {
+  "fw": 48,
+  "fh": 44,
+  "footY": 28
+ }
+}

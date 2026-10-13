@@ -1,0 +1,42 @@
+{
+ "Bite": {
+  "fw": 64,
+  "fh": 84,
+  "footY": 46
+ },
+ "Shoot": {
+  "fw": 40,
+  "fh": 68,
+  "footY": 38
+ },
+ "Swell": {
+  "fw": 40,
+  "fh": 68,
+  "footY": 40
+ },
+ "Sleep": {
+  "fw": 32,
+  "fh": 52,
+  "footY": 32
+ },
+ "Hurt": {
+  "fw": 56,
+  "fh": 72,
+  "footY": 36
+ },
+ "Swing": {
+  "fw": 72,
+  "fh": 96,
+  "footY": 56
+ },
+ "Hop": {
+  "fw": 32,
+  "fh": 100,
+  "footY": 56
+ },
+ "Charge": {
+  "fw": 40,
+  "fh": 60,
+  "footY": 36
+ }
+}
