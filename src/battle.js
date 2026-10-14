@@ -10,6 +10,13 @@ const TUNE = {
   RANGE_MULT: 2.2,       // PMDO ranges are in tiles for a grid game; stretch them for the arena
   STATUS_TURN: 10,       // seconds that stand in for one game "turn" for chip damage and healing
   LASER_TICK: 0.12, BEAM_CLASH_SPEED: 320,
+  LASER: {
+    FLOW_SPEED: 620,     // px/s the aim travels down a beam; slower = the far end lags further behind the aim
+    LAG_STREAM: 0.45,    // flamethrower, water, ice...: fraction of the old lag (was 1.0, too hard to hit with)
+    LAG_BEAM: 0.07,      // hyper / solar / electric / the rest: only a slight bend
+    SHOOT: 1100 * 1.25,  // px/s a beam extends when fired (was 1100)
+    WIDTH: 1.25,         // hitbox and drawn width multiplier (was 1)
+  },
   FIELD_TIME: 30,        // weather / terrain / screens duration (5 turns)
   FIELD_TIME_EXT: 48,    // with Heat Rock, Light Clay, etc. (8 turns)
   SWAP_CD: 8, SWAP_IFRAMES: 0.7, ENTRY_IFRAMES: 1.0,
@@ -630,8 +637,15 @@ const LASERS = {
 // Round 5 balance: lasers hit far harder (total = damage if every tick lands, as a multiple of one normal hit) and the slow ones
 // track much faster. Solar Beam's drawback is its forced charge-up, not a beam that can't turn onto anyone.
 for (const L of Object.values(LASERS)) { L.total = +(L.total * 1.7 * 2.2).toFixed(2); if (L.turn < 2) L.turn = +(L.turn * 2.5).toFixed(1); }
-for (const k of ['flamethrower', 'hydropump', 'watergun', 'bubblebeam', 'dragonbreath', 'blastburn', 'icebeam']) LASERS[k].flow = true; // streams: the far end lags behind where the user is aiming
-for (const L of Object.values(LASERS)) L.len *= 2; // reach: walls, rocks and dodging are the limits, not range
+// Every laser bends: the far end shows where the user was aiming a moment ago (see flowPts). Streams lag a lot (LAG_STREAM), rigid beams only a touch (LAG_BEAM).
+// Lag is a multiplier on the travel time along the beam: 1 = the old stream lag, 0.45 = under half as far behind the aim at the same sweep speed.
+const LASER_STREAMS = ['flamethrower', 'hydropump', 'watergun', 'bubblebeam', 'dragonbreath', 'blastburn', 'icebeam'];
+for (const [k, L] of Object.entries(LASERS)) {
+  L.flow = true; L.lag = LASER_STREAMS.includes(k) ? TUNE.LASER.LAG_STREAM : TUNE.LASER.LAG_BEAM;
+  L.w *= TUNE.LASER.WIDTH; // hitbox; the drawn beam is b.w * BFX_VIS, so art and hitbox stay in step
+  L.len *= 2; // reach: walls, rocks and dodging are the limits, not range
+  L.histT = L.len / TUNE.LASER.FLOW_SPEED * L.lag + 0.1; // seconds of aim history worth keeping
+}
 LASERS.solarbeam.turn = 3.4; LASERS.solarbeam.total = 10;
 function archetype(move) {
   if (move._arch) return move._arch;
@@ -741,7 +755,9 @@ function fireMove(side) {
       // each hit is a volley of bh.n shots fanned bh.spread apart; the first shot of a volley to connect deals the damage
       const n = parental ? 2 : hits, fan = bh.n || 1;
       const spd = projSpeed(move) * (bh.spd || 1);
+      const cn = e.cancelN | 0;
       for (let i = 0; i < n; i++) after(i * 0.09, () => {
+        if ((e.cancelN | 0) !== cn) return;
         const sp = n > 1 ? (Math.random() - 0.5) * 0.12 : 0, vol = { hit: false };
         for (let j = 0; j < fan; j++) {
           const a2 = ang + sp + (j - (fan - 1) / 2) * (bh.spread || 0.2);
@@ -783,7 +799,8 @@ function fireMove(side) {
       snapAim(side, reach * TUNE.MELEE.SNAP_RANGE + hurtRadius(foe));
       e.kx += e.aimX * 90; e.ky += e.aimY * 90;
       const n = parental ? 2 : hits;
-      for (let i = 0; i < n; i++) after(i * 0.12, () => meleeHit(side, move, reach, i, parental && i === 1));
+      const cn = e.cancelN | 0;
+      for (let i = 0; i < n; i++) after(i * 0.12, () => { if ((e.cancelN | 0) === cn) meleeHit(side, move, reach, i, parental && i === 1); });
       break;
     }
     case 'dash': case 'lunge': {
@@ -869,9 +886,9 @@ function meleeHit(side, move, reach, i, parental) {
   if (move.fx?.anims?.[0]) spawnFx(move.fx.anims[0], hx, hy - 8, { dir: e.face }); else slashFx(hx, hy - 8, ang, TYPE_COLOR[move.type]);
   for (const r of B.rocks) if (Math.hypot(r.x - hx, r.y - hy) < reach * 0.6 + r.r) hitRock(r, move);
   // the swing stays live for MELEE.ACTIVE seconds: it re-tests, and the user steps into a foe who is in front but just out of reach
-  const sw = { done: false }, M = TUNE.MELEE;
+  const sw = { done: false }, M = TUNE.MELEE, cn = e.cancelN | 0;
   const test = () => {
-    if (sw.done || !B || activeMon(side) !== m || m.fainted) return;
+    if (sw.done || !B || activeMon(side) !== m || m.fainted || (e.cancelN | 0) !== cn) return;
     const dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy), hr = hurtRadius(foe);
     const inFront = d < hr + 12 || Math.abs(angDiff(Math.atan2(dy, dx), ang)) < M.CONE;
     if (!inFront) return;
@@ -1160,16 +1177,26 @@ function playerIntent(side, dt) {
   if (INPUT.usingPad && INPUT.held('RB')) {
     if (!side.wheel) side.wheel = { sel: -1 };
     const vx = INPUT.aimActive ? INPUT.ax : INPUT.mx, vy = INPUT.aimActive ? INPUT.ay : INPUT.my;
-    if (Math.hypot(vx, vy) > 0.4) side.wheel.sel = wheelSlot(Math.atan2(vy, vx));
+    if (Math.hypot(vx, vy) > 0.4) { const w = side.wheel, o = wheelOpts(side), k = wheelPick(o.length, Math.atan2(vy, vx)); w.ang = Math.atan2(vy, vx); w.sel = k >= 0 && !side.team[o[k]].fainted ? o[k] : -1; }
     I.mx = I.my = 0; I.use = -1;
   } else if (side.wheel) {
     const sel = side.wheel.sel; side.wheel = null;
     if (sel >= 0 && doSwap(side, sel, side.freeSwap > 0)) side.freeSwap = 0;
   }
 }
-// six wheel slots, starting at the top, clockwise
-const wheelSlot = ang => ((Math.round((ang + Math.PI / 2) / (Math.PI / 3)) % 6) + 6) % 6;
-const wheelAng = i => -Math.PI / 2 + i * Math.PI / 3;
+// swap wheel: the active mon sits in the centre, every other team index gets a spoke (top, clockwise); wheel.sel is a team index
+const wheelOpts = side => side.team.map((_, i) => i).filter(i => i !== side.cur);
+const wheelPick = (n, ang) => n ? ((Math.round((ang + Math.PI / 2) / (Math.PI * 2 / n)) % n) + n) % n : -1;
+const wheelAng = (k, n) => -Math.PI / 2 + k * Math.PI * 2 / n;
+
+// Ends whatever attack the side is in the middle of. The move keeps its cooldown. Pending swing / volley callbacks see cancelN change and stop.
+function cancelAttack(side) {
+  const e = side.ent, m = activeMon(side);
+  if (e.act || e.dash || e.laser) e.lock = 0;
+  e.cancelN = (e.cancelN | 0) + 1; e.act = null; e.dash = null; e.laser = null;
+  for (const b of B.beams) if (b.side === side.idx && b.laser) b.dead = true; // updateClash drops the clash, the foe's beam carries on
+  if (m.vol.recharge > 1.3) m.vol.recharge = 1.3;
+}
 
 function updateSide(side, dt) {
   const m = activeMon(side), e = side.ent, I = side.intent, foe = foeOf(side);
@@ -1193,10 +1220,11 @@ function updateSide(side, dt) {
   if (I.mega && !incap) tryMega(side);
 
   // dodge
-  if (I.dodge && side.dodgeCd <= 0 && !incap && e.stun <= 0 && !e.dash && e.hidden <= 0 && !(e.act && e.act.fired)) {
+  if (I.dodge && side.dodgeCd <= 0 && !incap && e.stun <= 0 && e.hidden <= 0) {
     let dx = I.mx, dy = I.my; if (Math.hypot(dx, dy) < 0.2) { dx = -e.aimX; dy = -e.aimY; }
     const l = Math.hypot(dx, dy) || 1;
-    e.dodge = { t: TUNE.DODGE_TIME, dx: dx / l, dy: dy / l }; e.iframes = Math.max(e.iframes, TUNE.DODGE_IFRAMES); e.act = null;
+    cancelAttack(side); // dodge cancels any own attack: windup, charge, swing, dash, laser (cooldown stays spent)
+    e.dodge = { t: TUNE.DODGE_TIME, dx: dx / l, dy: dy / l }; e.iframes = Math.max(e.iframes, TUNE.DODGE_IFRAMES);
     side.dodgeCd = clamp(2.2 - speedStat(m, side) / 250, 0.9, 2.2);
     spawnFx('Puff_White', e.x, e.y - 4 * SS, { scale: SS }); uiBlip(520, 0.04, 'triangle'); // dust cloud where it left from
   }
@@ -1358,14 +1386,15 @@ function updateProjectiles(dt) {
 }
 // Flowing streams (fire, water, ...): each part of the stream keeps the direction the user was aiming when it was emitted,
 // so turning bends the stream and the far end lags behind. Points are 16 px apart; ang[i] is the direction of segment i.
-const FLOW_SPEED = 620, FLOW_SEG = 16;
+const FLOW_SEG = 16;
 function flowPts(b) {
   if (b._ptsT === B.time && b._ptsLen === b.len) return b._pts;
-  const h = b.hist || [], pts = [{ x: b.x, y: b.y }], ang = [], n = Math.ceil(b.len / FLOW_SEG);
+  const h = b.hist || [], pts = [{ x: b.x, y: b.y }], ang = [], n = Math.ceil(b.len / FLOW_SEG), lagK = b.laser.lag / TUNE.LASER.FLOW_SPEED;
   for (let i = 0; i < n; i++) {
-    const want = B.time - (i + 0.5) * FLOW_SEG / FLOW_SPEED; let a = h.length ? h[0].a : b.ang;
+    const want = B.time - (i + 0.5) * FLOW_SEG * lagK; let a = h.length ? h[0].a : b.ang;
     for (let j = h.length - 1; j >= 0; j--) if (h[j].t <= want) { a = h[j].a; break; }
-    ang.push(a); const p = pts[i]; pts.push({ x: p.x + Math.cos(a) * FLOW_SEG, y: p.y + Math.sin(a) * FLOW_SEG });
+    const sl = Math.min(FLOW_SEG, b.len - i * FLOW_SEG); // last piece stops exactly at the beam's end
+    ang.push(a); const p = pts[i]; pts.push({ x: p.x + Math.cos(a) * sl, y: p.y + Math.sin(a) * sl });
   }
   b._pts = { pts, ang }; b._ptsT = B.time; b._ptsLen = b.len; return b._pts;
 }
@@ -1401,11 +1430,11 @@ function updateLaser(b, side, foe, dt) {
   if (activeMon(side) !== b.mon || m.fainted || m.status === 'slp' || m.status === 'frz' || !e.act || e.act.move !== b.move) { b.dead = true; return; }
   e.laser = b;
   b.ang += clamp(angDiff(Math.atan2(e.aimY, e.aimX), b.ang), -L.turn * dt, L.turn * dt);
-  if (L.flow) { (b.hist ||= []).push({ t: B.time, a: b.ang }); while (b.hist.length > 2 && b.hist[1].t < B.time - 0.8) b.hist.shift(); }
+  (b.hist ||= []).push({ t: B.time, a: b.ang }); while (b.hist.length > 2 && b.hist[1].t < B.time - L.histT) b.hist.shift();
   const ax = Math.cos(b.ang), ay = Math.sin(b.ang);
   b.x = e.x + ax * 10; b.y = e.y - 8 * SS + ay * 6;
   const max = rayLen(b.x, b.y, ax, ay, L.len);
-  if (!b.clash) b.len = Math.min(max, b.len + 1100 * dt);
+  if (!b.clash) b.len = Math.min(max, b.len + TUNE.LASER.SHOOT * dt);
   if ((b.tickT -= dt) > 0) return;
   b.tickT = TUNE.LASER_TICK;
   const ex = b.x + ax * b.len, ey = b.y + ay * b.len;

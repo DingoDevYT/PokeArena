@@ -555,14 +555,21 @@ function drawSideMon(s) {
 }
 function pixelZ(x, y) { x = Math.round(x); y = Math.round(y); ctx.fillRect(x, y, 5, 1); ctx.fillRect(x + 3, y + 1, 1, 1); ctx.fillRect(x + 2, y + 2, 1, 1); ctx.fillRect(x + 1, y + 3, 1, 1); ctx.fillRect(x, y + 4, 5, 1); }
 function drawWheel(s) {
-  const e = s.ent, R = 30 * SS, cy = e.y - 14 * SS;
-  ell(e.x, cy, R + 26, R + 26, 'rgba(0,0,0,0.4)');
-  s.team.forEach((m, i) => {
-    const a = wheelAng(i), x = Math.round(e.x + Math.cos(a) * R), y = Math.round(cy + Math.sin(a) * R);
-    const sel = s.wheel.sel === i, cur = s.cur === i;
-    ell(x, y, 22, 22, sel ? '#ffe36b' : cur ? '#7fb5ff' : '#e8e8f0', '#000', 2);
+  const e = s.ent, R = 30 * SS, cy = e.y - 14 * SS, cx = Math.round(e.x), w = s.wheel, o = wheelOpts(s), n = o.length;
+  // portrait in a framed round tile; fainted = greyscale at 75% opacity
+  const tile = (m, x, y, r, ring) => {
+    ell(x, y, r + 2, r + 2, ring, '#000', 2);
     const im = img(spriteOf(m.sp.sprite)?.portrait);
-    if (im) { ctx.globalAlpha = m.fainted ? 0.3 : 1; ctx.drawImage(im, x - 20, y - 20, 40, 40); ctx.globalAlpha = 1; }
+    if (!im) return;
+    ctx.save(); if (m.fainted) { ctx.globalAlpha = 0.75; ctx.filter = 'grayscale(1)'; }
+    ctx.drawImage(im, x - 20, y - 20, 40, 40); ctx.restore();
+  };
+  ell(cx, cy, R + 30, R + 30, 'rgba(0,0,0,0.4)');
+  if (w.ang !== undefined && Math.hypot(INPUT.aimActive ? INPUT.ax : INPUT.mx, INPUT.aimActive ? INPUT.ay : INPUT.my) > 0.4) pline(cx, cy, cx + Math.cos(w.ang) * (R - 6), cy + Math.sin(w.ang) * (R - 6), w.sel >= 0 ? '#ffe36b' : '#888', 3);
+  tile(s.team[s.cur], cx, Math.round(cy), 20, '#7fb5ff');
+  o.forEach((ti, k) => {
+    const m = s.team[ti], a = wheelAng(k, n), x = Math.round(cx + Math.cos(a) * R), y = Math.round(cy + Math.sin(a) * R);
+    tile(m, x, y, 20, w.sel === ti ? '#ffe36b' : '#e8e8f0');
     ctx.fillStyle = '#000'; ctx.fillRect(x - 16, y + 23, 32, 4);
     ctx.fillStyle = m.fainted ? '#555' : m.hp / m.maxHp > 0.5 ? '#4cd964' : m.hp / m.maxHp > 0.2 ? '#ffcc00' : '#ff3b30';
     ctx.fillRect(x - 15, y + 24, Math.round(30 * m.hp / m.maxHp), 2);
@@ -722,11 +729,17 @@ function drawSideHUD(s, right) {
   }
   const bx2 = right ? px + P - T - 18 * S : px + T + 20 * S;
   s.team.forEach((tm, i) => {
-    const x = bx2 + dir * i * 24 * S;
-    pokeball(x, ty + T / 2, 8 * S, tm.fainted ? 'fainted' : i === s.cur ? 'active' : 'ok');
-    if (s.idx === meIdx() && !INPUT.usingPad) text(String(i + 1), x, ty + T / 2 + 17 * S, 10 * S, '#fff', 'center');
+    // portrait tile per team slot: current mon gold-ringed, fainted greyscale at 75%
+    const q = Math.round(28 * S), step = Math.round(32 * S), x = Math.round(bx2 + dir * i * step), qx = x - (q >> 1), qy = Math.round(ty + T / 2 - 8 * S) - (q >> 1);
+    rrect(qx, qy, q, q, 3 * S, '#b9d3f0', i === s.cur && !tm.fainted ? '#ffcf3f' : '#fff', i === s.cur ? 3 : 2);
+    const tim = img(spriteOf(tm.sp.sprite)?.portrait);
+    if (tim) {
+      ctx.save(); if (tm.fainted) { ctx.globalAlpha = 0.75; ctx.filter = 'grayscale(1)'; }
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(tim, qx + 2, qy + 2, q - 4, q - 4); ctx.restore();
+    }
+    if (s.idx === meIdx() && !INPUT.usingPad) text(String(i + 1), x, qy + q + 8 * S, 10 * S, '#fff', 'center');
   });
-  text(s.name.toUpperCase(), bx2 + dir * 6 * 24 * S + (right ? -4 : 4), ty + T / 2, 16 * S, right ? '#7fd0e8' : '#7be07b', right ? 'right' : 'left', '#000');
+  text(s.name.toUpperCase(), bx2 + dir * 6 * Math.round(32 * S) + (right ? -4 : 4), ty + T / 2 - 8 * S, 16 * S, right ? '#7fd0e8' : '#7be07b', right ? 'right' : 'left', '#000');
   Object.entries(s.screens).filter(([, v]) => v > 0).forEach(([k, v], i) => text(`${DEX.moves[k]?.name || k} ${Math.ceil(v)}`, right ? VW - pad : pad, ty + T + 22 * S + i * 15 * S, 11 * S, '#bfe8ff', right ? 'right' : 'left'));
   B.callouts.filter(c => c.side === s.idx).forEach((c, i) => {
     const a = clamp(Math.min(c.t * 8, (1.6 - c.t) * 4), 0, 1), y = ty + T + 40 * S + i * 36 * S;
