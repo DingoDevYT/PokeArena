@@ -592,7 +592,10 @@ function drawWheel(s) {
 }
 
 // ---------- frame ----------
+const FLOWERY_MUSIC = 'assets/music/flower-man.mp3';
 function drawBattle(dt) {
+  // anyone fielding Flowery takes over the music for the rest of the fight (runs on host, guest and offline alike)
+  if (!B.demo && AUDIO.musicSrc !== FLOWERY_MUSIC && B.sides.some(s => activeMon(s)?.sp.id === 'flowery')) AUDIO.playMusic(FLOWERY_MUSIC);
   updateCamera(dt);
   const c = B.cam;
   // world canvas covers the view in world pixels; the camera's fractional offset is applied when scaling up
