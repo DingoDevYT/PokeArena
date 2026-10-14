@@ -240,8 +240,8 @@ function EditScene(ti) {
         });
         // description of the focused field
         let desc = '';
-        if (f === 'ability') desc = (DEX.abilities[toId(set.ability)]?.shortDesc || '') + (ABILITY_WORKS(toId(set.ability)) ? '' : '  (no arena effect yet)');
-        if (f === 'item' && set.item) desc = (DEX.items[toId(set.item)]?.shortDesc || '') + (ITEM_WORKS(toId(set.item)) ? '' : '  (no arena effect yet)');
+        if (f === 'ability') desc = (DEX.abilities[toId(set.ability)]?.shortDesc || '') + (ABILITY_WORKS(toId(set.ability)) ? '' : '  (does nothing in PokeArena yet)');
+        if (f === 'item' && set.item) desc = (DEX.items[toId(set.item)]?.shortDesc || '') + (ITEM_WORKS(toId(set.item)) ? '' : '  (does nothing in PokeArena yet)');
         if (f === 'nature') desc = nm && nm.plus && nm.plus !== nm.minus ? `Raises ${nm.plus.toUpperCase()}, lowers ${nm.minus.toUpperCase()}` : 'Neutral nature';
         if (focusMove) { const mv = DEX.moves[focusMove]; desc = `${archWord(mv)}: ${ARCH_INFO[archetype(mv)]?.[1] || ''} ${mv.shortDesc || ''}`; }
         if (desc && st.col === 1) wrapText(desc, MX, 520 * s, MW, 13 * s, '#dde');
@@ -259,9 +259,15 @@ function EditScene(ti) {
             const [pi, ci] = slotIcons(k); icon(pi, FX + 22 * s, mid, 32); icon(ci, FX + 52 * s, mid, 32);
             if (!mv) { text(k <= set.moves.length ? '+ add move' : '(empty)', FX + 80 * s, mid, 15 * s, on ? '#333' : '#889', 'left', null); return; }
             const tw = hudChip(FX + 76 * s, mid - 11 * s, mv.type.toUpperCase(), TYPE_COLOR[mv.type], 22 * s);
-            text(mv.name, FX + 80 * s + Math.max(tw, 90 * s), mid, 16 * s, dk, 'left', null);
-            const info = `${CAT[mv.category][0]}  ${mv.basePower ? 'POW ' + mv.basePower : ''}  CD ${moveCd(mv).toFixed(1)}s  ${archWord(mv).toUpperCase()}`;
-            text(info, FX + FW - 76 * s, mid, 11 * s, sub, 'right', null);
+            // name + style on the left; category pill, power and cooldown in fixed columns on the right
+            const R = FX + FW - 80 * s, nx = FX + 80 * s + Math.max(tw, 90 * s), room = R - 266 * s - nx;
+            ctx.font = `${16 * s}px Bungee, "Arial Black", sans-serif`;
+            text(mv.name, nx, mid - 7 * s, 16 * s * Math.min(1, room / Math.max(1, ctx.measureText(mv.name).width)), dk, 'left', null);
+            text(archWord(mv).toUpperCase(), nx, mid + 11 * s, 10 * s, sub, 'left', null);
+            const [cl, cc] = CAT[mv.category], pw = 68 * s;
+            rrect(R - 266 * s, mid - 10 * s, pw, 20 * s, 10 * s, cc); text(cl, R - 266 * s + pw / 2, mid + 1, 9 * s, '#fff', 'center', null);
+            text(mv.basePower ? 'POW ' + mv.basePower : 'POW -', R - 108 * s, mid, 13 * s, dk, 'right', null);
+            text(`CD ${moveCd(mv).toFixed(1)}s`, R, mid, 13 * s, dk, 'right', null);
             if (k > 0) button(FX + FW - 68 * s, y + 9 * s, 30 * s, 32 * s, '^', () => scene.moveSwap(k, -1), { size: 14 * s });
             if (k < set.moves.length - 1) button(FX + FW - 34 * s, y + 9 * s, 30 * s, 32 * s, 'v', () => scene.moveSwap(k, 1), { size: 14 * s });
             return;
@@ -272,6 +278,7 @@ function EditScene(ti) {
           if (f === 'item' && set.item) vx += itemIcon(set.item, vx + 12 * s, mid, 24 * s) + 8 * s;
           const val = { species: sp.name, level: String(set.level), ability: set.ability, item: set.item || '(none)', nature: set.nature }[f];
           text(lrRow ? `<  ${val}  >` : val, vx, mid, 16 * s, dk, 'left', null);
+          if (f === 'species' || f === 'item') text(pad ? 'A to change' : 'CLICK TO CHANGE >', FX + FW - 16 * s, mid, 11 * s, sub, 'right', null);
           if (f === 'nature' && nm?.plus && nm.plus !== nm.minus) text(`+${nm.plus.toUpperCase()} -${nm.minus.toUpperCase()}`, FX + FW - 16 * s, mid, 12 * s, sub, 'right', null);
           if (f === 'level') { button(FX + FW - 140 * s, y + 9 * s, 62 * s, 32 * s, '-10', () => scene.level(-10), { size: 12 * s }); button(FX + FW - 72 * s, y + 9 * s, 62 * s, 32 * s, '+10', () => scene.level(10), { size: 12 * s }); }
         });
@@ -440,7 +447,7 @@ function ItemPicker(set, onPick, back) {
       const s = S(), mid = y + h / 2;
       itemIcon(it.name, x + 22 * s, mid, 24 * s);
       text(it.name, x + 46 * s, mid, 15 * s, on ? '#111' : '#fff', 'left', null);
-      if (it.id && !ITEM_WORKS(it.id)) text('no arena effect yet', x + w - 10 * s, mid, 11 * s, on ? '#333' : '#889', 'right', null);
+      if (it.id && !ITEM_WORKS(it.id)) text('does nothing yet', x + w - 10 * s, mid, 11 * s, on ? '#333' : '#889', 'right', null);
       else if (mine(it)) text('MEGA STONE', x + w - 10 * s, mid, 11 * s, on ? '#333' : '#ffde3b', 'right', null);
     },
     drawSide(it, x, y, w) {
@@ -448,7 +455,7 @@ function ItemPicker(set, onPick, back) {
       rrect(x, y + 30 * s, 96 * s, 96 * s, 12 * s, '#00000055', '#ffffff44', 2);
       itemIcon(it.name, x + 48 * s, y + 78 * s, 72 * s);
       text(it.name, x + 112 * s, y + 60 * s, 22 * s, '#fff', 'left');
-      if (it.id) text(ITEM_WORKS(it.id) ? 'Works in the arena' : 'No arena effect yet', x + 112 * s, y + 92 * s, 13 * s, ITEM_WORKS(it.id) ? '#7be07b' : '#f99', 'left', null);
+      if (it.id) text(ITEM_WORKS(it.id) ? 'Works in PokeArena' : 'Does nothing in PokeArena yet', x + 112 * s, y + 92 * s, 13 * s, ITEM_WORKS(it.id) ? '#7be07b' : '#f99', 'left', null);
       wrapText(it.shortDesc || '', x, y + 150 * s, w, 14 * s, '#ffe7a8');
     },
     onPick: it => onPick(it.id ? it.name : ''), back,

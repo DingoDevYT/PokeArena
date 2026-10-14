@@ -123,7 +123,11 @@ function boulder(sheets) {
   const [s, sx, sy] = pickTile(sheets, WALL, 0x00);
   const t = new PNG({ width: T, height: T });
   PNG.bitblt(s, t, sx, sy, T, T, 0, 0);
-  return clearOutside(t, floorPalette(sheets));
+  return clearOutside(t, floorPalette(sheets), 24);
+}
+// Pillar: a 1x2 column of the arena's own wall tiles (capped top and bottom) with the floor cleared around it.
+function pillar(sheets) {
+  return clearOutside(blob(sheets, WALL, ['#', '#']), floorPalette(sheets), 45);
 }
 const edgeClear = (img) => {
   const pal = new Set(), { width: w, height: h, data } = img;
@@ -141,15 +145,23 @@ function floorPalette(sheets) {
   return pal;
 }
 // Flood-fills palette-coloured pixels inward from the image border and makes them transparent.
-function clearOutside(img, pal) {
+// tol > 0 also clears colours within that RGB distance of a palette colour (floor shades that differ a little).
+function clearOutside(img, pal, tol = 0) {
   const { width: w, height: h, data } = img, seen = new Uint8Array(w * h), st = [];
+  const cols = tol ? [...pal].map((c) => [c >> 16, (c >> 8) & 255, c & 255]) : [];
+  const isFloor = (i) => {
+    const c = rgb(data, i * 4);
+    if (pal.has(c)) return true;
+    const r = c >> 16, g = (c >> 8) & 255, b = c & 255;
+    return cols.some(([pr, pg, pb]) => Math.hypot(r - pr, g - pg, b - pb) <= tol);
+  };
   for (let x = 0; x < w; x++) st.push(x, (h - 1) * w + x);
   for (let y = 0; y < h; y++) st.push(y * w, y * w + w - 1);
   while (st.length) {
     const i = st.pop();
     if (seen[i]) continue;
     seen[i] = 1;
-    if (!data[i * 4 + 3] || pal.has(rgb(data, i * 4))) {
+    if (!data[i * 4 + 3] || isFloor(i)) {
       data[i * 4 + 3] = 0;
       const x = i % w, y = (i / w) | 0;
       if (x > 0) st.push(i - 1); if (x < w - 1) st.push(i + 1);
@@ -172,7 +184,7 @@ const ARENA_DEFS = [
     style: 'cave', sec: 'pools', secT: 0.7, open: 2,
     deco: { big: [['Tree_Town.Flip', 4]], small: [['Flowers_Town_3.Flip', 12], ['Flowers_Tropical_1.Flip', 7]] },
     obstacles: [['grass', 262, 142], ['grass', 262, 434], ['rock', 432, 288], ['puddle', 432, 80]] },
-  { id: 'gym', name: 'Temporal Tower', tileset: 'TemporalTower', grass: 'TallGrass', music: 'oras-trainer',
+  { id: 'gym', name: 'Temporal Tower', tileset: 'TemporalTower', grass: 'TallGrass', rockPillar: true, music: 'oras-trainer',
     style: 'geo', sec: 'corners', fvar: 0,
     obstacles: [['rock', 312, 142], ['rock', 312, 434], ['rock', 182, 72], ['puddle', 432, 288]] },
   { id: 'beach', name: 'Beach Cave', tileset: 'BeachCave', grass: 'TallGrassYellow', music: 'sm-trainer',
@@ -182,7 +194,7 @@ const ARENA_DEFS = [
     style: 'cave', sec: 'pools', secT: 0.68, open: 1.9, fvar: 0.25,
     deco: { big: [['Tree_Town.Flip', 4], ['Logs_Large.Flip', 1], ['Trunk_Small.None', 2]], small: [['Flowers_Tropical_1.Flip', 9], ['Flowers_Town_3.Flip', 5]] },
     obstacles: [['grass', 260, 140], ['grass', 260, 436], ['rock', 432, 288], ['puddle', 150, 476], ['grass', 432, 84]] },
-  { id: 'volcano', name: 'Magma Cavern', tileset: 'MagmaCavern3', grass: 'TallGrassYellow', music: 'dpp-trainer',
+  { id: 'volcano', name: 'Magma Cavern', tileset: 'MagmaCavern3', grass: 'TallGrassYellow', rockSet: 'MtSteel1', music: 'dpp-trainer',
     style: 'cave', sec: 'rivers', secT: 0.74, pillars: 3, light: 0.1, fvar: 0.2,
     obstacles: [['rock', 290, 170], ['rock', 290, 406], ['rock', 432, 288], ['grass', 160, 70], ['grass', 432, 500]] },
   { id: 'lorelei', name: "Lorelei's Room", frlg: 'LAYOUT_POKEMON_LEAGUE_LORELEIS_ROOM', room: 'league', music: 'xy-rival',
@@ -349,7 +361,8 @@ async function pmdArena(def) {
   await decorate(art, g, def);
   shade(art, g, def);
   const props = {
-    rock: def.rock ? PNG.sync.read(await get(`${RAW_ASSET}/Object/${def.rock}.png`, `${CACHE}/obj/${def.rock}.png`)) : boulder(sheets),
+    rock: def.rock ? PNG.sync.read(await get(`${RAW_ASSET}/Object/${def.rock}.png`, `${CACHE}/obj/${def.rock}.png`))
+      : def.rockPillar ? pillar(sheets) : boulder(def.rockSet ? await loadTileset(def.rockSet) : sheets),
     puddle: edgeClear(blob(sheets, SEC)),
     grass: blob(await loadTileset(def.grass), 0),
   };
@@ -420,9 +433,22 @@ const gridOf = (f) => Array.from({ length: GH }, (_, Y) => Array.from({ length: 
 function frlgSprite({ P, S }, rows, floorId) {
   const img = new PNG({ width: rows[0].length * M, height: rows.length * M }), fl = new PNG({ width: M, height: M }), pal = new Set();
   rows.forEach((r, y) => r.forEach((id, x) => drawMetatile(P, S, id, img, x * M, y * M)));
-  drawMetatile(P, S, floorId, fl, 0, 0);
-  for (let i = 0; i < fl.data.length; i += 4) pal.add(rgb(fl.data, i));
+  for (const id of [].concat(floorId)) { // every floor shade round the prop, not just one tile's, or tinted fringes survive
+    drawMetatile(P, S, id, fl, 0, 0);
+    for (let i = 0; i < fl.data.length; i += 4) pal.add(rgb(fl.data, i));
+  }
   return clearOutside(img, pal);
+}
+// Cuts a sprite off at its first fully transparent row after the body, dropping the next object's top edge that
+// shares the last metatile (stacked pillars overlap by a few pixels).
+function cropAtGap(img) {
+  const rowEmpty = (y) => { for (let x = 0; x < img.width; x++) if (img.data[(y * img.width + x) * 4 + 3]) return false; return true; };
+  let y = 0; while (y < img.height && rowEmpty(y)) y++;
+  while (y < img.height && !rowEmpty(y)) y++;
+  if (y >= img.height) return img;
+  const out = new PNG({ width: img.width, height: y });
+  PNG.bitblt(img, out, 0, 0, img.width, y, 0, 0);
+  return out;
 }
 const FRLG_ROOMS = {
   // Indigo League rooms (Lorelei / Bruno / Agatha share one 13x13 plan): wall + door on top, exit at the bottom,
@@ -441,7 +467,9 @@ const FRLG_ROOMS = {
       drawMetatile(P, S, plain, floor, 0, 0);
       stretchCourt(room, floor, art, { sx: 4 * M, sy: 4 * M, cw: 19, ch: 12, ox: (CX - 9) * M, oy: (GPAD + 3) * M });
     };
-    return { grid, after, props: { rock: frlgSprite(lay, [[at(2, 4)], [at(2, 5)], [at(2, 6)]], plain) }, rockR: 0.5 };
+    // one pillar is the three metatiles (2,2) cap, (2,3) shaft, (2,4) base; the next pillar starts at (2,5)
+    const around = [plain, plainTop, ...[2, 3, 4].flatMap((y) => [at(1, y), at(3, y)])];
+    return { grid, after, props: { rock: cropAtGap(frlgSprite(lay, [[at(2, 2)], [at(2, 3)], [at(2, 4)]], around)) }, rockR: 0.5 };
   },
   // Pewter Gym: windowed back wall with the gym banner, sand floor, boulders along the sides,
   // the plank floor, statues and exit along the bottom.

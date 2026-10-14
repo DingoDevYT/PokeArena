@@ -38,10 +38,13 @@ const cleanTeam = t => (Array.isArray(t) ? t : []).slice(0, 6).map(s => ({
   ability: String(s?.ability || '').slice(0, 40), item: String(s?.item || '').slice(0, 40), nature: String(s?.nature || 'Hardy').slice(0, 20),
 })).filter(s => DEX.species[toId(s.species)]);
 const cleanName = n => String(n || 'Player').replace(/[^\w .'-]/g, '').slice(0, 16) || 'Player';
+// a peer's avatar id is only ever looked up in our own list; an old client sends none, so its old sprite field is used
+const cleanPeer = (p, team) => { const avatar = cleanAvatar(p?.avatar); return { name: cleanName(p?.name), avatar, sprite: avatar ? avatarSprite(avatar) : cleanSprite(p?.sprite), team }; };
 const cleanSprite = p => ((window.PLAYER_SPRITES || []).find(x => x.sprite === p) || (window.PLAYER_SPRITES || [])[0] || {}).sprite || '';
 const me = () => {
   const st = OnlineScene.st, teams = savedTeams(), t = teams[clamp(st.team, 0, teams.length - 1)];
-  return { name: cleanName(STORE.get('playerName', 'You')), sprite: cleanSprite(STORE.get('playerSprite', '')), team: cleanTeam(leadFirst(t.mons, st.lead)) };
+  const avatar = profileAvatar();
+  return { name: cleanName(profileName()), sprite: avatarSprite(avatar), avatar, team: cleanTeam(leadFirst(t.mons, st.lead)) };
 };
 const newCode = () => Array.from({ length: 5 }, () => ONLINE.CHARS[Math.random() * ONLINE.CHARS.length | 0]).join('');
 const joinLink = code => location.origin + location.pathname + '?join=' + code;
@@ -76,7 +79,7 @@ function onData(m) {
     if (m.t === 'hello' && !NET.cfg) {
       const team = cleanTeam(m.team);
       if (m.v !== ONLINE.VERSION || !team.length) { NETSYNC.send({ t: 'deny', why: m.v !== ONLINE.VERSION ? 'You are on a different game version. Refresh the page.' : 'Empty team.' }); return; }
-      hostStart({ name: cleanName(m.name), sprite: cleanSprite(m.sprite), team });
+      hostStart(cleanPeer(m, team));
     } else if (m.t === 'ready') NET.guestReady = true;
     else if (m.t === 'in') NETSYNC.onInput(m);
     else if (m.t === 'act') NETSYNC.onPress(m);
@@ -85,8 +88,8 @@ function onData(m) {
     else if (m.t === 'pick' && B && B.choose && B.sides[B.choose.side].remote) { B.choose.sel = clamp(m.sel | 0, 0, 5); confirmChoose(); }
   } else if (NET.role === 'guest') {
     if (m.t === 'start') {
-      const arena = ARENAS[m.ai | 0] || ARENAS[0], host = { name: cleanName(m.host?.name), sprite: cleanSprite(m.host?.sprite), team: cleanTeam(m.host?.team) };
-      const mine = { name: cleanName(m.guest?.name), sprite: cleanSprite(m.guest?.sprite), team: cleanTeam(m.guest?.team) };
+      const arena = ARENAS[m.ai | 0] || ARENAS[0], host = cleanPeer(m.host, cleanTeam(m.host?.team));
+      const mine = cleanPeer(m.guest, cleanTeam(m.guest?.team));
       if (!host.team.length || !mine.team.length) return netLeave('Bad match data.');
       NETSYNC.reset();
       NET.cfg = { arena, weather: '', music: arena.music, player: host, cpu: mine, me: 1, guest: true };
@@ -94,7 +97,7 @@ function onData(m) {
     } else if (m.t === 'snap') NETSYNC.apply(m.s);
     else if (m.t === 'teams') NETSYNC.applyTeams(m.s);
     else if (m.t === 'fx') NETSYNC.applyFx(m.s);
-    else if (m.t === 'rematch' && NET.cfg) { startBattle(NET.cfg); AUDIO.playMusic(NET.cfg.music); }
+    else if (m.t === 'rematch' && NET.cfg) { startBattleA(NET.cfg); AUDIO.playMusic(NET.cfg.music); }
     else if (m.t === 'deny') netLeave(String(m.why || 'The host refused.').slice(0, 80));
   }
 }
@@ -111,7 +114,7 @@ function hostStart(guest) {
 }
 async function hostGame(isPublic) {
   OnlineScene.msg = '';
-  setScene(StatusScene('Opening a lobby', 'Getting a join code...', () => netLeave()));
+  setScene(StatusScene('Opening a lobby', 'Getting a join code...', () => netLeave(), true));
   try {
     const Peer = await loadLib(ONLINE.PEER, 'Peer');
     for (let tries = 0; tries < 5; tries++) {
@@ -145,7 +148,7 @@ async function joinGame(raw) {
   OnlineScene.msg = '';
   let done = false;
   const fail = m => { if (!done) { done = true; netLeave(m); } };
-  setScene(StatusScene('Joining ' + code, 'Connecting to the host...', () => fail('')));
+  setScene(StatusScene('Joining ' + code, 'Connecting to the host...', () => fail(''), true));
   try {
     const Peer = await loadLib(ONLINE.PEER, 'Peer'), peer = new Peer({ debug: 0 });
     NET.peer = peer; NET.role = 'guest'; NET.conn = NET.fast = null;
@@ -158,8 +161,8 @@ async function joinGame(raw) {
       fast.on('open', () => wireConn(fast, true));
       ctl.on('open', () => {
         clearTimeout(timer); done = true; wireConn(ctl, false);
-        const m = me(); NETSYNC.send({ t: 'hello', v: ONLINE.VERSION, name: m.name, sprite: m.sprite, team: m.team });
-        setScene(StatusScene('Connected', 'The host is starting the match...', () => netLeave()));
+        const m = me(); NETSYNC.send({ t: 'hello', v: ONLINE.VERSION, name: m.name, sprite: m.sprite, avatar: m.avatar, team: m.team });
+        setScene(StatusScene('Connected', 'The host is starting the match...', () => netLeave(), true));
       });
     });
   } catch (e) { fail('Could not join: ' + (e.message || 'network error')); }
@@ -170,7 +173,7 @@ async function lobbyStart(code) {
   try {
     const mqtt = await loadLib(ONLINE.MQTT, 'mqtt'), topic = ONLINE.TOPIC + code, m = me();
     const c = mqtt.connect(ONLINE.BROKER, { reconnectPeriod: 4000, will: { topic, payload: '', retain: true, qos: 0 } });
-    const pub = () => c.publish(topic, JSON.stringify({ code, name: m.name, lead: leadName(m.team, 0), lid: toId(m.team[0]?.species || ''), n: m.team.length, v: ONLINE.VERSION, t: Date.now() }), { retain: true });
+    const pub = () => c.publish(topic, JSON.stringify({ code, name: m.name, av: m.avatar, lead: leadName(m.team, 0), lid: toId(m.team[0]?.species || ''), n: m.team.length, v: ONLINE.VERSION, t: Date.now() }), { retain: true });
     c.on('connect', pub); c.on('error', () => {});
     NET.mq = c; NET.mqTopic = topic; NET.mqT = setInterval(pub, 30000);
   } catch { /* the code still works without the list */ }
@@ -225,12 +228,22 @@ function portraitTile(id, x, y, sz, ring) {
   rrect(x, y, sz, sz, Math.max(4, sz / 8), '#00000066', ring || null, ring ? 2 : 0);
   if (im) ctx.drawImage(im, x + 2, y + 2, sz - 4, sz - 4);
 }
+// two trainers side by side with a VS between; a missing one shows a question mark
+function vsCards(cx, cy, size, a, b) {
+  const gap = size * 1.2;
+  [[a, cx - gap / 2 - size, '#7be07b'], [b, cx + gap / 2, '#7fd0e8']].forEach(([p, x, col]) => {
+    if (p) avatarTile(p.avatar || AVATAR_DEFAULT, x, cy, size, col);
+    else { rrect(x, cy, size, size, Math.max(4, size / 8), '#00000066', '#ffffff55', 2); text('?', x + size / 2, cy + size / 2 + 2, size * 0.5, '#ffffff77', 'center', null); }
+    const nm = p ? String(p.name).toUpperCase() : 'WAITING'; text(nm.length > 12 ? nm.slice(0, 11) + '.' : nm, x + size / 2, cy + size + size * 0.2, Math.max(9, size * 0.15), p ? '#fff' : '#9aa6c0', 'center', null);
+  });
+  text('VS', cx, cy + size / 2, size * 0.32, '#ffde3b', 'center', '#1a2a6c');
+}
 // design space is 1320 x 800, scaled to fit and centred
 function layout() { const s = Math.min(VW / 1360, VH / 840), ox = (VW - 1320 * s) / 2, oy = Math.max(0, (VH - 800 * s) / 2); return { s, X: v => ox + v * s, Y: v => oy + v * s, L: v => v * s }; }
 
 // ---------- scenes ----------
 function spinner(cx, cy, r) { const t = performance.now() / 1000; for (let i = 0; i < 8; i++) { ctx.globalAlpha = 0.15 + 0.85 * (((i - t * 10) % 8 + 8) % 8) / 8; rrect(cx + Math.cos(i / 8 * 6.283) * r - 4, cy + Math.sin(i / 8 * 6.283) * r - 4, 8, 8, 2, '#ffde3b'); } ctx.globalAlpha = 1; }
-function StatusScene(title, sub, cancel) {
+function StatusScene(title, sub, cancel, showMe) {
   const sc = { reg: [], focus: 'cancel' };
   return Object.assign(sc, {
     update() { uiNav(sc); if (backHit()) { sc.cancelled = true; cancel(); } },
@@ -238,7 +251,7 @@ function StatusScene(title, sub, cancel) {
       bgFill('#101830', '#2c1838'); sc.reg = [];
       const { X, Y, L } = layout();
       panel(X(360), Y(220), L(600), L(340));
-      spinner(X(660), Y(320), L(26));
+      if (showMe) vsCards(X(660), Y(236), L(84), me(), null); else spinner(X(660), Y(320), L(26));
       text(title.toUpperCase(), X(660), Y(400), L(34), '#fff', 'center', null);
       if (sub) text(sub, X(660), Y(445), L(16), '#aab4c8', 'center', null);
       uiBtn(sc, 'cancel', X(560), Y(485), L(200), L(52), { label: 'CANCEL', size: L(18) }, () => { sc.cancelled = true; cancel(); });
@@ -260,8 +273,9 @@ function WaitScene(code, isPublic) {
       uiBtn(sc, 'copy', X(400), Y(330), L(250), L(56), { label: recent && sc.what === 'code' ? 'COPIED!' : 'COPY CODE', size: L(18) }, () => copy(code, 'code'));
       uiBtn(sc, 'link', X(670), Y(330), L(250), L(56), { label: recent && sc.what === 'link' ? 'COPIED!' : 'COPY INVITE LINK', size: L(18) }, () => copy(joinLink(code), 'link'));
       text('A friend can open the invite link, or pick JOIN WITH A CODE.', X(660), Y(415), L(15), '#aab4c8', 'center', null);
-      spinner(X(470), Y(480), L(16));
-      text('Waiting for an opponent' + '.'.repeat(Math.floor(performance.now() / 400) % 4), X(500), Y(480), L(22), '#fff', 'left', null);
+      spinner(X(320), Y(480), L(16));
+      text('Waiting for an opponent' + '.'.repeat(Math.floor(performance.now() / 400) % 4), X(350), Y(480), L(22), '#fff', 'left', null);
+      vsCards(X(900), Y(440), L(62), m, null);
       text('YOUR TEAM', X(300), Y(560), L(13), '#9aa6c0', 'left', null);
       m.team.forEach((t, i) => portraitTile(toId(t.species), X(300 + i * 76), Y(578), L(66), i === 0 ? '#ffde3b' : '#ffffff40'));
       uiBtn(sc, 'cancel', X(810), Y(590), L(220), L(56), { label: 'CLOSE LOBBY', size: L(18) }, () => netLeave());
@@ -303,7 +317,7 @@ const OnlineScene = {
         if (!buf.length) return void L.delete(code);
         try {
           const l = JSON.parse(buf.toString());
-          if (l && l.v === ONLINE.VERSION && /^[A-Z0-9]{5}$/.test(code)) L.set(code, { code, name: cleanName(l.name), lead: String(l.lead || '').slice(0, 24), lid: DEX.species[toId(l.lid || '')] ? toId(l.lid) : '', n: clamp(l.n | 0, 1, 6), t: +l.t || 0 });
+          if (l && l.v === ONLINE.VERSION && /^[A-Z0-9]{5}$/.test(code)) L.set(code, { code, name: cleanName(l.name), av: cleanAvatar(l.av) || AVATAR_DEFAULT, lead: String(l.lead || '').slice(0, 24), lid: DEX.species[toId(l.lid || '')] ? toId(l.lid) : '', n: clamp(l.n | 0, 1, 6), t: +l.t || 0 });
         } catch {}
       });
     }).catch(() => { this.lstatus = 'Lobby list unreachable right now. Codes still work.'; });
@@ -321,6 +335,7 @@ const OnlineScene = {
     const team = teams[st.team]; st.lead = clamp(st.lead, 0, team.mons.length - 1);
     text('PLAY ONLINE', X(660), Y(50), L(44), '#ffde3b', 'center', '#1a2a6c');
     backButton(() => setScene(MenuScene));
+    profileChip(X(1010), Y(14), L(310), L(56), OnlineScene);
 
     // ----- left: team + lead -----
     panel(X(0), Y(96), L(440), L(660), 'YOUR TEAM', teams.length > 4 ? `${st.team + 1} / ${teams.length}` : '');
@@ -331,6 +346,7 @@ const OnlineScene = {
       const t = teams[i], y = Y(140 + (i - this.tOff) * 96);
       uiBtn(this, 'team' + i, X(20), y, L(400), L(86), { selected: i === st.team, wheel, draw: (x, y2, w, h, tc, sel) => {
         text(t.name.length > 22 ? t.name.slice(0, 21) + '.' : t.name, x + L(16), y2 + L(20), L(17), tc, 'left', null);
+        avatarTile(profileAvatar(), x + w - L(40), y2 + L(6), L(28));
         t.mons.slice(0, 6).forEach((mn, k) => portraitTile(toId(mn.species), x + L(14 + k * 62), y2 + L(36), L(44), sel ? '#16161e55' : null));
       } }, () => { st.team = i; st.lead = 0; this.save(); });
     }
@@ -379,9 +395,10 @@ const OnlineScene = {
     open.slice(this.lOff, this.lOff + rows).forEach((l, k) => {
       const y = Y(448 + k * 78);
       rrect(X(490), y, L(810), L(68), L(12), '#ffffff0c', '#ffffff22', 2);
-      if (l.lid) portraitTile(l.lid, X(500), y + L(6), L(56), '#ffffff40');
-      text(l.name, X(572), y + L(24), L(20), '#fff', 'left', null);
-      text(`${l.lead ? 'leads with ' + l.lead + '  -  ' : ''}${l.n} Pokemon`, X(572), y + L(48), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
+      avatarTile(l.av, X(500), y + L(6), L(56), '#ffffff66');
+      if (l.lid) portraitTile(l.lid, X(566), y + L(6), L(56), '#ffffff40');
+      text(l.name, X(638), y + L(24), L(20), '#fff', 'left', null);
+      text(`${l.lead ? 'leads with ' + l.lead + '  -  ' : ''}${l.n} Pokemon`, X(638), y + L(48), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
       text(l.code, X(1060), y + L(35), L(18), '#ffde3b', 'right', null);
       uiBtn(this, 'lob' + l.code, X(1080), y + L(10), L(206), L(48), { label: 'JOIN', size: L(20), color: '#5ad25a', wheel: lwheel }, () => { this.unwatch(); joinGame(l.code); });
     });
@@ -446,7 +463,7 @@ function onlineOverlay() {
   const { X, Y, L } = layout();
   ctx.fillStyle = '#000000cc'; ctx.fillRect(0, 0, VW, VH);
   panel(X(360), Y(250), L(600), L(300));
-  spinner(X(660), Y(330), L(22));
+  vsCards(X(660), Y(262), L(70), NET.cfg?.player, NET.cfg?.cpu);
   text(`WAITING FOR ${(NET.guestName || 'YOUR OPPONENT').toUpperCase()}`, X(660), Y(395), L(26), '#fff', 'center', null);
   text('Loading the arena and sprites...', X(660), Y(430), L(15), '#aab4c8', 'center', null);
   rrect(X(440), Y(460), L(440), L(18), L(9), '#ffffff18', '#ffffff55', 2);
@@ -454,7 +471,7 @@ function onlineOverlay() {
   text(Math.round(NET.peerLoad * 100) + '%', X(660), Y(505), L(15), '#fff', 'center', null);
   hint('Esc / B leave');
 }
-function onlineRematch() { startBattle(NET.cfg); NETSYNC.begin(); NETSYNC.send({ t: 'rematch' }); AUDIO.playMusic(NET.cfg.music); }
+function onlineRematch() { startBattleA(NET.cfg); NETSYNC.begin(); NETSYNC.send({ t: 'rematch' }); AUDIO.playMusic(NET.cfg.music); }
 
 // invite links: ?join=CODE opens straight into joining that lobby
 const AUTOJOIN = (new URLSearchParams(location.search).get('join') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);

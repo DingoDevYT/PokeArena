@@ -18,6 +18,22 @@ const TUNE = {
   STATUS_MOVE_MIN_CD: 7, FIELD_MOVE_MIN_CD: 14,
   HEAL_MULT: 0.5, RECOVER_MIN_CD: 12, // every heal (moves, items, drain, abilities) is scaled by this; recovery moves get a long cooldown
   SLEEP_TIME: [2.5, 4], FREEZE_TIME: 2.5, CONFUSE_TIME: 6, REST_SLEEP: 4,
+  // Melee-style moves (melee / dash / lunge / leap, plus their charge-up versions). A swing is not one frame: it stays live for ACTIVE seconds,
+  // steps toward the foe, and locks on if they are roughly in front. Dodging at the right moment still beats it; a dodge started too early or late does not.
+  MELEE: {
+    REACH: 26,          // px added to every swing's reach
+    CONE: 1.35,         // half-angle (rad) a swing covers
+    SNAP_CONE: 0.95,    // aim assist: a foe within this angle of the aim at swing time gets aimed at
+    SNAP_RANGE: 1.7,    // ...and within this many reaches
+    ACTIVE: 0.2, TICKS: 4, // seconds a swing keeps hitting, and how many times it re-tests in that time
+    STEP: 230,          // px/s the user steps toward the foe while a swing is live
+    DASH_REACH: 18, LUNGE_REACH: 40, // extra px on top of body contact for dash / lunge
+    HOME: 3.2, HOME_CONE: 0.9, HOME_RANGE: 300, // dash / lunge steer toward a foe in front: rad/s, half-angle, max distance
+    TAIL: 60,           // px a dash / lunge keeps going (at half speed) when it ends near a foe it has not hit
+    ARMOR: 0.3,         // a wind-up survives hits below this fraction of max HP (normal wind-ups break at 0.12)
+    CHARGE_SIZE: 1.3,   // charge-up moves (two-turn, Focus Punch) get this much more reach
+    FAST_WIND: 0.7,     // wind-up multiplier for weak (BP 60 or less) non-charge melee
+  },
 };
 const SS = TUNE.SPRITE_SCALE;
 const toId = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -309,6 +325,8 @@ function calcDamage(att, def, move, opts = {}) {
   if (move.flags?.punch && abil(att, 'ironfist')) bp *= 1.2;
   if (move.flags?.bite && abil(att, 'strongjaw')) bp *= 1.5;
   if (move.flags?.pulse && abil(att, 'megalauncher')) bp *= 1.5;
+  if (move.flags?.sound && abil(att, 'punkrock')) bp *= 1.3;
+  if (move.flags?.sound && abil(def, 'punkrock')) bp *= 0.5;
   if (move.flags?.contact && abil(att, 'toughclaws')) bp *= 1.3;
   if ((move.recoil || move.hasCrashDamage) && abil(att, 'reckless')) bp *= 1.2;
   if (abil(att, 'sheerforce') && (move.secondary || move.secondaries)) bp *= 1.3;
@@ -631,6 +649,8 @@ function archetype(move) {
     || (move.target === 'allAdjacent' || move.target === 'allAdjacentFoes' ? 'area' : move.flags?.contact ? 'melee' : 'projectile');
   return (move._arch = a);
 }
+const isChargeMove = move => !!(move.flags?.charge || move.id === 'focuspunch');
+const isMeleeStyle = move => { const a = archetype(move); return a === 'melee' || a === 'dash' || a === 'lunge' || a === 'leap'; };
 function rangePx(move, min = 60) {
   const r = move.fx ? Math.max(move.fx.range || 0, 1) : 4;
   return Math.max(min, r * TUNE.TILE * TUNE.RANGE_MULT);
@@ -655,6 +675,7 @@ function windupFor(move, m, key) {
   w = clamp(w, 0.1, 0.55);
   const arch = archetype(move);
   if (arch === 'dash' || arch === 'lunge') w = Math.min(w, 0.12);
+  if (arch === 'melee' && !isChargeMove(move) && move.basePower <= 60) w = Math.max(0.1, w * TUNE.MELEE.FAST_WIND);
   if (move.priority > 0) w *= 0.45; if (move.priority < 0) w *= 1.5;
   if (move.flags?.charge && arch !== 'leap' && !((move.id === 'solarbeam' || move.id === 'solarblade') && effWeather() === 'sun')) w += item(m, 'powerherb') ? 0 : 1.1;
   if (move.id === 'focuspunch') w += 1.1;
@@ -758,8 +779,9 @@ function fireMove(side) {
       break;
     }
     case 'melee': {
-      const reach = 22 + bodyRadius(spriteKey(m)) + (fx.range > 1 ? 18 : 0) + (bh.reach || 0);
-      e.kx += ax * 90; e.ky += ay * 90;
+      const reach = (22 + bodyRadius(spriteKey(m)) + (fx.range > 1 ? 18 : 0) + (bh.reach || 0) + TUNE.MELEE.REACH) * (isChargeMove(move) ? TUNE.MELEE.CHARGE_SIZE : 1);
+      snapAim(side, reach * TUNE.MELEE.SNAP_RANGE + hurtRadius(foe));
+      e.kx += e.aimX * 90; e.ky += e.aimY * 90;
       const n = parental ? 2 : hits;
       for (let i = 0; i < n; i++) after(i * 0.12, () => meleeHit(side, move, reach, i, parental && i === 1));
       break;
@@ -767,11 +789,12 @@ function fireMove(side) {
     case 'dash': case 'lunge': {
       // full-length dash: Speed sets both distance and pace; on pad with the aim stick idle it goes where you're walking.
       // A lunge is the short, fast version that cuts anything within reach in front instead of needing body contact.
-      let dx = ax, dy = ay;
+      snapAim(side, TUNE.MELEE.HOME_RANGE);
+      let dx = e.aimX, dy = e.aimY;
       if (!side.cpu && !side.remote && INPUT.usingPad && !INPUT.aimActive && Math.hypot(INPUT.mx, INPUT.my) > 0.3) { const l = Math.hypot(INPUT.mx, INPUT.my); dx = INPUT.mx / l; dy = INPUT.my / l; e.aimX = dx; e.aimY = dy; e.face = dirFromVec(dx, dy); }
       const k = speedFactor(m, side), prio = move.priority > 0, lunge = arch === 'lunge';
       const roll = !!bh.roll;
-      e.dash = { move, dx, dy, spd: (prio || lunge ? 820 : 560) * k * (bh.spd || 1), left: (lunge ? 150 : prio ? 230 : 190) * k * (bh.dist || 1), hit: false, parental, roll, t: roll ? 1.6 : 0, hitCd: 0, hits: 0, reach: lunge ? 30 : 4 + (bh.reach || 0), lunge, mul: bh.mul, fast: !!bh.spd };
+      e.dash = { move, dx, dy, spd: (prio || lunge ? 820 : 560) * k * (bh.spd || 1), left: (lunge ? 150 : prio ? 230 : 190) * k * (bh.dist || 1), hit: false, parental, roll, t: roll ? 1.6 : 0, hitCd: 0, hits: 0, reach: (lunge ? 30 + TUNE.MELEE.LUNGE_REACH : 4 + TUNE.MELEE.DASH_REACH + (bh.reach || 0)) * (isChargeMove(move) ? TUNE.MELEE.CHARGE_SIZE : 1), lunge, mul: bh.mul, fast: !!bh.spd };
       if (roll) { e.dash.left = 1e9; if (spriteOf(spriteKey(m))?.anims.Rotate) { e.anim = 'Rotate'; e.animT = 0; } }
       if (prio) e.iframes = Math.max(e.iframes, e.dash.left / e.dash.spd + 0.05);
       burst(e.x, e.y, '#ddd', 6, 80, 0.25, 1);
@@ -807,7 +830,7 @@ function fireMove(side) {
       if (move.id !== 'dig') {
         // Fly, Bounce, Sky Drop, Phantom Force: squash-and-stretch takeoff, then a homing reticle (same tell as Psychic) and a fast, wide landing
         e.hidden = 0.62; e.flying = true; e.flyT0 = B.time; e.iframes = Math.max(e.iframes, 0.65);
-        B.marks.push({ side: side.idx, move, kind: 'strike', sx: e.x, sy: e.y - 12 * SS, x: e.x, y: e.y, r: 62 * Math.max(sc, 0.9), t: 0, delay: 0.6, chase: 340, land: true, mon: m });
+        B.marks.push({ side: side.idx, move, kind: 'strike', sx: e.x, sy: e.y - 12 * SS, x: e.x, y: e.y, r: 76 * Math.max(sc, 0.9), t: 0, delay: 0.6, chase: 340, land: true, mon: m });
         ring(e.x, e.y, 22, '#fff', 0.3, 2);
         break;
       }
@@ -817,7 +840,7 @@ function fireMove(side) {
       if (move.id === 'dig') decal('hole', e.x, e.y, 12);
       after(0.85, () => {
         if (activeMon(side) !== m || m.fainted) return;
-        B.areas.push({ side: side.idx, move, x: e.x, y: e.y, r: 42, t: 0, dur: 0.18, hit: false });
+        B.areas.push({ side: side.idx, move, x: e.x, y: e.y, r: 62, t: 0, dur: 0.3, hit: false });
         shake(4); burst(e.x, e.y, '#fff', 16, 160, 0.4, 3);
       });
       break;
@@ -841,12 +864,30 @@ function rayLen(x, y, dx, dy, max) {
 function meleeHit(side, move, reach, i, parental) {
   const e = side.ent, foe = foeOf(side), fe = foe.ent, m = activeMon(side);
   if (activeMon(side) !== m || m.fainted || !B) return;
-  const ang = Math.atan2(e.aimY, e.aimX);
-  const hx = e.x + e.aimX * reach * 0.6, hy = e.y + e.aimY * reach * 0.6;
+  const ang = Math.atan2(e.aimY, e.aimX), ax = e.aimX, ay = e.aimY;
+  const hx = e.x + ax * reach * 0.6, hy = e.y + ay * reach * 0.6;
   if (move.fx?.anims?.[0]) spawnFx(move.fx.anims[0], hx, hy - 8, { dir: e.face }); else slashFx(hx, hy - 8, ang, TYPE_COLOR[move.type]);
-  const d = Math.hypot(fe.x - e.x, fe.y - e.y);
-  if (d < reach + hurtRadius(foe) && Math.abs(angDiff(Math.atan2(fe.y - e.y, fe.x - e.x), ang)) < 1.1) hitFoe(side, move, { x: fe.x - e.aimX * 8, y: fe.y }, { parental, multi: i > 0 });
   for (const r of B.rocks) if (Math.hypot(r.x - hx, r.y - hy) < reach * 0.6 + r.r) hitRock(r, move);
+  // the swing stays live for MELEE.ACTIVE seconds: it re-tests, and the user steps into a foe who is in front but just out of reach
+  const sw = { done: false }, M = TUNE.MELEE;
+  const test = () => {
+    if (sw.done || !B || activeMon(side) !== m || m.fainted) return;
+    const dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy), hr = hurtRadius(foe);
+    const inFront = d < hr + 12 || Math.abs(angDiff(Math.atan2(dy, dx), ang)) < M.CONE;
+    if (!inFront) return;
+    if (d < reach + hr) {
+      if (!canHit(foe)) { if (fe.iframes > 0 && fe.dodge && !sw.dodged) { sw.dodged = true; floatText(fe.x, fe.y - 40 * SS, 'Dodged!', '#bdf', 11); } return; }
+      sw.done = true; hitFoe(side, move, { x: fe.x - ax * 8, y: fe.y }, { parental, multi: i > 0 });
+    } else if (d < reach * 1.8 + hr && !e.dodge && e.hidden <= 0) { const st = Math.min(M.STEP * M.ACTIVE / M.TICKS, d - reach * 0.5); e.x += dx / d * st; e.y += dy / d * st; }
+  };
+  test();
+  for (let k = 1; k <= M.TICKS; k++) after(k * M.ACTIVE / M.TICKS, test);
+}
+// aim assist for melee-style moves: a foe roughly in front of the aim, and near enough, gets aimed at
+function snapAim(side, range) {
+  const e = side.ent, fe = foeOf(side).ent, dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy);
+  if (d > range || d < 1 || Math.abs(angDiff(Math.atan2(dy, dx), Math.atan2(e.aimY, e.aimX))) > TUNE.MELEE.SNAP_CONE) return;
+  e.aimX = dx / d; e.aimY = dy / d; e.face = dirFromVec(e.aimX, e.aimY);
 }
 function slashFx(x, y, ang) { spawnFx('Cut', x, y, { dir: dirFromVec(Math.cos(ang), Math.sin(ang)), scale: SS * 0.75, ft: 2 }); }
 
@@ -893,11 +934,13 @@ function hitFoe(side, move, at, opts = {}) {
   // feedback
   const frac = dmg / fm.maxHp;
   fe.flash = 0.12; fe.hurtT = 0.25;
-  const tick = opts.tick, kb = tick ? (opts.kb ?? 40) : 110 + 700 * frac, dx = fe.x - (at?.ox ?? side.ent.x), dy = fe.y - (at?.oy ?? side.ent.y), dl = Math.hypot(dx, dy) || 1;
+  // melee-style wind-ups (and charge-ups, bar Focus Punch) have armor: a small hit does not interrupt, stun or shove them
+  const am = fe.act && !fe.act.fired && fe.act.move.id !== 'focuspunch' && isMeleeStyle(fe.act.move) && frac < TUNE.MELEE.ARMOR && !abil(fm, 'innerfocus') ? (opts.tick ? 1 : 0.25) : 1;
+  const tick = opts.tick, kb = (tick ? (opts.kb ?? 40) : 110 + 700 * frac) * am, dx = fe.x - (at?.ox ?? side.ent.x), dy = fe.y - (at?.oy ?? side.ent.y), dl = Math.hypot(dx, dy) || 1;
   fe.kx += dx / dl * kb; fe.ky += dy / dl * kb;
   if (tick) { fe.beamSlow = 0.2; shake(1.5); }
   else {
-    fe.stun = Math.max(fe.stun, clamp(0.08 + frac * 1.2, 0.08, 0.32));
+    if (am === 1) fe.stun = Math.max(fe.stun, clamp(0.08 + frac * 1.2, 0.08, 0.32));
     B.hitstop = Math.max(B.hitstop, clamp(0.03 + frac * 0.6, 0.03, 0.11));
     shake(clamp(frac * 40, 1, 8));
   }
@@ -923,7 +966,8 @@ function hitFoe(side, move, at, opts = {}) {
   if (fm.status === 'frz') { fm.status = ''; floatText(fe.x, fe.y - 44 * SS, 'Thawed', '#fff', 11); }
   if (item(fm, 'airballoon') && !fm.vol.balloonPopped) { fm.vol.balloonPopped = true; fm.item = ''; floatText(fe.x, fe.y - 54 * SS, 'Balloon popped!', '#fff', 11); }
   // interrupt windups: big hits or flinch
-  const interrupts = fe.act && !fe.act.fired && ((tick ? fe.tickDmg = (fe.tickDmg || 0) + frac : frac) >= 0.12 || fe.act.move.id === 'focuspunch');
+  const armorLim = fe.act && !fe.act.fired && fe.act.move.id !== 'focuspunch' && isMeleeStyle(fe.act.move) ? TUNE.MELEE.ARMOR : 0.12;
+  const interrupts = fe.act && !fe.act.fired && ((tick ? fe.tickDmg = (fe.tickDmg || 0) + frac : frac) >= armorLim || fe.act.move.id === 'focuspunch');
   if (interrupts && !abil(fm, 'innerfocus')) { fe.act = null; floatText(fe.x, fe.y - 76 * SS, 'Interrupted', '#ffd', 11); }
   // after-hit effects
   afterHit(side, foe, move, dmg, r, opts.multi);
@@ -1034,7 +1078,8 @@ function selfEffect(side, move) {
     if (['synthesis', 'morningsun', 'moonlight'].includes(id)) f = w === 'sun' ? 2 / 3 : w ? 0.25 : 0.5;
     heal(m, m.maxHp * f * TUNE.FIGHT_SCALE * 2.2, e.x, e.y);
   }
-  if (move.weather) setWeather({ SunnyDay: 'sun', sunnyday: 'sun', RainDance: 'rain', raindance: 'rain', Sandstorm: 'sand', sandstorm: 'sand', hail: 'snow', snow: 'snow', Snow: 'snow', Hail: 'snow' }[move.weather] || toId(move.weather), m);
+  const wx = move.weather && { sunnyday: 'sun', raindance: 'rain', sandstorm: 'sand', hail: 'snow', snow: 'snow', snowscape: 'snow' }[toId(move.weather)];
+  if (wx) setWeather(wx, m);
   if (move.terrain) setTerrain(toId(move.terrain).replace('terrain', ''), m);
   if (move.sideCondition) {
     const sc = toId(move.sideCondition);
@@ -1183,8 +1228,12 @@ function updateSide(side, dt) {
       const na = cur + clamp(angDiff(want, cur), -4 * dt, 4 * dt); d.dx = Math.cos(na); d.dy = Math.sin(na);
       d.hitCd -= dt; if ((d.t -= dt) <= 0) d.left = 0;
     }
-    vx = d.dx * d.spd; vy = d.dy * d.spd; d.left -= d.spd * dt;
     const fe = foe.ent;
+    if (!d.roll && !d.hit) { // light homing: steers toward a foe who is in front, slowly enough that a well-timed sidestep or roll still beats it
+      const fdx = fe.x - e.x, fdy = fe.y - e.y, cur = Math.atan2(d.dy, d.dx), df = angDiff(Math.atan2(fdy, fdx), cur);
+      if (Math.hypot(fdx, fdy) < TUNE.MELEE.HOME_RANGE && Math.abs(df) < TUNE.MELEE.HOME_CONE) { const na = cur + clamp(df, -TUNE.MELEE.HOME * dt, TUNE.MELEE.HOME * dt); d.dx = Math.cos(na); d.dy = Math.sin(na); }
+    }
+    vx = d.dx * d.spd; vy = d.dy * d.spd; d.left -= d.spd * dt;
     if ((d.lunge || d.fast) && (d.trailT = (d.trailT || 0) - dt) <= 0) { d.trailT = 0.025; spawnFx('Puff_White', e.x - d.dx * 10, e.y - 6 * SS, { scale: 1 }); }
     if ((d.roll ? d.hitCd <= 0 : !d.hit) && Math.hypot(fe.x - e.x, fe.y - e.y) < bodyRadius(spriteKey(m)) + hurtRadius(foe) + (d.reach || 4)) {
       d.hit = true;
@@ -1196,6 +1245,8 @@ function updateSide(side, dt) {
         hitFoe(side, d.move, { x: fe.x, y: fe.y }, { parental: d.parental, mul: d.mul }); d.left = Math.min(d.left, 10);
       }
     }
+    // overshoot: a dash that ended without connecting keeps going a little, slower, if the foe is still close (punishes a roll started too early)
+    if (d.left <= 0 && !d.hit && !d.roll && !d.tailed && Math.hypot(fe.x - e.x, fe.y - e.y) < d.reach + bodyRadius(spriteKey(m)) + hurtRadius(foe) + TUNE.MELEE.TAIL) { d.tailed = true; d.left = TUNE.MELEE.TAIL; d.spd *= 0.5; }
     if (d.left <= 0) { if (d.lunge && !d.hit) slashFx(e.x + d.dx * 24, e.y - 10 * SS + d.dy * 12, Math.atan2(d.dy, d.dx)); e.dash = null; e.lock = 0.12; }
   } else if (!incap && e.stun <= 0) {
     let mx = I.mx, my = I.my;
@@ -1502,7 +1553,7 @@ function placeTrap(side, move, x, y, r) {
 }
 function updateTraps(dt) {
   for (const t of B.traps) {
-    t.t += dt;
+    t.t += dt; if (t.flashT > 0) t.flashT -= dt;
     const side = B.sides[t.side], foe = foeOf(side), fe = foe.ent, fm = activeMon(foe);
     // bits drift up out of the patch, drawn over the mons, so it still reads when someone stands in it
     if ((t.fxT -= dt) <= 0) { t.fxT = 0.12; const a = Math.random() * Math.PI * 2, d = Math.sqrt(Math.random()) * t.r * 0.85; spawnFx(t.fx[0], t.x + Math.cos(a) * d, t.y + Math.sin(a) * d * 0.62 - rand(4, 14) * SS, { scale: sheetScale(t.fx[0]), ft: 4 }); }
@@ -1518,7 +1569,7 @@ function trapTouch(t, side, foe) {
   // immune or nothing left to do: stay quiet instead of spamming "No effect" every tick
   if (immunity(m, fm, mv, type) || (t.mul && typeEff(type, fm, mv) === 0)) { if (!t.told) { t.told = true; floatText(fe.x, fe.y - 44 * SS, 'Immune', '#ccf', 11); } return; }
   if (!t.mul && ((mv.status && statusImmune(fm, mv.status, foe)) || (mv.volatileStatus === 'confusion' && fm.vol.confused > 0) || (mv.volatileStatus === 'leechseed' && (fm.vol.seeded || hasType(fm, 'Grass'))))) return;
-  t.n++;
+  t.n++; t.flashT = 0.22;
   const landed = hitFoe(side, mv, { x: fe.x, y: fe.y, ox: t.x, oy: t.y }, t.mul ? { mul: t.mul, tick: t.every < 1 ? t.n : 0, multi: t.every < 1 && t.n > 1 } : {});
   if (landed && !t.mul && (mv.status || mv.volatileStatus)) t.dur = Math.min(t.dur, t.t + 0.5);
 }
@@ -1666,7 +1717,7 @@ function effRange(move) {
   if (a === 'wave') return (bh.len || 260) * 0.8;
   if (a === 'sweep') return 9999;
   if (a === 'lunge') return 150 * (bh.dist || 1) + 20;
-  if (a === 'melee') return 34 + (bh.reach || 0);
+  if (a === 'melee') return 34 + TUNE.MELEE.REACH * 0.6 + (bh.reach || 0);
   return a === 'area' ? areaRadius(move) * 0.8 : a === 'dash' ? rangePx(move, 90) * 0.9 : a === 'self' ? 9999 : rangePx(move, 120) * 0.85;
 }
 function cpuPickSwap(side, forced) {

@@ -207,6 +207,81 @@ function drawLighting() {
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 }
 
+// Ambient light, per arena: slanted god rays through the openings and a soft vignette. Both are pre-rendered once into small
+// canvases from a 4x4 ordered dither with hard bands, so they stay pixel art and cost one drawImage per layer per frame.
+// rays: count, colour, strength, half width (art px), lean (px sideways per px down). Arenas not listed get no rays.
+const ARENA_LIGHT = {
+  field: { rays: 5, col: [255, 244, 196], a: 0.24, hw: 10, lean: 0.5, vig: 0.8 },
+  forest: { rays: 6, col: [255, 238, 168], a: 0.26, hw: 8, lean: 0.55, vig: 0.9 },
+  viridian: { rays: 4, col: [236, 255, 204], a: 0.22, hw: 9, lean: 0.5, vig: 0.8 },
+  cave: { rays: 3, col: [222, 234, 255], a: 0.2, hw: 6, lean: 0.4, vig: 1 },
+  beach: { rays: 3, col: [208, 240, 255], a: 0.2, hw: 7, lean: 0.45, vig: 0.9 },
+  pewter: { rays: 3, col: [255, 236, 186], a: 0.16, hw: 5, lean: 0.35, vig: 0.7 },
+  volcano: { vig: 0.8 }, gym: { vig: 0.7 }, lorelei: { vig: 0.6 }, bruno: { vig: 0.6 }, agatha: { vig: 0.6 },
+};
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const LIGHT_CACHE = new Map();
+// Two canvases at half resolution (one art pixel = 2 world px); rays alternate between them so they can shimmer out of phase.
+function buildRays(ar, L) {
+  const W = ar.w >> 1, H = ar.h >> 1, wall = ar.wall >> 1, rnd = seeded(ar.id.length * 7919 + L.rays);
+  const x0 = wall - 12, x1 = W - wall + 12, y0 = wall - 16, y1 = H - wall + 12;
+  const sMin = x0 - L.lean * y1, sMax = x1 - L.lean * y0, rays = [];
+  for (let k = 0; k < L.rays; k++) rays.push({ s: sMin + (sMax - sMin) * ((k + 0.5 + (rnd() - 0.5) * 0.5) / L.rays), hw: L.hw * (0.6 + rnd() * 0.8), len: (y1 - y0) * (0.55 + rnd() * 0.45), layer: k & 1 });
+  const cvs = [0, 1].map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
+  const ids = cvs.map(c => c.getContext('2d').createImageData(W, H)), alpha = [0, 0.35, 0.68, 1];
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    const s = x - L.lean * y; let v = 0, layer = 0;
+    for (const r of rays) {
+      const t = (1 - Math.abs(s - r.s) / r.hw) * clamp(1 - (y - y0) / r.len, 0, 1) * clamp((y - y0) / 10, 0, 1) * clamp((x - x0) / 8, 0, 1) * clamp((x1 - x) / 8, 0, 1);
+      if (t > v) { v = t; layer = r.layer; }
+    }
+    if (v <= 0) continue;
+    const lvl = Math.min(3, Math.floor(v * 3 + (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16));
+    if (!lvl) continue;
+    const d = ids[layer].data, o = (y * W + x) * 4;
+    d[o] = L.col[0]; d[o + 1] = L.col[1]; d[o + 2] = L.col[2]; d[o + 3] = Math.round(255 * alpha[lvl] * L.a);
+  }
+  cvs.forEach((c, i) => c.getContext('2d').putImageData(ids[i], 0, 0));
+  return cvs;
+}
+// Dark navy corners in 4 hard dithered bands, rebuilt only when the view size crosses a 32px bucket.
+function buildVignette(w, h, strength) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'), id = g.createImageData(w, h), alpha = [0, 0.07, 0.14, 0.22];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const nx = (x + 0.5) / w * 2 - 1, ny = (y + 0.5) / h * 2 - 1, d = Math.hypot(nx, ny), v = clamp((d - 0.7) / 0.75, 0, 1);
+    const lvl = Math.min(3, Math.floor(v * 3 + (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16));
+    if (lvl) { const o = (y * w + x) * 4; id.data[o] = 8; id.data[o + 1] = 6; id.data[o + 2] = 20; id.data[o + 3] = Math.round(255 * alpha[lvl] * strength); }
+  }
+  g.putImageData(id, 0, 0); return c;
+}
+function lightFor(ar) {
+  let e = LIGHT_CACHE.get(ar.id);
+  if (!e) { const L = ARENA_LIGHT[ar.id] || {}; e = { L, rays: L.rays ? buildRays(ar, L) : null, vig: null, vw: 0, vh: 0 }; LIGHT_CACHE.set(ar.id, e); }
+  return e;
+}
+const isPreviewBattle = () => typeof PV !== 'undefined' && PV.B === B;
+function drawRays() {
+  const ar = B.arena, e = lightFor(ar), w = B.field.weather;
+  if (!e.rays || isPreviewBattle() || w === 'rain' || (B.mega && !B.mega.done)) return;
+  const k = w === 'sun' ? 1.5 : w ? 0.7 : 1;
+  const x0 = Math.max(0, view.x & ~1), y0 = Math.max(0, view.y & ~1), x1 = Math.min(ar.w, (view.x + view.w + 1) & ~1), y1 = Math.min(ar.h, (view.y + view.h + 1) & ~1);
+  if (x1 <= x0 || y1 <= y0) return;
+  ctx.globalCompositeOperation = 'lighter';
+  e.rays.forEach((c, i) => {
+    ctx.globalAlpha = Math.min(1, k * (0.55 + 0.15 * Math.round((0.5 + 0.5 * Math.sin(B.time * 0.7 + i * 2.4)) * 3)));
+    ctx.drawImage(c, x0 / 2, y0 / 2, (x1 - x0) / 2, (y1 - y0) / 2, x0, y0, x1 - x0, y1 - y0);
+  });
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+function drawVignette() {
+  const e = lightFor(B.arena), s = e.L.vig ?? 0.8;
+  if (isPreviewBattle()) return;
+  const bw = Math.ceil(view.w / 32) * 32, bh = Math.ceil(view.h / 32) * 32;
+  if (!e.vig || e.vw !== bw || e.vh !== bh) { e.vig = buildVignette(bw, bh, s); e.vw = bw; e.vh = bh; }
+  ctx.drawImage(e.vig, view.x + ((view.w - bw) >> 1), view.y + ((view.h - bh) >> 1));
+}
+
 // ---------- world layers ----------
 function drawDecal(d) {
   const r = seeded(Math.floor(d.seed)), a = clamp(1 - d.t / 20, 0, 1);
@@ -222,40 +297,107 @@ function drawDecal(d) {
   else if (d.kind === 'hole') ell(d.x, d.y, d.r, d.r * 0.55, 'rgba(30,20,10,0.7)');
   ctx.globalAlpha = 1;
 }
+// Entry hazards: every one gets a pulsing ring in its owner's HUD colour on the floor (so it's clear whose it is on any
+// background), a 1px dark outline round the art, and a short idle effect (glints on metal, purple bubbles, shimmer on web).
+const HAZARD_SIDE = ['#f08a8a', '#7fd0e8'];
+const hazardPulse = (h, rate = 2.2) => Math.round((0.5 + 0.5 * Math.sin(B.time * rate + h.seed * 6)) * 3) / 3; // 4 steps, no smooth fade
+function hazardRing(h) {
+  const col = HAZARD_SIDE[h.owner] || '#fff', k = hazardPulse(h);
+  const rx = (h.kind === 'stealthrock' ? 13 : h.kind === 'stickyweb' ? h.r : Math.round(h.r * 0.95)) + 3, ry = Math.round(rx * 0.5) + 1;
+  ctx.globalAlpha = 0.26 + 0.16 * k; ell(h.x, h.y, rx, ry, col);
+  ctx.globalAlpha = 0.9 + 0.1 * k; ell(h.x, h.y, rx + 1, ry + 1, null, '#0c0a14', 5); ell(h.x, h.y, rx, ry, null, col, 3);
+  ctx.globalAlpha = 1;
+}
+// Particle sheet frame with a 1px dark outline (cached outlined sheet, same as the mons).
+function hazardSprite(name, x, y, scale, frame = 0, alpha = 1) {
+  const p = VFX.particles[name], im = p && img(p.file); if (!im) return false;
+  const w = p.fw * scale, h = p.fh * scale;
+  ctx.globalAlpha = alpha; ctx.drawImage(outlined(im, p.fw, p.fh), frame * p.fw, 0, p.fw, p.fh, Math.round(x - w / 2), Math.round(y - h / 2), w, h); ctx.globalAlpha = 1;
+  return true;
+}
+// Plus-shaped sparkle that grows and fades over phase 0..1.
+function glint(x, y, phase) {
+  const n = Math.round((phase < 0.5 ? phase : 1 - phase) * 2 * 3); if (n < 1) return;
+  x = Math.round(x); y = Math.round(y); ctx.fillStyle = '#fff'; ctx.fillRect(x - n, y, n * 2 + 1, 1); ctx.fillRect(x, y - n, 1, n * 2 + 1);
+}
 function drawHazard(h) {
   if (h.kind === 'stealthrock') {
     const bob = Math.round(Math.sin(B.time * 3 + h.seed * 9) * 2);
     ell(h.x, h.y + 3, 6, 2, 'rgba(0,0,0,0.3)');
-    if (!particle('Stealth_Rock_Front', h.x, h.y - 10 + bob, 0.15 + h.seed * 0.1, { ft: 999, scale: 1 })) ell(h.x, h.y - 8 + bob, 5, 5, '#8a7a66', '#3b3128');
+    if (!hazardSprite('Stealth_Rock_Front', h.x, h.y - 10 + bob, 1)) ell(h.x, h.y - 8 + bob, 5, 5, '#8a7a66', '#3b3128');
+    const ph = (B.time * 0.7 + h.seed * 5) % 1; if (ph < 0.3) glint(h.x - 4 + Math.floor(h.seed * 9), h.y - 14 + bob, ph / 0.3);
   } else if (h.kind === 'spikes' || h.kind === 'toxicspikes') {
-    const r = seeded(Math.floor(h.seed * 1e4)), name = h.kind === 'spikes' ? 'Spikes_RSE' : 'Spikes_Purple_RSE';
-    for (let i = 0; i < 7; i++) { const a = r() * Math.PI * 2, d = r() * h.r * 0.8; particle(name, h.x + Math.cos(a) * d, h.y + Math.sin(a) * d * 0.5, 0.05 * i, { ft: 999, scale: SS }); }
+    const r = seeded(Math.floor(h.seed * 1e4)), name = h.kind === 'spikes' ? 'Spikes_RSE' : 'Spikes_Purple_RSE', pts = [];
+    for (let i = 0; i < 7; i++) { const a = r() * Math.PI * 2, d = r() * h.r * 0.8; pts.push([h.x + Math.cos(a) * d, h.y + Math.sin(a) * d * 0.5]); }
+    pts.sort((a, b) => a[1] - b[1]);
+    for (const [x, y] of pts) hazardSprite(name, x, y, SS);
+    if (h.kind === 'spikes') { const ph = (B.time * 0.9 + h.seed * 7) % 1; if (ph < 0.3) glint(pts[Math.floor(h.seed * 70) % 7][0], pts[Math.floor(h.seed * 70) % 7][1] - 6, ph / 0.3); }
+    else for (let i = 0; i < 3; i++) { // purple bubbles rising off the poison
+      const q = (B.time * 0.5 + h.seed * 3 + i / 3) % 1, bx = Math.round(h.x + Math.sin(h.seed * 40 + i * 2.3) * h.r * 0.7), by = Math.round(h.y - 4 - q * 18), s = q < 0.7 ? 4 : 2;
+      ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3; ctx.fillStyle = '#2a0a3a'; ctx.fillRect(bx - 2, by - 2, s + 2, s + 2); ctx.fillStyle = '#d9a0ff'; ctx.fillRect(bx - 1, by - 1, s, s);
+      ctx.fillStyle = '#fff'; ctx.fillRect(bx - 1, by - 1, 1, 1); ctx.globalAlpha = 1;
+    }
   } else if (h.kind === 'stickyweb') {
     const p = VFX.particles.String_Shot_Web;
-    if (p) drawParticle({ p, x: h.x, y: h.y, t: (p.frames - 1) * 3 / 60, ft: 3, dir: 0, scale: Math.max(1, Math.round(h.r * 2 / p.fw)), z: 0, alpha: 0.8 });
+    if (p) { const sc = Math.max(1, Math.round(h.r * 2 / p.fw)); hazardSprite('String_Shot_Web', h.x, h.y, sc, p.frames - 1, 0.8 + 0.2 * hazardPulse(h, 1.4));
+      const ph = (B.time * 0.8 + h.seed * 4) % 1; if (ph < 0.3) glint(h.x + Math.cos(h.seed * 50) * h.r * 0.5, h.y + Math.sin(h.seed * 50) * h.r * 0.25, ph / 0.3); }
   }
 }
-const WEATHER_TINT = { sun: 'rgba(255,190,90,0.13)', rain: 'rgba(40,60,120,0.18)', sand: 'rgba(190,150,80,0.2)', snow: 'rgba(210,230,255,0.15)' };
+const WEATHER_TINT = { sun: 'rgba(255,190,90,0.07)', rain: 'rgba(40,60,120,0.1)', sand: 'rgba(190,150,80,0.1)', snow: 'rgba(210,230,255,0.07)' };
 const TERRAIN_TINT = { electric: '#ffe34d', grassy: '#5fd35f', psychic: '#e05cd0', misty: '#ffc6f0' };
-let weatherParts = [];
+// Weather particles live in view space (0..1 of the screen). Counts and speeds per kind; everything is hard pixels.
+let weatherParts = [], rainSplash = [], sandBand = null;
+// One dithered gust streak (cached): dense in the middle, tapering to scattered pixels at both ends and edges.
+function sandBandTex() {
+  if (sandBand) return sandBand;
+  const W = 200, H = 10, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), id = g.createImageData(W, H), col = rgbaOf('#d6b26e');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const v = Math.sin(x / W * Math.PI) * (1 - Math.abs(y - (H - 1) / 2) / (H / 2)), lvl = Math.floor(v * 3 + (BAYER4[(y & 3) * 4 + (x & 3)] + 0.5) / 16);
+    if (lvl > 0) { id.data.set(col, (y * W + x) * 4); id.data[(y * W + x) * 4 + 3] = lvl >= 3 ? 210 : lvl === 2 ? 150 : 90; }
+  }
+  g.putImageData(id, 0, 0); return (sandBand = c);
+}
 function drawWeather(dt) {
   const w = B.field.weather;
-  if (!w) { weatherParts.length = 0; return; }
+  if (!w) { weatherParts.length = 0; rainSplash.length = 0; return; }
   ctx.fillStyle = WEATHER_TINT[w]; ctx.fillRect(view.x, view.y, view.w, view.h);
-  const want = w === 'sun' ? 25 : 120;
+  const want = Math.round(({ rain: 150, sand: 100, snow: 130, sun: 24 }[w] ?? 25) * clamp(view.w * view.h / 230000, 0.6, 3)), T = B.time; // density follows the visible area
   while (weatherParts.length < want) weatherParts.push({ x: Math.random(), y: Math.random(), s: rand(0.6, 1.2) });
   weatherParts.length = want;
+  const gust = 0.5 + 0.5 * Math.sin(T * 0.5) * Math.sin(T * 0.23 + 1); // slow gusts: 0..1, mostly mid
+  if (w === 'sand') { // wind-blown bands of grit drifting across at different heights and speeds
+    const tex = sandBandTex();
+    for (let i = 0; i < 7; i++) {
+      const spd = 90 + i * 35 + gust * 120, x = Math.round(view.x + ((T * spd + i * 211) % (view.w + 400)) - 200), y = Math.round(view.y + ((i * 0.21 + 0.07 + Math.sin(T * 0.2 + i) * 0.03) % 1) * view.h);
+      ctx.globalAlpha = 0.45 + 0.5 * gust; ctx.drawImage(tex, x, y, tex.width * (1 + i % 2), tex.height * (1 + (i >> 1) % 2));
+    }
+    ctx.globalAlpha = 1;
+  }
   for (const p of weatherParts) {
     if (w === 'rain') { p.x -= 0.15 * dt * p.s; p.y += 0.9 * dt * p.s; }
-    else if (w === 'sand') { p.x += 0.6 * dt * p.s; p.y += 0.08 * dt * p.s; }
-    else if (w === 'snow') { p.x += Math.sin(B.time + p.s * 9) * 0.03 * dt; p.y += 0.08 * dt * p.s; }
-    else p.y += 0.02 * dt;
-    if (p.y > 1) { p.y -= 1; p.x = Math.random(); } if (p.x > 1) p.x -= 1; if (p.x < 0) p.x += 1;
+    else if (w === 'sand') { p.x += (0.35 + 0.7 * gust) * dt * p.s; p.y += 0.04 * dt * p.s + Math.sin(T * 2 + p.s * 20) * 0.01 * dt; }
+    else if (w === 'snow') { p.x += (Math.sin(T * 0.4) * 0.025 + Math.sin(T + p.s * 9) * 0.03) * dt; p.y += 0.09 * dt * p.s * p.s; }
+    else { p.x += Math.sin(T * 0.6 + p.s * 12) * 0.006 * dt; p.y -= 0.012 * dt * p.s; if (p.y < 0) p.y += 1; }
+    if (p.y > 1) { p.y -= 1; p.x = Math.random(); if (w === 'rain' && rainSplash.length < 40 && Math.random() < 0.5) rainSplash.push({ x: Math.random(), y: 0.35 + Math.random() * 0.65, t: 0 }); }
+    if (p.x > 1) p.x -= 1; if (p.x < 0) p.x += 1;
     const x = Math.round(view.x + p.x * view.w), y = Math.round(view.y + p.y * view.h);
-    if (w === 'rain') pline(x, y, x + 2, y - 7, 'rgba(170,200,255,0.6)');
-    else if (w === 'sand') { ctx.fillStyle = 'rgba(214,178,110,0.75)'; ctx.fillRect(x, y, 2, 1); }
-    else if (w === 'snow') { ctx.fillStyle = '#fff'; ctx.fillRect(x, y, p.s > 0.9 ? 2 : 1, p.s > 0.9 ? 2 : 1); }
-    else if (Math.sin(B.time * 3 + p.s * 10) > 0.4) { ctx.fillStyle = 'rgba(255,240,180,0.7)'; ctx.fillRect(x, y, 1, 1); }
+    if (w === 'rain') { const far = p.s < 0.9; pline(x, y, x + (far ? 1 : 2), y - (far ? 5 : 9), far ? 'rgba(170,200,245,0.55)' : 'rgba(225,238,255,0.9)'); if (!far) { ctx.fillStyle = '#fff'; ctx.fillRect(x + 2, y - 9, 1, 2); } }
+    else if (w === 'sand') { ctx.fillStyle = p.s > 1 ? 'rgba(232,200,130,0.85)' : 'rgba(205,168,100,0.65)'; ctx.fillRect(x, y, p.s > 1 ? 3 : 2, 1); }
+    else if (w === 'snow') {
+      const sz = p.s > 1.05 ? 3 : p.s > 0.8 ? 2 : 1; ctx.fillStyle = sz === 1 ? 'rgba(235,245,255,0.9)' : '#fff';
+      if (sz === 3) { ctx.fillRect(x, y - 1, 1, 3); ctx.fillRect(x - 1, y, 3, 1); } else ctx.fillRect(x, y, sz, sz);
+    }
+    else { const tw = Math.round(Math.sin(T * 1.6 + p.s * 10) * 1.5 + 1.5); if (tw > 0) { ctx.fillStyle = 'rgba(255,238,170,' + (0.25 * tw) + ')'; ctx.fillRect(x, y, p.s > 1 ? 2 : 1, p.s > 1 ? 2 : 1); } }
+  }
+  // rain splashes: small pixel crowns that pop on the ground and spread over a third of a second
+  for (let i = rainSplash.length - 1; i >= 0; i--) {
+    const s = rainSplash[i]; s.t += dt; if (s.t > 0.3) { rainSplash.splice(i, 1); continue; }
+    const x = Math.round(view.x + s.x * view.w), y = Math.round(view.y + s.y * view.h), k = Math.floor(s.t / 0.1);
+    ctx.fillStyle = k < 2 ? 'rgba(220,235,255,0.85)' : 'rgba(190,215,250,0.5)';
+    if (k === 0) { ctx.fillRect(x, y - 1, 1, 1); ctx.fillRect(x - 1, y, 3, 1); }
+    else if (k === 1) { ctx.fillRect(x - 2, y, 1, 1); ctx.fillRect(x + 2, y, 1, 1); ctx.fillRect(x - 1, y - 1, 1, 1); ctx.fillRect(x + 1, y - 1, 1, 1); }
+    else { ctx.fillRect(x - 3, y, 1, 1); ctx.fillRect(x + 3, y, 1, 1); ctx.fillRect(x - 2, y - 1, 1, 1); ctx.fillRect(x + 2, y - 1, 1, 1); }
   }
 }
 function insideGrass(e) { return B.grass.some(g => !g.burnt && Math.hypot((e.x - g.x) / g.r, (e.y - g.y) / (g.r * 0.7)) < 1); }
@@ -267,12 +409,14 @@ function drawWorld(dt) {
   const bg = dimmed(ar.bg);
   if (bg) ctx.drawImage(bg, 0, 0); else { ctx.fillStyle = '#4a4752'; ctx.fillRect(0, 0, ar.w, ar.h); }
   // ambient shade on the floor only (mons are drawn after it, so they stay bright); glows come later in drawLighting
-  if (B.field.weather !== 'sun') { ctx.fillStyle = B.field.weather === 'rain' ? 'rgba(10,16,40,0.2)' : 'rgba(18,10,40,0.12)'; ctx.fillRect(view.x, view.y, view.w, view.h); }
+  if (B.field.weather !== 'sun') { ctx.fillStyle = B.field.weather === 'rain' ? 'rgba(10,16,40,0.14)' : 'rgba(18,10,40,0.12)'; ctx.fillRect(view.x, view.y, view.w, view.h); }
   if (B.mega && !B.mega.done) { ctx.fillStyle = `rgba(4,0,16,${0.6 * Math.min(1, B.mega.t / 0.3)})`; ctx.fillRect(view.x, view.y, view.w, view.h); }
   if (B.field.terrain) { ctx.globalAlpha = 0.12 + 0.05 * Math.sin(B.time * 2); ctx.fillStyle = TERRAIN_TINT[B.field.terrain]; ctx.fillRect(ar.wall, ar.wall, ar.w - ar.wall * 2, ar.h - ar.wall * 2); ctx.globalAlpha = 1; }
   for (const d of B.decals) drawDecal(d);
   for (const p of B.puddles) blob(props.puddle, p.x, p.y, p.r * 1.1, p.r * 0.8, '#3d64a8', p.x);
   for (const g of B.grass) if (g.burnt) ell(g.x, g.y, g.r * 0.8, g.r * 0.45, 'rgba(40,30,20,0.4)');
+  drawRays(); // light shafts lie on the floor: everything that matters in a fight (traps, telegraphs, mons) is drawn over them
+  for (const h of B.hazards) hazardRing(h);
   for (const h of B.hazards) if (h.kind !== 'stealthrock') drawHazard(h);
   if (window.drawFieldFx) drawFieldFx(); // field traps + waves (src/fieldfx.js)
   // telegraphs: hard-edged rings that fill up before the hit lands
@@ -299,21 +443,26 @@ function drawWorld(dt) {
     if (m.fainted && e.animT > 1.2) continue;
     if (e.hidden > 0 || m.fainted || !drawMonShadow(key, e.anim, e.animT, e.face, e.x, e.y, { z: e.z, loop: !e.animOnce })) ell(e.x, e.y, r * (e.hidden > 0 ? 0.6 : 0.95), r * 0.42, 'rgba(0,0,0,0.42)');
   }
+  // projectile and sideline trainer shadows are floor decals, so they live here and never paint over a mon standing behind them
+  for (const p of B.proj) ell(p.x, p.y + 10 * SS, p.r * 0.8, p.r * 0.35, 'rgba(0,0,0,0.25)');
+  for (const s of B.sides) { const ca = s.ent.act; if (ca?.pow && !ca.noOrb && !ca.fired && (ca.pow < 1 || Math.floor(B.time * 16) % 2)) ell(s.ent.x + s.ent.aimX * (26 + 26 * ca.pow), s.ent.y + s.ent.aimY * 14, (6 + 17 * ca.pow) * 0.8, (6 + 17 * ca.pow) * 0.35, 'rgba(0,0,0,0.25)'); }
+  const trainerOw = B.sides.map((s, i) => {
+    const id = (s.trainerSprite || '').split('/').pop().replace(/^player-|\.png$/g, '');
+    const ow = window.TRAINER_OW && (TRAINER_OW[id] || TRAINER_OW[{ chase: 'ethan', elaine: 'lyra' }[id]]);
+    return ow && { ow, i, x: i ? ar.w - ar.wall - 18 : ar.wall + 18, y: ar.h / 2 };
+  }).filter(Boolean);
+  for (const t of trainerOw) ell(t.x, t.y, 7 * SS, 3 * SS, 'rgba(0,0,0,0.42)');
   // depth-sorted things
   const list = [];
   for (const s of B.sides) list.push({ y: s.ent.y, f: () => drawSideMon(s) });
-  for (const r of B.rocks) list.push({ y: r.y, f: () => { const im = dimmed(props.rock); if (im) drawFrame(im, 0, 0, im.width, im.height, Math.round((r.x - im.width / 2) / 2) * 2, Math.round((r.y - im.height + r.r * 0.5) / 2) * 2, r.flash > 0 ? '#fff' : null); else ell(r.x, r.y, r.r, r.r * 0.6, '#7d7266', '#3e352c'); } });
+  for (const r of B.rocks) list.push({ y: r.y + r.r * 0.5, f: () => { const im = dimmed(props.rock); if (im) drawFrame(im, 0, 0, im.width, im.height, Math.round((r.x - im.width / 2) / 2) * 2, Math.round((r.y - im.height + r.r * 0.5) / 2) * 2, r.flash > 0 ? '#fff' : null); else ell(r.x, r.y, r.r, r.r * 0.6, '#7d7266', '#3e352c'); } });
   for (const h of B.hazards) if (h.kind === 'stealthrock') list.push({ y: h.y, f: () => drawHazard(h) });
-  for (const p of B.proj) list.push({ y: p.y + 10, f: () => drawProjectile(p) });
+  for (const p of B.proj) list.push({ y: p.y + 10 * SS, f: () => drawProjectile(p) }); // same ground anchor as its shadow, so a shot never slips behind the mon that fired it
+  // tall grass sorts by the near edge of its footprint: mons inside it are covered, mons in front of it stand over it
+  for (const g of B.grass) if (!g.burnt) list.push({ y: g.y + g.r * 0.7, f: () => { ctx.globalAlpha = 0.92; blob(props.grass, g.x, g.y - 4, g.r * 1.1, g.r * 0.85, '#3f8a37', g.y, true); ctx.globalAlpha = 1; } });
   // HGSS overworld trainers on the sidelines, facing the arena (data/trainer-ow.js; id taken from the battle sprite file name)
-  B.sides.forEach((s, i) => {
-    const id = (s.trainerSprite || '').split('/').pop().replace(/^player-|\.png$/g, '');
-    const ow = window.TRAINER_OW && (TRAINER_OW[id] || TRAINER_OW[{ chase: 'ethan', elaine: 'lyra' }[id]]);
-    const x = i ? ar.w - ar.wall - 18 : ar.wall + 18, y = ar.h / 2;
-    if (ow) list.push({ y, f: () => { const raw = img(ow.file); if (!raw) return; ell(x, y, 7 * SS, 3 * SS, 'rgba(0,0,0,0.42)'); drawFrame(outlined(raw, ow.fw, ow.fh), 0, ow.rows.indexOf(i ? 'left' : 'right') * ow.fh, ow.fw, ow.fh, Math.round(x - ow.fw * SS / 2), Math.round(y - ow.footY * SS), null, 1, SS); } });
-  });
+  for (const { ow, i, x, y } of trainerOw) list.push({ y, f: () => { const raw = img(ow.file); if (!raw) return; drawFrame(outlined(raw, ow.fw, ow.fh), 0, ow.rows.indexOf(i ? 'left' : 'right') * ow.fh, ow.fw, ow.fh, Math.round(x - ow.fw * SS / 2), Math.round(y - ow.footY * SS), null, 1, SS); } });
   list.sort((a, b) => a.y - b.y).forEach(o => o.f());
-  for (const g of B.grass) if (!g.burnt) { ctx.globalAlpha = 0.92; blob(props.grass, g.x, g.y - 4, g.r * 1.1, g.r * 0.85, '#3f8a37', g.y, true); ctx.globalAlpha = 1; }
   // beams, particles
   for (const b of B.beams) {
     if (b.laser) { drawLaser(b); continue; }
@@ -330,6 +479,7 @@ function drawWorld(dt) {
     else if (f.column) { const q = f.t / f.life; ctx.globalAlpha = 1 - q * q; drawBeam(f.column, f.x, f.y - 200, Math.PI / 2, 200, f.t); ctx.globalAlpha = 1; }
   }
   drawLighting();
+  drawVignette();
   if (B.impact) {
     // impact frame: black void, white speed lines bursting from the hit, both mons as white silhouettes
     const k = B.impact, rr = seeded(Math.floor(k.seed));
@@ -349,7 +499,6 @@ function drawWorld(dt) {
   drawWeather(dt);
 }
 function drawProjectile(p) {
-  ell(p.x, p.y + 10 * SS, p.r * 0.8, p.r * 0.35, 'rgba(0,0,0,0.25)');
   const fx = p.move.fx || {}, name = fx.anims?.[0] || fx.hitAnim || (p.move.type === 'Electric' ? 'Spark' : '');
   // whole-number scales only (2x or 3x) so projectile pixels stay square
   const k = p.r >= 22 ? 2 : p.r >= 11 ? 1.5 : 1;
@@ -501,6 +650,31 @@ function portraitEmotion(s, m) {
   const emo = (st.list || ['Normal']).find(n => P[n]) || 'Normal';
   return { emo, bump: PORTRAIT_BUMP[Math.floor((B.time - st.bumpT) / 0.03)] || 0 };
 }
+// ---------- trainer avatars (data/trainer-avatars.js): Pokemon Showdown 80x80 sprites shown as a head-and-shoulders crop ----------
+const AVATAR_DEFAULT = 'red';
+let AVATAR_MAP = null;
+const avatarById = id => (AVATAR_MAP ||= new Map((window.TRAINER_AVATARS || []).map(a => [a.id, a]))).get(id) || null;
+const cleanAvatar = id => (avatarById(String(id || '')) ? String(id) : ''); // trust boundary: only ids from our own list ever become a file path
+// the sideline overworld sprite (data/trainer-ow.js) that goes with an avatar, or '' when there is none
+function avatarSprite(id) {
+  const k = String(id || '').replace(/-lgpe$/, ''); if (!window.TRAINER_OW?.[k]) return '';
+  return (window.PLAYER_SPRITES || []).find(p => p.id === k)?.sprite || `assets/trainer/${k}.png`;
+}
+// pixel-crisp square crop; returns false while the PNG is still loading
+function drawAvatar(id, x, y, size) {
+  const a = avatarById(id) || avatarById(AVATAR_DEFAULT), im = a && img(a.file); if (!im) return false;
+  const [cx, cy, cs] = a.crop || [8, 0, 64], was = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(im, cx, cy, cs, cs, Math.round(x), Math.round(y), Math.round(size), Math.round(size));
+  ctx.imageSmoothingEnabled = was; return true;
+}
+// framed avatar tile used by the HUD, the lobby and the cards
+function avatarTile(id, x, y, size, ring) {
+  const r = Math.max(4, size / 8);
+  rrect(x, y, size, size, r, '#b9d3f0', ring || '#fff', 2);
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x + 2, y + 2, size - 4, size - 4, Math.max(2, r - 2)); ctx.clip();
+  drawAvatar(id, x + 2, y + 2, size - 4); ctx.restore();
+}
 function drawSideHUD(s, right) {
   const m = activeMon(s), S = Math.min(1, VW / 1500), pad = 14 * S;
   const dir = right ? -1 : 1, P = 74 * S;
@@ -509,8 +683,8 @@ function drawSideHUD(s, right) {
   const pe = portraitEmotion(s, m), pkey = spriteKey(m);
   const pim = img(window.PORTRAITS?.[pkey]?.[pe.emo]) || img(spriteOf(pkey)?.portrait);
   if (pim) {
-    // whole-number scale of the 40px source, centred and clipped to the box, so pixels stay square
-    const inner = P - 8, k = Math.max(1, Math.round(inner / pim.naturalWidth)), D = pim.naturalWidth * k;
+    // fill the box exactly; a whole-number scale left a gap on small windows
+    const inner = P - 8, k = inner / pim.naturalWidth, D = inner;
     ctx.save(); ctx.beginPath(); ctx.rect(px + 4, pad + 4, inner, inner); ctx.clip();
     ctx.drawImage(pim, Math.round(px + 4 + (inner - D) / 2 + pe.bump * k), Math.round(pad + 4 + (inner - D) / 2), D, D);
     ctx.restore();
@@ -533,12 +707,15 @@ function drawSideHUD(s, right) {
   const col = fr > 0.5 ? '#5ad25a' : fr > 0.2 ? '#f5c518' : '#ee3b3b';
   if (s.hpShow > fr) rrect(right ? bx + bw - (bw - 4) * s.hpShow - 2 : bx + 2, by + 2, Math.max(0, (bw - 4) * s.hpShow), bh - 4, 4 * S, '#ffffff99');
   rrect(right ? bx + bw - (bw - 4) * fr - 2 : bx + 2, by + 2, Math.max(0, (bw - 4) * fr), bh - 4, 4 * S, col);
-  text(String(Math.ceil(m.hp)), right ? bx + bw - 10 * S : bx + 10 * S, by + bh / 2 + 1, 15 * S, '#fff', right ? 'right' : 'left', '#000');
-  const ty = pad + P + 10 * S, T = 40 * S;
-  const tim = img(s.trainerSprite);
-  rrect(px + (right ? P - T - 6 : 6), ty, T + 6, T, 6 * S, '#b9d3f0', '#fff', 2);
-  if (tim) ctx.drawImage(tim, 0, 0, tim.naturalWidth, tim.naturalHeight * 0.7, px + (right ? P - T - 4 : 8), ty + 2, T, T * 0.92);
-  const bx2 = right ? px + P - T - 22 * S : px + T + 24 * S;
+  text(`${Math.ceil(m.hp)} / ${Math.ceil(m.maxHp)}`, right ? bx + bw - 10 * S : bx + 10 * S, by + bh / 2 + 1, 15 * S, '#fff', right ? 'right' : 'left', '#000');
+  const ty = pad + P + 10 * S, T = 52 * S;
+  if (s.avatar) avatarTile(s.avatar, px + (right ? P - T : 0), ty, T);
+  else { // CPU trainers without a Showdown match keep their old battle sprite
+    const tim = img(s.trainerSprite);
+    rrect(px + (right ? P - T : 0), ty, T, T, 6 * S, '#b9d3f0', '#fff', 2);
+    if (tim) ctx.drawImage(tim, 0, 0, tim.naturalWidth, tim.naturalHeight * 0.7, px + (right ? P - T : 0) + 2, ty + 2, T - 4, (T - 4) * 0.92);
+  }
+  const bx2 = right ? px + P - T - 18 * S : px + T + 20 * S;
   s.team.forEach((tm, i) => {
     const x = bx2 + dir * i * 24 * S;
     pokeball(x, ty + T / 2, 8 * S, tm.fainted ? 'fainted' : i === s.cur ? 'active' : 'ok');
@@ -563,23 +740,31 @@ function drawHUD() {
   rrect(VW / 2 - 55 * S, 14 * S, 110 * S, 38 * S, 19 * S, '#111a', null);
   text(clock, VW / 2, 33 * S, 22 * S, '#fff', 'center', null);
   let fy = 66 * S;
-  if (B.field.weather) { const lbl = { sun: 'HARSH SUN', rain: 'RAIN', sand: 'SANDSTORM', snow: 'SNOW' }[B.field.weather]; text(B.field.weatherT > 1e6 ? lbl : `${lbl} ${Math.ceil(B.field.weatherT)}`, VW / 2, fy, 13 * S, '#ffe7a8', 'center'); fy += 18 * S; }
-  if (B.field.terrain) { text(`${B.field.terrain.toUpperCase()} TERRAIN ${Math.ceil(B.field.terrainT)}`, VW / 2, fy, 13 * S, TERRAIN_TINT[B.field.terrain], 'center'); fy += 18 * S; }
+  // field effects sit in dark-backed pills so they read over any arena; timed ones end in "s"
+  const fieldPill = (lbl, col) => { const h = 20 * S; ctx.font = `${h * 0.62}px Bungee, "Arial Black", sans-serif`; const w = ctx.measureText(lbl).width + h * 0.9; hudChip(VW / 2 - w / 2, fy - h / 2, lbl, col, h); fy += h + 5 * S; };
+  if (B.field.weather) { const lbl = { sun: 'HARSH SUN', rain: 'RAIN', sand: 'SANDSTORM', snow: 'SNOW' }[B.field.weather]; fieldPill(B.field.weatherT > 1e6 ? lbl : `${lbl} ${Math.ceil(B.field.weatherT)}s`, { sun: '#c8641c', rain: '#2f64b8', sand: '#9a7e34', snow: '#4a9cb8' }[B.field.weather] || '#555'); }
+  if (B.field.terrain) fieldPill(`${B.field.terrain.toUpperCase()} TERRAIN ${Math.ceil(B.field.terrainT)}s`, { electric: '#a8870a', grassy: '#378a37', psychic: '#a63a93', misty: '#b85f9c' }[B.field.terrain] || '#555');
   B.callouts.filter(c => c.side === -1).forEach((c, i) => { ctx.globalAlpha = clamp((1.6 - c.t) * 3, 0, 1); text(c.s, VW / 2, fy + 10 * S + i * 22 * S, 16 * S, '#fff', 'center'); ctx.globalAlpha = 1; });
   const me = B.sides[meIdx()]; if (!me) return;
   const m = activeMon(me), W = 210 * S, H = 46 * S, gap = 10 * S, total = 4 * W + 3 * gap, pad = INPUT.usingPad;
   const y = VH - H - 18 * S; let x = VW / 2 - total / 2;
   m.moves.forEach((mv, i) => {
     const ready = canUse(me, i), cd = m.cds[i], tc = TYPE_COLOR[mv.type] || '#888';
-    rrect(x, y, W, H, 10 * S, ready ? '#1c1f26ee' : '#1c1f26aa', ready ? tc : '#555', 3);
-    icon((pad ? PAD_ICONS : PC_ICONS)[i], x + 25 * S, y + H / 2, H >= 34 ? 32 : 16);
-    text(mv.name, x + 50 * S, y + H / 2 - 6 * S, 15 * S, ready ? '#fff' : '#999', 'left');
-    text(`${mv.type.toUpperCase()} ${mv.category === 'Status' ? 'STATUS' : mv.basePower || '-'}`, x + 50 * S, y + H / 2 + 11 * S, 10 * S, tc, 'left', null);
+    // a card that just came off cooldown flashes once, so you can look at the fight instead of the bar
+    const rdy = me.hudRdy || (me.hudRdy = []); if (cd > 0) rdy[i] = 0; else if (rdy[i] === 0) rdy[i] = B.time;
+    rrect(x, y, W, H, 10 * S, ready ? '#1c1f26ee' : '#13151acc', ready ? tc : '#555', 3);
+    ctx.globalAlpha = cd > 0 ? 0.45 : 1; icon((pad ? PAD_ICONS : PC_ICONS)[i], x + 25 * S, y + H / 2, H >= 34 ? 32 : 16); ctx.globalAlpha = 1;
+    const room = W - 50 * S - (cd > 0 ? 46 * S : 8 * S); ctx.font = `${15 * S}px Bungee, "Arial Black", sans-serif`;
+    const nsz = 15 * S * Math.min(1, room / Math.max(1, ctx.measureText(mv.name).width));
+    text(mv.name, x + 50 * S, y + H / 2 - 7 * S, nsz, ready ? '#fff' : '#9a9aa4', 'left');
+    text(`${mv.type.toUpperCase()} ${mv.category === 'Status' ? 'STATUS' : (mv.category === 'Physical' ? 'PHY ' : 'SPC ') + (mv.basePower || '-')}`, x + 50 * S, y + H / 2 + 9 * S, 10 * S, tc, 'left', null);
     if (cd > 0) {
-      const max = cooldownFor(mv, m);
-      ctx.fillStyle = '#000a'; ctx.beginPath(); ctx.roundRect(x, y, W * clamp(cd / max, 0, 1), H, 10 * S); ctx.fill();
-      text(cd.toFixed(1), x + W - 22 * S, y + H / 2, 15 * S, '#fff', 'center');
-    }
+      // recharge strip along the bottom edge fills as the move comes back; the countdown turns yellow in its last second
+      const max = cooldownFor(mv, m), sx = x + 10 * S, sw = W - 20 * S;
+      ctx.fillStyle = '#000c'; ctx.fillRect(sx, y + H - 8 * S, sw, 4 * S);
+      ctx.fillStyle = tc; ctx.fillRect(sx, y + H - 8 * S, sw * (1 - clamp(cd / max, 0, 1)), 4 * S);
+      text(cd.toFixed(1), x + W - 24 * S, y + H / 2 - 4 * S, 20 * S, cd < 1 ? '#ffde3b' : '#fff', 'center');
+    } else if (rdy[i] > 0 && B.time - rdy[i] < 0.3) { ctx.globalAlpha = 0.55 * (1 - (B.time - rdy[i]) / 0.3); rrect(x, y, W, H, 10 * S, '#fff'); ctx.globalAlpha = 1; }
     if (me.choice >= 0 && me.choice !== i) text('LOCKED', x + W - 40 * S, y + 10 * S, 9 * S, '#ff9a9a', 'center');
     x += W + gap;
   });

@@ -187,13 +187,24 @@ function drawTrap(t) {
     const a = rnd() * Math.PI * 2 + spin, d = (0.25 + rnd() * 0.7) * rx;
     particle(name, t.x + Math.cos(a) * d, t.y + Math.sin(a) * d * 0.62 - 6, t.t + rnd() * 3, { ft: 4, scale: p.fw <= 20 ? SS : 1, alpha: fade });
   }
-  // outline: 1px dark rim, then a 2px status-colour ring that breathes by a pixel or two
-  const b = Math.round(Math.sin(B.time * 6) * 1.5);
+  // outline, outside in: 1px dark rim, the placer's colour ring (red-pink for side 0, blue for side 1), a dark gap, then the status-colour
+  // edge that pulses between 1 and 3 px and beats faster as the trap runs out. Everything sits outside the real hitbox radius (rx, ry).
+  const rem = t.dur - t.t, hurry = Math.max(0, 2 - rem), p = Math.round(1 + Math.sin(t.t * 5 + 5 * hurry * hurry)), grow = d => [rx + d, ry + d * 0.85]; // the rings grow a bit rounder than the patch so the top and bottom bands stay thick enough to read
   ctx.globalAlpha = fade;
-  ell(t.x, t.y, rx + b + 1, ry + b + 1, null, '#0c0a14', 5);
-  ell(t.x, t.y, rx + b, ry + b, null, col, 3);
+  ell(t.x, t.y, ...grow(11), null, '#0c0a14', 1);
+  ell(t.x, t.y, ...grow(10), null, OWNER_COL[t.side] || OWNER_COL[0], 4);
+  ell(t.x, t.y, ...grow(6), null, '#0c0a14', 2);
+  ell(t.x, t.y, ...grow(2 + p), null, col, 3);
+  ell(t.x, t.y, ...grow(0), null, '#0c0a14', 1);
+  // tick flash: the patch lights up white for a moment each time it hits (t.flashT is set by trapTouch in src/battle.js)
+  if (t.flashT > 0) {
+    const f = clamp(t.flashT / 0.22, 0, 1), dz2 = ditherEll(rx, ry, '#ffffff');
+    ctx.globalAlpha = fade * f * 0.8; ctx.drawImage(dz2, Math.round(t.x) - (dz2.width >> 1), Math.round(t.y) - (dz2.height >> 1));
+    ctx.globalAlpha = fade * f; ell(t.x, t.y, ...grow(5), null, '#ffffff', 3);
+  }
   ctx.globalAlpha = 1;
 }
+const OWNER_COL = ['#f08a8a', '#7fd0e8'];
 
 // Checkerboard-dithered ellipse in one colour (cached): reads as a tinted patch while staying hard-pixel.
 const DITHER = new Map();

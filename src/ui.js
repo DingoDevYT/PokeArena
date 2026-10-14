@@ -8,15 +8,22 @@ function bgFill(top = '#1b1f3a', bottom = '#3a1f3f') {
 }
 // Button names in hint strings become Kenney icons.
 const HINT_ICONS = { A: 'xbox_a', B: 'xbox_b', X: 'xbox_x', Y: 'xbox_y', LB: 'xbox_lb', RB: 'xbox_rb', 'left/right': 'xbox_dpad', Delete: 'key_delete', F2: 'key_f2', Enter: 'key_enter', Esc: 'key_esc' };
-function hint(s) {
+function hint(s, y = VH - 26) {
   const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
-  iconRow(parts, VW / 2, VH - 26, 32, Math.max(12, 14 * S()), '#ccd', 'center');
+  iconRow(parts, VW / 2, y, 32, Math.max(12, 14 * S()), '#ccd', 'center');
 }
 function backButton(fn) {
   const s = S(), w = 110 * s, h = 36 * s;
   rrect(16 * s, 16 * s, w, h, 10 * s, '#ffffff22', '#ffffff55', 2);
   text('< BACK', 16 * s + w / 2, 16 * s + h / 2 + 1, 15 * s, '#fff', 'center', null);
   hot(16 * s, 16 * s, w, h, { click: fn });
+}
+// red button for destructive actions; armed = the next click confirms
+function dangerButton(x, y, w, h, label, fn, armed, hover) {
+  const s = S(), hov = overRect(x, y, w, h);
+  rrect(x, y, w, h, 8 * s, armed ? '#e03a2e' : hov ? '#b0372e' : '#8e2a24', '#fff', 2);
+  text(label, x + w / 2, y + h / 2 + 1, Math.max(10, 13 * s), '#fff', 'center', null);
+  hot(x, y, w, h, { click: fn, hover });
 }
 const okHit = () => INPUT.hit('OK') || INPUT.hit('A');
 const backHit = () => INPUT.hit('BACKK');
@@ -149,8 +156,9 @@ const MenuScene = {
     return [
       { label: 'Battle', act: () => setScene(SetupScene) },
       { label: 'Online', act: () => setScene(OnlineScene) },
+      { label: 'Profile', value: profileName(), act: () => { ProfileScene.back = null; setScene(ProfileScene); } },
       { label: 'Team Builder', act: () => setScene(TeamsScene) },
-      { label: 'Controls', act: () => setScene(ControlsScene) },
+      { label: 'Controls', act: () => { ControlsScene.back = null; setScene(ControlsScene); } },
       { label: 'Music Volume', value: Math.round(AUDIO.vol.music * 10), cycle: d => { AUDIO.vol.music = clamp(AUDIO.vol.music + d * 0.1, 0, 1); if (AUDIO.music) AUDIO.music.volume = AUDIO.vol.music; STORE.set('vol', AUDIO.vol); } },
       { label: 'SFX Volume', value: Math.round(AUDIO.vol.sfx * 10), cycle: d => { AUDIO.vol.sfx = clamp(AUDIO.vol.sfx + d * 0.1, 0, 1); STORE.set('vol', AUDIO.vol); uiBlip(700); } },
     ];
@@ -159,8 +167,96 @@ const MenuScene = {
   draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(INPUT.usingPad ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(TitleScene)); },
 };
 
+// ---------- profile: trainer name + avatar (shown in battle, the online lobby and the team cards) ----------
+const profileName = () => String(STORE.get('playerName', '') || '').replace(/[^\w .'-]/g, '').trim().slice(0, 12) || 'You';
+const profileAvatar = () => cleanAvatar(STORE.get('playerAvatar', '')) || AVATAR_DEFAULT;
+// small clickable "avatar + name" chip that opens the profile and comes back to `from`
+function profileChip(x, y, w, h, from) {
+  const s = S(), on = overRect(x, y, w, h);
+  rrect(x, y, w, h, 10 * s, on ? '#ffffff2e' : '#ffffff14', on ? '#fff' : '#ffffff55', 2);
+  avatarTile(profileAvatar(), x + 5 * s, y + 5 * s, h - 10 * s);
+  text(profileName(), x + h + 2 * s, y + h / 2 + 1, Math.max(10, 14 * s), '#fff', 'left', null);
+  hot(x, y, w, h, { click: () => { ProfileScene.back = from; uiBlip(880, 0.05); setScene(ProfileScene); } });
+}
+const ProfileScene = {
+  back: null, // scene to return to; null = main menu
+  st: { sel: 0, off: 0 }, name: '', cur: '', ate: false, follow: true, cols: 10, rows: 7,
+  enter() {
+    AUDIO.playMusic(MUSIC.menu);
+    this.name = String(STORE.get('playerName', '') || '').replace(/[^\w .'-]/g, '').slice(0, 12); this.cur = profileAvatar();
+    this.st.sel = Math.max(0, (window.TRAINER_AVATARS || []).findIndex(a => a.id === this.cur)); this.follow = true;
+    this.keyFn = e => this.onKey(e); window.addEventListener('keydown', this.keyFn);
+  },
+  exit() { window.removeEventListener('keydown', this.keyFn); },
+  setName(n) { this.name = String(n).replace(/[^\w .'-]/g, '').slice(0, 12); STORE.set('playerName', this.name.trim()); },
+  // like the species search box: letters go to the name, so WASD / Space / Backspace stop acting as menu keys while it is open
+  onKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Backspace') this.setName(this.name.slice(0, -1));
+    else if (e.key.length === 1 && /[\w .'-]/.test(e.key) && (e.key !== ' ' || this.name) && this.name.length < 12) this.setName(this.name + e.key);
+    else return;
+    this.ate = true; e.preventDefault();
+  },
+  choose(i) { const a = (window.TRAINER_AVATARS || [])[i]; if (a) { this.cur = a.id; STORE.set('playerAvatar', a.id); uiBlip(880, 0.05); } },
+  rename() { const c = window.prompt('Your name (12 letters max)', this.name); if (c !== null) this.setName(c); },
+  update() {
+    const n = (window.TRAINER_AVATARS || []).length, st = this.st, c = this.cols;
+    const dir = ['KeyW', 'KeyA', 'KeyS', 'KeyD'].some(k => KEYS[k]) ? '' : INPUT.menu;
+    if (dir) {
+      const o = st.sel;
+      st.sel = dir === 'left' ? Math.max(0, o - 1) : dir === 'right' ? Math.min(n - 1, o + 1) : dir === 'up' ? (o >= c ? o - c : o) : Math.min(n - 1, o + c);
+      if (st.sel !== o) { this.follow = true; uiBlip(600, 0.03); }
+    }
+    if (okHit() && !this.ate) this.choose(st.sel);
+    if (INPUT.hit('X')) this.rename();
+    if (backHit() && !this.ate) setScene(this.back || MenuScene);
+    this.ate = false;
+  },
+  draw() {
+    bgFill('#101830', '#2c1838');
+    const { X, Y, L } = layout(), A = window.TRAINER_AVATARS || [], st = this.st, c = this.cols, r = this.rows, pitch = 80, n = A.length;
+    text('PROFILE', X(660), Y(50), L(44), '#ffde3b', 'center', '#1a2a6c');
+    backButton(() => setScene(this.back || MenuScene));
+    // ----- left: preview + name -----
+    panel(X(0), Y(96), L(440), L(660), 'YOUR TRAINER');
+    avatarTile(this.cur, X(100), Y(150), L(240), '#ffde3b');
+    text((avatarById(this.cur)?.name || '').toUpperCase(), X(220), Y(412), L(18), '#aab4c8', 'center', null);
+    text('NAME', X(30), Y(470), L(14), '#ffde3b', 'left', null);
+    rrect(X(30), Y(486), L(380), L(60), L(12), '#00000066', '#ffde3b', 2);
+    const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
+    text(this.name ? this.name + caret : 'You' + caret, X(46), Y(517), L(26), this.name ? '#fff' : '#ffffff66', 'left', null);
+    text(`${this.name.length} / 12`, X(410), Y(564), L(12), '#9aa6c0', 'right', null, 'Silkscreen');
+    text(INPUT.usingPad ? 'Press X to type a name' : 'Just type. Backspace deletes.', X(30), Y(564), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
+    rrect(X(30), Y(590), L(380), L(46), L(10), '#ffffff14', '#ffffff55', 2); text('EDIT NAME', X(220), Y(614), L(16), '#fff', 'center', null);
+    hot(X(30), Y(590), L(380), L(46), { click: () => this.rename() });
+    // ----- right: avatar grid -----
+    panel(X(470), Y(96), L(850), L(660), 'CHOOSE A PORTRAIT', A[st.sel] ? A[st.sel].name.toUpperCase() : '');
+    const trows = Math.ceil(n / c), mo = Math.max(0, trows - r), x0 = X(485), y0 = Y(140);
+    if (this.follow) { const row = Math.floor(st.sel / c); st.off = row < st.off ? row : row >= st.off + r ? row - r + 1 : st.off; this.follow = false; } // scroll only when the keys leave the view
+    st.off = clamp(st.off, 0, mo);
+    hot(x0, y0, L(pitch * c), L(pitch * r), { wheel: d => { st.off = clamp(st.off + d, 0, mo); } }); // registered first so the cells sit on top
+    for (let i = st.off * c; i < Math.min(n, (st.off + r) * c); i++) {
+      const x = x0 + (i % c) * L(pitch), y = y0 + (Math.floor(i / c) - st.off) * L(pitch), sz = L(72), cur = A[i].id === this.cur, on = i === st.sel;
+      hot(x, y, sz, sz, { hover: () => { st.sel = i; }, click: () => { st.sel = i; this.choose(i); }, wheel: d => { st.off = clamp(st.off + d, 0, mo); } });
+      rrect(x, y, sz, sz, L(10), on ? '#ffffff30' : '#ffffff10', cur ? '#ffde3b' : on ? '#fff' : '#ffffff22', cur ? 4 : on ? 3 : 2);
+      drawAvatar(A[i].id, x + L(6), y + L(6), sz - L(12));
+    }
+    // scrollbar: click or drag the track, or use the wheel
+    const bx = x0 + L(pitch * c) + L(4), bw = L(12), th = L(pitch * r - 8);
+    ctx.fillStyle = '#ffffff18'; ctx.fillRect(bx, y0, bw, th);
+    if (mo > 0) {
+      const kh = Math.max(L(24), th * r / trows), ky = y0 + (th - kh) * st.off / mo, jump = () => { st.off = clamp(Math.round((MOUSE.y - y0 - kh / 2) / (th - kh) * mo), 0, mo); };
+      ctx.fillStyle = st.drag ? '#fff' : '#ffde3b'; ctx.fillRect(bx, ky, bw, kh);
+      hot(bx - 6, y0, bw + 12, th, { click: () => { st.drag = true; jump(); }, wheel: d => { st.off = clamp(st.off + d, 0, mo); } });
+      if (st.drag) { if (MOUSE.down) jump(); else st.drag = false; }
+    }
+    hint(INPUT.usingPad ? 'D-pad browse   A pick   X type a name   B back' : 'Click a portrait   arrows or scroll browse   Enter pick   Esc back');
+  },
+};
+
 const ControlsScene = {
-  update() { if (backHit() || okHit()) setScene(MenuScene); },
+  back: null, // the scene to return to (the pause menu sets this); null = main menu
+  update() { if (backHit() || okHit()) setScene(this.back || MenuScene); },
   draw() {
     bgFill(); const s = S();
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
@@ -168,7 +264,7 @@ const ControlsScene = {
       ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor, always']],
       ['Move 1', ['xbox_a'], ['mouse_left']], ['Move 2', ['xbox_b'], ['mouse_right']], ['Move 3', ['xbox_x'], ['key_q']], ['Move 4', ['xbox_y'], ['key_e']],
       ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' hold, point a stick, release'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
-      ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Pause', ['xbox_start'], ['key_esc']],
+      ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Pause', ['xbox_start'], ['key_esc', ' or P']],
     ];
     const RH = Math.max(36, 40 * s), ih = 32;
     text('ACTION', VW / 2 - 400 * s, 110 * s, 16 * s, '#9ab', 'left'); text('CONTROLLER', VW / 2 - 200 * s, 110 * s, 16 * s, '#7fd0e8', 'left'); text('KEYBOARD + MOUSE', VW / 2 + 150 * s, 110 * s, 16 * s, '#7be07b', 'left');
@@ -187,7 +283,7 @@ const ControlsScene = {
       text(`Pad ${i + 1}: ${p.id.slice(0, 60)}  [${p.mapping || 'non-standard'}]`, VW / 2, y0 + i * 44 * s, 14 * s, p.mapping === 'standard' ? '#9f9' : '#fc9', 'center', null);
       text(`buttons: ${pressed.join(' ') || '-'}   sticks: ${[...p.axes].slice(0, 4).map(a => a.toFixed(2)).join(' ')}`, VW / 2, y0 + i * 44 * s + 20 * s, 12 * s, '#ccd', 'center', null);
     });
-    hint('B / right-click back'); backButton(() => setScene(MenuScene));
+    hint('B / right-click back'); backButton(() => setScene(this.back || MenuScene));
   },
 };
 
@@ -219,8 +315,8 @@ const SetupScene = {
     const arena = st.arena < 0 ? pick(ARENAS) : ARENAS[st.arena];
     const cfg = {
       arena, weather: WEATHERS[st.weather],
-      player: { name: STORE.get('playerName', 'You'), sprite: STORE.get('playerSprite', (window.PLAYER_SPRITES || [])[0]?.sprite || ''), team: leadFirst(team.mons, st.lead) },
-      cpu: { name: tr.name, cpu: true, tier: st.diff ? DIFFS[st.diff] : tr.difficulty, sprite: tr.sprite, team: tr.team },
+      player: { name: profileName(), avatar: profileAvatar(), sprite: avatarSprite(profileAvatar()), team: leadFirst(team.mons, st.lead) },
+      cpu: { name: tr.name, cpu: true, tier: st.diff ? DIFFS[st.diff] : tr.difficulty, sprite: tr.sprite, avatar: cpuAvatar(tr.id), team: tr.team },
       music: tr.music || arena.music,
     };
     setScene(LoadingScene(cfg));
@@ -228,22 +324,37 @@ const SetupScene = {
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(MenuScene); },
   draw() {
     bgFill(); const s = S(); text('BATTLE', VW / 2, 70 * s, 48 * s, '#ffde3b', 'center');
+    profileChip(VW - 220 * s, 16 * s, 204 * s, 40 * s, SetupScene);
     drawMenu(this.items(), this.st, VW / 2 - 140 * s, 130 * s, 640 * s, 62);
-    // preview both teams
-    const tr = TRAINERS[this.st.opp], mine = savedTeams()[this.st.team];
-    const px = VW / 2 + 250 * s;
-    text('YOU', px + 80 * s, 140 * s, 18 * s, '#7be07b', 'center');
-    mine.mons.forEach((m, i) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, px + (i % 3) * 56 * s, 160 * s + Math.floor(i / 3) * 56 * s, 48 * s, 48 * s); });
-    text(tr.name.toUpperCase(), px + 80 * s, 300 * s, 18 * s, '#7fd0e8', 'center');
-    const tim = img(tr.sprite); if (tim) ctx.drawImage(tim, px + 175 * s, 280 * s, 80 * s, 80 * s);
-    tr.team.forEach((m, i) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, px + (i % 3) * 56 * s, 320 * s + Math.floor(i / 3) * 56 * s, 48 * s, 48 * s); });
+    // preview both teams: big portraits with names, your lead marked
+    const tr = TRAINERS[this.st.opp], mine = savedTeams()[this.st.team], lead = clamp(this.st.lead | 0, 0, mine.mons.length - 1);
+    const x0 = VW / 2 - 140 * s + 320 * s + 24 * s, pw = VW - x0 - 20 * s, tw = pw / 3, ps = Math.min(tw - 10 * s, 96 * s), th = ps + 22 * s;
+    const tiles = (mons, y, leadI) => mons.forEach((m, i) => {
+      const x = x0 + (i % 3) * tw + (tw - ps) / 2, yy = y + Math.floor(i / 3) * th, im = portrait(toId(m.species)), on = i === leadI;
+      rrect(x - 3 * s, yy - 3 * s, ps + 6 * s, ps + 6 * s, 6 * s, on ? '#ffde3b44' : '#00000044', on ? '#ffde3b' : '#ffffff33', on ? 3 : 2);
+      if (im) ctx.drawImage(im, x, yy, ps, ps);
+      const nm = DEX.species[toId(m.species)]?.name || m.species;
+      text(nm.length > 11 ? nm.slice(0, 10) + '.' : nm, x + ps / 2, yy + ps + 13 * s, Math.max(9, 10 * s), on ? '#ffde3b' : '#dde', 'center', null, 'Silkscreen');
+      if (on) { const bw = 38 * s; rrect(x, yy, bw, 14 * s, 4 * s, '#ffde3b'); text('LEAD', x + bw / 2, yy + 7 * s + 1, Math.max(8, 9 * s), '#111', 'center', null, 'Silkscreen'); }
+    });
+    text('YOU', x0, 118 * s, 18 * s, '#7be07b', 'left');
+    tiles(mine.mons, 134 * s, lead);
+    const oy = 134 * s + Math.ceil(mine.mons.length / 3) * th + 22 * s;
+    text(tr.name.toUpperCase(), x0, oy, 18 * s, '#7fd0e8', 'left');
+    const tim = img(tr.sprite); if (tim) ctx.drawImage(tim, x0 + pw - 56 * s, oy - 28 * s, 56 * s, 56 * s);
+    tiles(tr.team, oy + 18 * s, -1);
     hint(INPUT.usingPad ? 'left/right change   A fight   B back' : 'Click a row to change it (left side -, right side +)   scroll also changes'); backButton(() => setScene(MenuScene));
   },
 };
 
+// startBattle plus the trainer avatars, which the sim itself does not know about (the HUD reads side.avatar)
+function startBattleA(cfg) { startBattle(cfg); B.sides[0].avatar = cfg.player.avatar; B.sides[1].avatar = cfg.cpu.avatar; }
+// CPU trainers with a close Showdown match (same id, or the LGPE variant)
+const cpuAvatar = id => cleanAvatar(id) || cleanAvatar(id + '-lgpe') || undefined;
+
 // every image/sound a battle will draw, so it can be loaded up front
 function assetSrcs(cfg) {
-  const srcs = [cfg.arena.bg, ...Object.values(cfg.arena.props || {}), cfg.player.sprite, cfg.cpu.sprite];
+  const srcs = [cfg.arena.bg, ...Object.values(cfg.arena.props || {}), cfg.player.sprite, cfg.cpu.sprite, avatarById(cfg.player.avatar)?.file, avatarById(cfg.cpu.avatar)?.file];
   for (const set of [...cfg.player.team, ...cfg.cpu.team]) {
     const sp = DEX.species[toId(set.species)]; if (!sp) continue;
     const keys = [sp.sprite, ...(sp.megas || []).map(id => DEX.species[id]?.sprite)];
@@ -262,10 +373,11 @@ function LoadingScene(cfg) {
     update(dt) {
       this.t += dt;
       if (NET.role && backHit()) return netLeave('');
-      if (done && this.t > 0.3) { try { startBattle(cfg); } catch (e) { if (NET.role) return netLeave('Could not start the match: ' + e.message); throw e; } setScene(BattleScene(cfg)); }
+      if (done && this.t > 0.3) { try { startBattleA(cfg); } catch (e) { if (NET.role) return netLeave('Could not start the match: ' + e.message); throw e; } setScene(BattleScene(cfg)); }
     },
     draw() {
       bgFill('#000', '#111'); const s = S(), f = got / total;
+      if (cfg.player.avatar && cfg.cpu.avatar) vsCards(VW / 2, VH / 2 - 210 * s, 90 * s, cfg.player, cfg.cpu);
       text('Loading...', VW / 2, VH / 2 - 40 * s, 30 * s, '#fff', 'center');
       rrect(VW / 2 - 220 * s, VH / 2, 440 * s, 18 * s, 9 * s, '#ffffff18', '#ffffff55', 2); rrect(VW / 2 - 218 * s, VH / 2 + 2 * s, 436 * s * f, 14 * s, 7 * s, '#ffde3b');
       text(Math.round(f * 100) + '%', VW / 2, VH / 2 + 44 * s, 16 * s, '#fff', 'center');
@@ -277,19 +389,20 @@ function LoadingScene(cfg) {
 // ---------- battle ----------
 function BattleScene(cfg) {
   return {
-    pause: { sel: 0 }, res: { sel: 0 },
+    pause: { sel: 0, arm: -1 }, res: { sel: 0 },
     enter() { AUDIO.playMusic(cfg.music); if (NET.role === 'host') NETSYNC.begin(); else if (NET.role === 'guest') NETSYNC.send({ t: 'ready' }); },
     update(dt) {
       if (NET.role) return onlineBattleUpdate(this, dt);
       if (B.paused) {
         const items = this.pauseItems();
+        if (this.pause.arm !== this.pause.sel) this.pause.arm = -1;
         runMenu(this.pause, items, dt);
         if (INPUT.hit('START') || backHit()) B.paused = false;
         return;
       }
       if (B.over) {
         updateBattle(dt);
-        if (B.endT > 1.5) { if (okHit()) { startBattle(cfg); this.res.sel = 0; AUDIO.playMusic(cfg.music); } else if (backHit() || INPUT.hit('START')) setScene(SetupScene); }
+        if (B.endT > 1.5) { if (okHit()) { startBattleA(cfg); this.res.sel = 0; AUDIO.playMusic(cfg.music); } else if (backHit() || INPUT.hit('START')) setScene(SetupScene); }
         return;
       }
       if (B.choose) {
@@ -299,15 +412,18 @@ function BattleScene(cfg) {
         if (okHit()) confirmChoose();
         updateBattle(dt); return;
       }
-      if (INPUT.hit('START')) { B.paused = true; this.pause.sel = 0; return; }
+      if (INPUT.hit('START')) { B.paused = true; this.pause.sel = 0; this.pause.arm = -1; return; }
       updateBattle(dt);
     },
     pauseItems() {
       if (NET.role) return [...(B.pausedBy === meIdx() ? [{ label: 'Resume', act: netResume }] : []), { label: 'Leave match', act: () => netLeave('') }];
+      // Restart and Quit throw the fight away, so the first press only arms them
+      const p = this.pause, ask = (i, label, fn) => ({ label: p.arm === i && p.sel === i ? 'Sure? Press again' : label, act: () => { if (p.arm === i) { p.arm = -1; fn(); } else p.arm = i; } });
       return [
         { label: 'Resume', act: () => B.paused = false },
-        { label: 'Restart', act: () => { startBattle(cfg); } },
-        { label: 'Quit to setup', act: () => setScene(SetupScene) },
+        { label: 'Controls', act: () => { ControlsScene.back = this; setScene(ControlsScene); } },
+        ask(2, 'Restart', () => { startBattleA(cfg); }),
+        ask(3, 'Quit to setup', () => setScene(SetupScene)),
       ];
     },
     draw() {
@@ -334,6 +450,7 @@ function BattleScene(cfg) {
         text('PAUSED', VW / 2, VH * 0.25, 48 * s, '#ffde3b', 'center');
         if (NET.role && B.pausedBy !== meIdx()) text(`${B.sides[B.pausedBy]?.name || 'Your opponent'} paused the game`, VW / 2, VH * 0.25 + 50 * s, 20 * s, '#fff', 'center');
         drawMenu(this.pauseItems(), this.pause, VW / 2, VH * 0.35, 380 * s, 60);
+        hint(INPUT.usingPad ? 'A select   B resume' : 'Click to select   Esc resume', VH * 0.35 + 4 * 60 * s + 16 * s);
       }
       if (B.over && B.endT > 0.8) {
         const mi = meIdx(), win = B.winner === mi, me = B.sides[mi], foe = B.sides[1 - mi];
@@ -341,10 +458,16 @@ function BattleScene(cfg) {
         text(win ? 'YOU WIN!' : 'YOU LOST', VW / 2, VH * 0.3, 80 * s, win ? '#ffde3b' : '#ff7a7a', 'center', '#000');
         text(win ? `${foe.name} was defeated!` : `${foe.name} wins.`, VW / 2, VH * 0.3 + 70 * s, 22 * s, '#fff', 'center');
         const t = Math.floor(B.time);
-        text(`Time ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}    Hits ${me.hits}    Damage dealt ${me.dealt}    Mons left ${remaining(me)}`, VW / 2, VH * 0.5, 18 * s, '#dde', 'center', null);
+        const cw = 150 * s, ch = 64 * s, cg = 12 * s, cx0 = VW / 2 - (cw * 4 + cg * 3) / 2, cy = VH * 0.42;
+        [['TIME', `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`], ['HITS', me.hits], ['DAMAGE DEALT', me.dealt], ['MONS LEFT', `${remaining(me)} / ${me.team.length}`]].forEach(([l, v], i) => {
+          const bx = cx0 + i * (cw + cg);
+          rrect(bx, cy, cw, ch, 10 * s, '#ffffff18', '#ffffff55', 2);
+          text(String(v), bx + cw / 2, cy + 24 * s, 24 * s, '#ffde3b', 'center', null);
+          text(l, bx + cw / 2, cy + ch - 15 * s, Math.max(10, 13 * s), '#bcd', 'center', null);
+        });
         if (B.endT > 1.5) {
           const bw = 220 * s, bh = 50 * s, by = VH * 0.62;
-          (NET.role ? [NET.role === 'host' ? ['REMATCH', onlineRematch] : ['WAITING FOR HOST', () => {}], ['LEAVE', () => netLeave('')]] : [['REMATCH', () => { startBattle(cfg); AUDIO.playMusic(cfg.music); }], ['BACK TO SETUP', () => setScene(SetupScene)]]).forEach(([l, fn], i) => {
+          (NET.role ? [NET.role === 'host' ? ['REMATCH', onlineRematch] : ['WAITING FOR HOST', () => {}], ['LEAVE', () => netLeave('')]] : [['REMATCH', () => { startBattleA(cfg); AUDIO.playMusic(cfg.music); }], ['BACK TO SETUP', () => setScene(SetupScene)]]).forEach(([l, fn], i) => {
             const bx = VW / 2 + (i ? 20 * s : -bw - 20 * s);
             rrect(bx, by, bw, bh, 12 * s, i ? '#ffffff22' : '#ffde3b', '#fff', 2); text(l, bx + bw / 2, by + bh / 2 + 1, 18 * s, i ? '#fff' : '#111', 'center', null);
             hot(bx, by, bw, bh, { click: fn });
@@ -358,29 +481,37 @@ function BattleScene(cfg) {
 
 // ---------- team list ----------
 const TeamsScene = {
-  st: { sel: 0 },
+  st: { sel: 0, del: -1 },
   enter() { AUDIO.playMusic(MUSIC.builder || MUSIC.menu); },
   items() {
     const teams = savedTeams();
     return [
-      ...teams.map((t, i) => ({ label: t.name, value: `${t.mons.length} mons`, act: () => setScene(EditScene(i)) })),
+      ...teams.map((t, i) => ({ label: t.name.length > 17 ? t.name.slice(0, 16) + '.' : t.name, value: '', act: () => setScene(EditScene(i)) })),
       { label: '+ New team', act: () => { const t = savedTeams(); t.push({ name: `Team ${t.length + 1}`, mons: [blankSet()] }); saveTeams(t); setScene(EditScene(t.length - 1)); } },
       { label: '+ Copy a trainer team', act: () => setScene(CopyScene) },
     ];
   },
   update(dt) {
-    const items = this.items(); runMenu(this.st, items, dt);
+    const items = this.items(); if (this.st.del !== this.st.sel) this.st.del = -1; runMenu(this.st, items, dt);
     const teams = savedTeams();
-    if ((INPUT.hit('X') || INPUT.hit('DEL')) && this.st.sel < teams.length && teams.length > 1) { teams.splice(this.st.sel, 1); saveTeams(teams); this.st.sel = Math.max(0, this.st.sel - 1); uiBlip(200, 0.1); }
+    if ((INPUT.hit('X') || INPUT.hit('DEL')) && this.st.sel < teams.length && teams.length > 1) this.del(this.st.sel);
     if (backHit()) setScene(MenuScene);
+  },
+  // deleting a team takes two presses: the first arms it
+  del(i) {
+    if (this.st.del !== i) { this.st.del = i; return; }
+    const teams = savedTeams(); teams.splice(i, 1); saveTeams(teams); this.st.del = -1; this.st.sel = Math.max(0, i - 1); uiBlip(200, 0.1);
   },
   draw() {
     bgFill('#14283a', '#1b3a2f'); const s = S(); text('TEAMS', VW / 2, 70 * s, 48 * s, '#ffde3b', 'center');
-    const items = this.items(), y0 = 130 * s;
+    const items = this.items(), y0 = 130 * s, teams = savedTeams(), rowH = 62 * s, h = 54 * s, ps = Math.min(40 * s, h - 8 * s);
     drawMenu(items, this.st, VW / 2, y0, 640 * s, 62);
-    const t = savedTeams()[this.st.sel];
-    if (t) t.mons.forEach((m, i) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, VW / 2 + 340 * s, y0 + i * 52 * s, 48 * s, 48 * s); });
-    hint(INPUT.usingPad ? 'A edit   X delete team   B back' : 'Click to edit   Delete key removes the highlighted team'); backButton(() => setScene(MenuScene));
+    teams.forEach((t, i) => {
+      const yy = y0 + i * rowH; let rx = VW / 2 + 320 * s - 10 * s;
+      if (teams.length > 1) { const bw = 100 * s; dangerButton(rx - bw, yy + (h - 34 * s) / 2, bw, 34 * s, this.st.del === i ? 'SURE?' : 'DELETE', () => { this.st.sel = i; this.del(i); }, this.st.del === i, () => this.st.sel = i); rx -= bw + 14 * s; }
+      t.mons.forEach((m, k) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, rx - (t.mons.length - k) * (ps + 3 * s), yy + (h - ps) / 2, ps, ps); });
+    });
+    hint(INPUT.usingPad ? 'A edit   X delete team (press twice)   B back' : 'Click a team to edit it   DELETE button or Delete key removes it (press twice)'); backButton(() => setScene(MenuScene));
   },
 };
 const CopyScene = {
@@ -412,11 +543,12 @@ function wrapText(s, x, y, w, size, color) {
   if (line) text(line, x, yy, size, color, 'left', null);
 }
 const GEN_OF = num => [151, 251, 386, 493, 649, 721, 809, 905, Infinity].findIndex(m => num <= m) + 1;
+const PICKER_FORMS = ['toxtricitylowkey'];
 // Grid of every species + battle form. Generation tabs (LT/RT, Tab, click) and type-to-search by name (keyboard).
 function SpeciesPicker(edit, slot) {
-  // one entry per real dex number (the base species has the shortest id; forms append a suffix), and only species that have sprites
+  // one entry per real dex number (the base species has the shortest id; forms append a suffix), plus PICKER_FORMS, and only species that have sprites
   const base = {}; for (const id in DEX.species) { const n = DEX.species[id].num; if (n > 0 && (!base[n] || id.length < base[n].length)) base[n] = id; }
-  const all = Object.values(base).filter(id => SPRITES[DEX.species[id].sprite]).sort((a, b) => DEX.species[a].num - DEX.species[b].num);
+  const all = [...Object.values(base), ...PICKER_FORMS].filter(id => SPRITES[DEX.species[id]?.sprite]).sort((a, b) => DEX.species[a].num - DEX.species[b].num);
   const st = { sel: 0, tab: 0, q: '', ate: false, list: all };
   const refilter = () => {
     const q = toId(st.q), hits = all.filter(id => (!st.tab || GEN_OF(DEX.species[id].num) === st.tab) && toId(DEX.species[id].name).includes(q));
@@ -434,7 +566,7 @@ function SpeciesPicker(edit, slot) {
     else if (e.key.length === 1 && /[a-z0-9.' :-]/i.test(e.key) && (e.key !== ' ' || st.q) && st.q.length < 20) { st.q += e.key; refilter(); st.ate = true; }
   };
   const cols = () => Math.max(4, Math.floor((VW - 80) / (84 * S())));
-  const rows = () => Math.max(1, Math.floor((VH - 230 * S()) / (84 * S())));
+  const rows = () => Math.max(1, Math.floor((VH - 150 * S() - 105) / (84 * S())));
   return {
     enter() { window.addEventListener('keydown', onKey); },
     exit() { window.removeEventListener('keydown', onKey); },
@@ -480,22 +612,43 @@ function SpeciesPicker(edit, slot) {
         const im = portrait(ids[i]); if (im) ctx.drawImage(im, x + 12 * s, y + 2 * s, sz - 30 * s, sz - 30 * s);
         text(sp.name.length > 11 ? sp.name.slice(0, 10) + '.' : sp.name, x + (sz - 6) / 2, y + sz - 17 * s, 10 * s, on ? '#111' : '#dde', 'center', null, 'Silkscreen');
       }
+      // scrollbar: click or drag the track, or use the wheel; moving it never changes which Pokemon is picked except to keep the highlight on screen
+      const trows = Math.ceil(ids.length / c), bw = Math.max(8, 10 * s), tx = 40 + c * sz + 6, th = r * sz - 6, mo = Math.max(0, trows - r);
+      const scrollTo = o => { st.off = clamp(o, 0, mo); const rw = clamp(Math.floor(st.sel / c), st.off, st.off + r - 1); st.sel = clamp(rw * c + st.sel % c, 0, Math.max(0, ids.length - 1)); };
+      ctx.fillStyle = '#ffffff18'; ctx.fillRect(tx, y0, bw, th);
+      if (mo > 0) {
+        const kh = Math.max(16 * s, th * r / trows), ky = y0 + (th - kh) * off / mo;
+        ctx.fillStyle = st.drag ? '#fff' : '#ffde3b'; ctx.fillRect(tx, ky, bw, kh);
+        const jump = () => scrollTo(Math.round((MOUSE.y - y0 - kh / 2) / (th - kh) * mo));
+        hot(tx - 8, y0, bw + 16, th, { click: () => { st.drag = true; jump(); }, wheel: d => scrollTo(off + d) });
+        if (st.drag) { if (MOUSE.down) jump(); else st.drag = false; }
+      }
       const sp = DEX.species[ids[st.sel]];
-      if (sp) text(`#${sp.num} ${sp.name}  ${sp.types.join('/')}  BST ${Object.values(sp.baseStats).reduce((a, b) => a + b)}`, VW / 2, VH - 58 * s, 18 * s, '#fff', 'center');
+      if (sp) {
+        // name and types on one line, base stats under it (the highest stat is gold)
+        const nm = `#${sp.num} ${sp.name.toUpperCase()}`, ns = Math.max(14, 22 * s), cy = VH - 92, ch = Math.max(16, 22 * s);
+        ctx.font = `${ns}px Bungee, "Arial Black", sans-serif`; const nw = ctx.measureText(nm).width;
+        ctx.font = `${ch * 0.62}px Bungee, "Arial Black", sans-serif`; const tw = sp.types.reduce((a, t) => a + ctx.measureText(t.toUpperCase()).width + ch * 0.9 + 5, 0);
+        let cx = VW / 2 - (nw + 14 + tw) / 2; text(nm, cx, cy, ns, '#fff', 'left'); cx += nw + 14; for (const t of sp.types) cx += hudChip(cx, cy - ch / 2, t.toUpperCase(), TYPE_COLOR[t], ch);
+        const bs = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'], top = Math.max(...bs.map(k => sp.baseStats[k])), fs = Math.max(11, 14 * s), gap = 22;
+        const parts = [...bs.map(k => [`${k.toUpperCase()} ${sp.baseStats[k]}`, sp.baseStats[k] === top ? '#ffde3b' : '#dde']), ['BST ' + bs.reduce((a, k) => a + sp.baseStats[k], 0), '#9ab']];
+        ctx.font = `${fs}px Bungee, "Arial Black", sans-serif`; const widths = parts.map(p => ctx.measureText(p[0]).width);
+        cx = VW / 2 - (widths.reduce((a, b) => a + b) + gap * (parts.length - 1)) / 2; parts.forEach((p, i) => { text(p[0], cx, VH - 62, fs, p[1], 'left', null); cx += widths[i] + gap; });
+      }
       else text('No Pokemon match', VW / 2, y0 + 60 * s, 20 * s, '#ccc', 'center');
       hint(INPUT.usingPad ? 'A pick   B back   LB/RB page   LT/RT generation' : 'Type to search   Tab generation   arrows or scroll browse   Enter pick   right-click back'); backButton(() => setScene(edit));
     },
   };
 }
 
-// Abilities/items the engine reads somewhere. Everything else shows "(no arena effect yet)".
+// Abilities/items the engine reads somewhere. Everything else shows "does nothing in PokeArena yet".
 const WORKING_ABILITIES = new Set(('aerilate refrigerate pixilate galvanize moldbreaker levitate waterabsorb voltabsorb dryskin stormdrain lightningrod flashfire sapsipper motordrive overcoat soundproof bulletproof ' +
   'scrappy superluck battlearmor shellarmor unaware hugepower purepower hustle guts solarpower blaze torrent overgrow swarm marvelscale furcoat technician ironfist strongjaw megalauncher toughclaws reckless sheerforce ' +
   'sandforce thickfat heatproof sniper adaptability filter solidrock tintedlens multiscale parentalbond magicguard waterveil waterbubble limber immunity insomnia vitalspirit sweetveil magmaarmor comatose leafguard ' +
   'earlybird synchronize owntempo oblivious clearbody whitesmoke fullmetalbody bigpecks hypercutter keeneye simple contrary defiant competitive cloudnine airlock imposter intimidate innerfocus drought drizzle sandstream ' +
   'snowwarning electricsurge grassysurge psychicsurge mistysurge download trace naturalcure regenerator shadowtag arenatrap magnetpull compoundeyes noguard pressure swiftswim chlorophyll sandrush slushrush skilllink ' +
   'serenegrace shielddust stench static flamebody poisonpoint effectspore cutecharm roughskin ironbarbs cursedbody poisontouch suctioncups rockhead sturdy angerpoint weakarmor justified steamengine steadfast ' +
-  'poisonheal sandveil snowcloak icebody raindish hydration shedskin speedboost magicbounce').split(' '));
+  'poisonheal sandveil snowcloak icebody raindish hydration shedskin speedboost magicbounce punkrock').split(' '));
 const ABILITY_WORKS = id => WORKING_ABILITIES.has(id);
 const WORKING_ITEMS = new Set(('leftovers blacksludge lifeorb choiceband choicespecs choicescarf focussash assaultvest rockyhelmet expertbelt muscleband wiseglasses charcoal mysticwater miracleseed magnet nevermeltice blackbelt ' +
   'poisonbarb softsand sharpbeak twistedspoon silverpowder hardstone spelltag dragonfang blackglasses metalcoat silkscarf fairyfeather sitrusberry lumberry heavydutyboots eviolite lightball thickclub leek luckypunch ' +
