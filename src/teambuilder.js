@@ -35,6 +35,8 @@ const ARCH_INFO = {
   sweep: ['Arena sweep', 'A front that crosses the whole arena. Dodge through it or stand in a gap.'],
   hazard: ['Hazard', 'Placed on the field and stays. Only hurts the other side.'],
   self: ['Self', 'Used on yourself: boosts, healing, protection or field effects.'],
+  gust: ['Gust', 'A cone of wind in front of you: small hits over time that shove the target back.'],
+  orange: ['Orange', 'Hop back out of danger and launch a fast projectile along your aim.'],
 };
 const archWord = m => (ARCH_INFO[archetype(m)] || [archetype(m)])[0];
 const moveCd = m => cooldownFor(m, { status: '' });
@@ -95,7 +97,7 @@ function pvStep(dt) {
   pvMuted(() => updateBattle(dt));
   B.cam.shake = Math.max(0, B.cam.shake - dt * 30);
   const e = B.sides[0].ent;
-  const busy = e.act || e.dash || e.hidden > 0 || e.laser || B.proj.length || B.beams.length || B.marks.length || B.waves.length || B.sweeps.length || B.timers.length || B.areas.length;
+  const busy = e.act || e.dash || e.hidden > 0 || e.laser || B.proj.length || B.gusts.length || B.beams.length || B.marks.length || B.waves.length || B.sweeps.length || B.timers.length || B.areas.length;
   if (PV.used && !busy) PV.done += dt;
   return PV.done > 1.1 || PV.t > 8;
 }

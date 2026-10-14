@@ -65,7 +65,7 @@ function animFrame(a, t, loop) {
   for (let i = 0; i < a.durations.length; i++) { tick -= a.durations[i]; if (tick < 0) return i; }
   return a.durations.length - 1;
 }
-function bodyRadius(key) { const w = animOf(key, 'Walk'); return (w ? clamp(w.fw * 0.3, 8, 22) : 12) * SS; }
+function bodyRadius(key) { const w = animOf(key, 'Walk'); if (spriteOf(key)?.body) return spriteOf(key).body * SS; return (w ? clamp(w.fw * 0.3, 8, 22) : 12) * SS; }
 
 // ---------- mons ----------
 function natureMod(nat, stat) { const n = DEX.natures[nat]; if (!n) return 1; return n.plus === stat && n.minus !== stat ? 1.1 : n.minus === stat && n.plus !== stat ? 0.9 : 1; }
@@ -124,6 +124,7 @@ const projSpeed = move => clamp((move.fx?.speed || 10) * 50, 400, 860);
 
 // ---------- cooldowns ----------
 function cooldownFor(move, m, foe) {
+  if (behaviour(move).cdExact) return behaviour(move).cdExact; // custom moves (Flowery): owner-set seconds, skips the PP table and CD_MULT
   const pp = move.pp || 10;
   let cd = pp <= 5 ? 10 : pp <= 8 ? 8 : pp <= 10 ? 6.5 : pp <= 15 ? 5 : pp <= 20 ? 4 : pp <= 25 ? 3.5 : pp <= 30 ? 3 : 2.5;
   if (move.category === 'Status') cd = Math.max(cd, TUNE.STATUS_MOVE_MIN_CD);
@@ -166,7 +167,7 @@ function startBattle(cfg) {
     arena: ar, time: 0, hitstop: 0, over: false, winner: -1, paused: false, endT: 0, choose: null,
     field: { weather: cfg.weather || '', weatherT: cfg.weather ? 1e9 : 0, terrain: '', terrainT: 0 },
     sides: [makeSide(0, cfg.player), makeSide(1, cfg.cpu)],
-    proj: [], areas: [], beams: [], marks: [], hazards: [], traps: [], waves: [], sweeps: [], soakT: 0, timers: [], fx: [], decals: [], floats: [], callouts: [],
+    proj: [], gusts: [], areas: [], beams: [], marks: [], hazards: [], traps: [], waves: [], sweeps: [], soakT: 0, timers: [], fx: [], decals: [], floats: [], callouts: [],
     rocks: ar.obstacles.filter(o => o.kind === 'rock').map(o => ({ ...o, hp: 3 })),
     puddles: ar.obstacles.filter(o => o.kind === 'puddle').map(o => ({ ...o })),
     grass: ar.obstacles.filter(o => o.kind === 'grass').map(o => ({ ...o })),
@@ -735,6 +736,7 @@ function fireMove(side) {
   const fx = move.fx || {};
   if (!AUDIO.move(move.id, 0.8, e.x)) { if (fx.sound) AUDIO.sfx(fx.sound, 0.8, e.x); else uiBlip(300 + Math.random() * 100, 0.06, 'square'); }
   const arch = archetype(move);
+  if (behaviour(move).voice) { const v = behaviour(move).voice; AUDIO.play(Array.isArray(v) ? pick(v) : v, 0.9, 1, e.x); }
   // attacks shout: most damaging moves play the cry, pitched and sped by how the move is used (quick physical = short and high, beams and waves = long and low)
   if (move.category !== 'Status' && B.time - (side.cryT ?? -9) > 1.4 && Math.random() < 0.7) {
     side.cryT = B.time;
@@ -766,6 +768,20 @@ function fireMove(side) {
           B.proj.push({ side: side.idx, move, x: e.x + Math.cos(a2) * 14, y: e.y - 10 * SS + Math.sin(a2) * 8, vx: Math.cos(a2) * spd, vy: Math.sin(a2) * spd, r: 14 * sc * (bh.r || 1) * (1 + TUNE.CHARGE_SIZE * pow), t: 0, life: rangePx(move, 120) / spd * (bh.spd || 1), ang: a2, parental: parental && i === 1, vol, home: bh.home || 0, pow });
         }
       });
+      break;
+    }
+    case 'gust': {
+      // Prism Blow: a cone of petals that follows the user, ticks small damage and shoves the target along the wind
+      B.gusts.push({ side: side.idx, move, mon: m, ang, t: 0, dur: bh.dur, len: bh.len, half: bh.half, ticks: 0, tickT: 0, fxT: 0, mul: 1 / bh.ticks, push: bh.push });
+      shake(2);
+      break;
+    }
+    case 'orange': {
+      // Ja-orange!: hop back out of the way (brief i-frames), then Orange flies out doing his own Jarona
+      e.iframes = Math.max(e.iframes, 0.4); e.kx -= ax * 560; e.ky -= ay * 560; e.hopT = 0.32;
+      spawnFx('Puff_White', e.x, e.y - 4 * SS, { scale: SS });
+      const spd = bh.spd || 800;
+      B.proj.push({ side: side.idx, move, x: e.x + ax * 22, y: e.y - 10 * SS + ay * 8, vx: ax * spd, vy: ay * spd, r: 20 * Math.max(sc, 1), t: 0, life: 1.6, ang, vol: { hit: false }, home: 0, pow: 0, orange: true });
       break;
     }
     case 'sweep': startSweep(side, move, ax, ay, sc); B.cam.punch = Math.max(B.cam.punch, 0.15); break;
@@ -813,7 +829,7 @@ function fireMove(side) {
       if (!side.cpu && !side.remote && INPUT.usingPad && !INPUT.aimActive && Math.hypot(INPUT.mx, INPUT.my) > 0.3) { const l = Math.hypot(INPUT.mx, INPUT.my); dx = INPUT.mx / l; dy = INPUT.my / l; e.aimX = dx; e.aimY = dy; e.face = dirFromVec(dx, dy); }
       const k = speedFactor(m, side), prio = move.priority > 0, lunge = arch === 'lunge';
       const roll = !!bh.roll;
-      e.dash = { move, dx, dy, spd: (prio || lunge ? 820 : 560) * k * (bh.spd || 1), left: (lunge ? 150 : prio ? 230 : 190) * k * (bh.dist || 1), hit: false, parental, roll, t: roll ? 1.6 : 0, hitCd: 0, hits: 0, reach: (lunge ? 30 + TUNE.MELEE.LUNGE_REACH : 4 + TUNE.MELEE.DASH_REACH + (bh.reach || 0)) * (isChargeMove(move) ? TUNE.MELEE.CHARGE_SIZE : 1), lunge, mul: bh.mul, fast: !!bh.spd };
+      e.dash = { move, dx, dy, spd: (prio || lunge ? 820 : 560) * k * (bh.spd || 1), left: (lunge ? 150 : prio ? 230 : 190) * k * (bh.dist || 1), hit: false, parental, roll, noHome: !!bh.noHome, wall: !!bh.wall, afterimage: !!bh.afterimage, t: roll ? 1.6 : 0, hitCd: 0, hits: 0, reach: (lunge ? 30 + TUNE.MELEE.LUNGE_REACH : 4 + TUNE.MELEE.DASH_REACH + (bh.reach || 0)) * (isChargeMove(move) ? TUNE.MELEE.CHARGE_SIZE : 1), lunge, mul: bh.mul, fast: !!bh.spd };
       if (roll) { e.dash.left = 1e9; if (spriteOf(spriteKey(m))?.anims.Rotate) { e.anim = 'Rotate'; e.animT = 0; } }
       if (prio) e.iframes = Math.max(e.iframes, e.dash.left / e.dash.spd + 0.05);
       burst(e.x, e.y, '#ddd', 6, 80, 0.25, 1);
@@ -848,8 +864,9 @@ function fireMove(side) {
     case 'leap': {
       if (move.id !== 'dig') {
         // Fly, Bounce, Sky Drop, Phantom Force: squash-and-stretch takeoff, then a homing reticle (same tell as Psychic) and a fast, wide landing
-        e.hidden = 0.62; e.flying = true; e.flyT0 = B.time; e.iframes = Math.max(e.iframes, 0.65);
-        B.marks.push({ side: side.idx, move, kind: 'strike', sx: e.x, sy: e.y - 12 * SS, x: e.x, y: e.y, r: 76 * Math.max(sc, 0.9), t: 0, delay: 0.6, chase: 340, land: true, mon: m });
+        const F = bh.fly || {};
+        e.hidden = F.hide || 0.62; e.flying = true; e.flySpd = F.spd || 1.5; e.flyT0 = B.time; e.iframes = Math.max(e.iframes, (F.hide || 0.62) + 0.03);
+        B.marks.push({ side: side.idx, move, kind: 'strike', sx: e.x, sy: e.y - 12 * SS, x: e.x, y: e.y, r: 76 * Math.max(sc, 0.9), t: 0, delay: (F.hide || 0.62) - 0.02, chase: F.hide ? 900 : 340, land: true, mon: m, fly: F.hide ? F : null });
         ring(e.x, e.y, 22, '#fff', 0.3, 2);
         break;
       }
@@ -950,6 +967,7 @@ function hitFoe(side, move, at, opts = {}) {
   if (move.id === 'falseswipe' || move.id === 'holdback') dmg = Math.min(dmg, fm.hp - 1);
   fm.hp = Math.max(0, fm.hp - dmg);
   side.dealt += dmg; side.hits++;
+  if (fm.sp.id === 'flowery' && B.time - (foe.huhT ?? -9) > 3) { foe.huhT = B.time; AUDIO.play(window.FLOWERY_HUH, 0.9, 1, fe.x); }
   // feedback
   const frac = dmg / fm.maxHp;
   fe.flash = 0.12; fe.hurtT = 0.25;
@@ -1137,7 +1155,7 @@ function updateBattle(dt) {
   for (const s of B.sides) { if (s.script) s.script(s, dt); else if (s.cpu) cpuThink(s, dt); else playerIntent(s, dt); } // script: team builder move preview
   for (const s of B.sides) updateSide(s, dt);
   separate();
-  updateProjectiles(dt); updateBeams(dt); updateAreas(dt); updateMarks(dt); updateHazards(dt); updateTraps(dt); updateWaves(dt); updateSweeps(dt);
+  updateProjectiles(dt); updateGusts(dt); updateBeams(dt); updateAreas(dt); updateMarks(dt); updateHazards(dt); updateTraps(dt); updateWaves(dt); updateSweeps(dt);
   for (const s of B.sides) if (s.koT > 0 && (s.koT -= dt) <= 0) afterKO(s);
   B.rocks = B.rocks.filter(r => r.hp > 0);
 }
@@ -1210,6 +1228,7 @@ function updateSide(side, dt) {
   for (const k of ['confused', 'taunt', 'endure', 'recharge', 'quickClaw']) if (m.vol[k] > 0) m.vol[k] -= dt;
   if (e.hidden > 0) e.hidden -= dt;
   e.z = grounded(m) ? 0 : (7 + Math.sin(B.time * 3 + side.idx) * 2) * SS;
+  if (e.hopT > 0) { e.z += Math.sin((1 - e.hopT / 0.32) * Math.PI) * 10 * SS; e.hopT -= dt; }
   if (e.dodge) e.z += Math.sin((1 - e.dodge.t / (e.dodge.T || TUNE.DODGE_TIME)) * Math.PI) * 14 * SS;
   if (m.fainted) { e.vx = e.vy = 0; return; }
 
@@ -1260,7 +1279,7 @@ function updateSide(side, dt) {
       d.hitCd -= dt; if ((d.t -= dt) <= 0) d.left = 0;
     }
     const fe = foe.ent;
-    if (!d.roll && !d.hit) { // light homing: steers toward a foe who is in front, slowly enough that a well-timed sidestep or roll still beats it
+    if (!d.roll && !d.hit && !d.noHome) { // light homing: steers toward a foe who is in front, slowly enough that a well-timed sidestep or roll still beats it
       const fdx = fe.x - e.x, fdy = fe.y - e.y, cur = Math.atan2(d.dy, d.dx), df = angDiff(Math.atan2(fdy, fdx), cur);
       if (Math.hypot(fdx, fdy) < TUNE.MELEE.HOME_RANGE && Math.abs(df) < TUNE.MELEE.HOME_CONE) { const na = cur + clamp(df, -TUNE.MELEE.HOME * dt, TUNE.MELEE.HOME * dt); d.dx = Math.cos(na); d.dy = Math.sin(na); }
     }
@@ -1290,7 +1309,7 @@ function updateSide(side, dt) {
     if (e.lock > 0) sp *= 0.3;
     if (grounded(m) && B.hazards.some(h => h.kind === 'stickyweb' && h.owner !== side.idx && Math.hypot(h.x - e.x, h.y - e.y) < h.r) && !item(m, 'heavydutyboots')) sp *= 0.5;
     for (const t of B.traps) if (t.slow && t.side !== side.idx && inTrap(t, e)) sp *= t.slow;
-    if (e.hidden > 0) sp *= e.flying ? 1.5 : 1.25; // a flier steers in the sky and lands where it is
+    if (e.hidden > 0) sp *= e.flying ? (e.flySpd || 1.5) : 1.25; // a flier steers in the sky and lands where it is
     vx = mx * sp; vy = my * sp;
   }
   e.vx = vx; e.vy = vy;
@@ -1299,7 +1318,9 @@ function updateSide(side, dt) {
   if (e.stun > 0) e.stun -= dt;
   // collide with arena edges and rocks
   const r = bodyRadius(spriteKey(m));
+  const px0 = e.x, py0 = e.y;
   [e.x, e.y] = clampToArena(e.x, e.y, r * 0.6);
+  if (e.dash?.wall && (Math.abs(px0 - e.x) > 0.5 || Math.abs(py0 - e.y) > 0.5)) e.dash.left = 0; // Jarona stops at walls
   if (e.hidden <= 0 || m.vol.lastMove !== 'dig') for (const rk of B.rocks) {
     const dx = e.x - rk.x, dy = e.y - rk.y, d = Math.hypot(dx, dy), min = rk.r + r * 0.7;
     if (d < min && d > 0.01) { e.x = rk.x + dx / d * min; e.y = rk.y + dy / d * min; if (e.dash) { e.dash.left = 0; hitRock(rk, e.dash.move); } }
@@ -1313,7 +1334,7 @@ function updateSide(side, dt) {
   let want = 'Idle';
   if (m.status === 'slp') want = 'Sleep';
   else if (e.act) want = e.anim;
-  else if (e.dodge) want = 'Idle'; // the sheets' Hop frames move the sprite around; the hop arc is drawn from e.z instead
+  else if (e.dodge) want = spriteOf(spriteKey(m))?.anims.Dodge ? 'Dodge' : 'Idle'; // the sheets' Hop frames move the sprite around; the hop arc is drawn from e.z instead
   else if (e.hurtT > 0) want = 'Hurt';
   else if (moving) want = 'Walk';
   else if (e.animOnce && e.animT < animLen(animOf(spriteKey(m), e.anim))) want = e.anim;
@@ -1517,9 +1538,36 @@ function updateAreas(dt) {
   }
   B.areas = B.areas.filter(a => a.t < a.dur + 0.15);
 }
+// Prism Blow (arch 'gust'): the cone follows the user; every tick the foe inside it takes a share of the damage, and the wind shoves it away continuously.
+function updateGusts(dt) {
+  for (const g of B.gusts) {
+    g.t += dt;
+    const side = B.sides[g.side], foe = foeOf(side), fe = foe.ent, e = side.ent;
+    if (g.t >= g.dur || activeMon(side) !== g.mon || g.mon.fainted || g.mon.status === 'slp' || g.mon.status === 'frz') { g.dead = true; continue; }
+    const c = Math.cos(g.ang), s = Math.sin(g.ang), ox = e.x, oy = e.y;
+    if ((g.fxT -= dt) <= 0) {
+      g.fxT = 0.035;
+      for (let i = 0; i < 2; i++) {
+        const d = rand(24, g.len), a = g.ang + rand(-g.half, g.half) * Math.min(1, d / 120);
+        spawnFx(Math.random() < 0.5 ? 'Petal_Dance_Flower_Pink' : 'Petal_Dance_Flower_Yellow', ox + Math.cos(a) * d, oy - 10 * SS + Math.sin(a) * d * 0.8, { scale: SS, ft: 3 });
+      }
+      if (Math.random() < 0.3) spawnFx('Gust_Wind', ox + c * rand(40, g.len), oy - 10 * SS + s * rand(40, g.len), { scale: 1, ft: 3 });
+    }
+    const dx = fe.x - ox, dy = fe.y - oy, d = Math.hypot(dx, dy), hr = hurtRadius(foe);
+    const inCone = d < g.len + hr && (d < hr + 20 || Math.abs(angDiff(Math.atan2(dy, dx), g.ang)) < g.half + Math.atan2(hr, Math.max(d, 1)));
+    if (!inCone || foe.ent.hidden > 0) continue;
+    if (fe.protect <= 0 && canHit(foe)) { fe.kx += c * g.push * 7 * dt; fe.ky += s * g.push * 7 * dt; } // steady shove (kx decays ~7x/s)
+    if ((g.tickT -= dt) <= 0) {
+      g.tickT = g.dur / 12;
+      if (canHit(foe)) { g.ticks++; hitFoe(side, g.move, { x: fe.x, y: fe.y, ox, oy }, { mul: g.mul, tick: g.ticks, multi: g.ticks > 1, kb: 0 }); }
+    }
+  }
+  B.gusts = B.gusts.filter(g => !g.dead);
+}
 function updateMarks(dt) {
   for (const k of B.marks) {
     k.t += dt;
+    if (k.fly && (k.petalT = (k.petalT || 0) - dt) <= 0) { k.petalT = 0.05; spawnFx(Math.random() < 0.5 ? 'Petal_Dance_Flower_Pink' : 'Petal_Dance_Flower_Yellow', k.x + rand(-40, 40), k.y + rand(-30, 20), { scale: SS, ft: 3 }); }
     if (k.land) {
       // Fly's reticle only looks like the homing tell: it glides to wherever the flier is, and the flier lands where the player steers it
       const ue = B.sides[k.side].ent, dx = ue.x - k.x, dy = ue.y - k.y, d = Math.hypot(dx, dy), step = Math.max(k.chase, d * 8) * dt;
@@ -1534,7 +1582,15 @@ function updateMarks(dt) {
     if (k.kind === 'hazard') placeHazard(side, k.move, k.x, k.y);
     else if (k.kind === 'trap') placeTrap(side, k.move, k.x, k.y, k.r);
     else { explodeAt(side, k.move, k.land ? side.ent.x : k.x, k.land ? side.ent.y : k.y, k.r, k.mul ? { mul: k.mul, multi: k.multi } : undefined); if (k.move.type === 'Electric') { shake(4); spawnFx('Discharge_Hit', k.x, k.y - 10 * SS); } }
-    if (k.land && activeMon(side) === k.mon) { const e = side.ent; e.hidden = 0; e.flying = false; e.landT = B.time; shake(5); burst(k.x, k.y, '#fff', 16, 160, 0.4, 3); }
+    if (k.land && activeMon(side) === k.mon) {
+      const e = side.ent; e.hidden = 0; e.flying = false; e.landT = B.time; shake(5); burst(k.x, k.y, '#fff', 16, 160, 0.4, 3);
+      if (k.fly) { // Mysterious Wind: gust ring and a hard shove on landing
+        const fe = foeOf(side).ent, dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy) || 1;
+        for (let i = 0; i < 3; i++) after(i * 0.07, () => ring(e.x, e.y - 8 * SS, 40 + i * 30, '#dff'));
+        spawnFx('Gust_Wind', e.x, e.y - 10 * SS, { scale: SS * 2 }); sparks(e.x, e.y - 10 * SS, 0, Math.PI, 18, '#bff', 360, 0.6);
+        if (d < k.r + hurtRadius(foeOf(side)) + 20 && fe.protect <= 0) { fe.kx += dx / d * k.fly.push; fe.ky += dy / d * k.fly.push; }
+      }
+    }
   }
   B.marks = B.marks.filter(k => !k.dead);
 }
@@ -1745,6 +1801,7 @@ function effRange(move) {
   if (a === 'laser') return LASERS[move.id].len * 0.85;
   if (a === 'strike') return rangePx(move, 120) * 1.1;
   const bh = behaviour(move);
+  if (bh.range) return bh.range;
   if (a === 'trap') return (bh.range || 240) * 0.85;
   if (a === 'wave') return (bh.len || 260) * 0.8;
   if (a === 'sweep') return 9999;
@@ -1771,6 +1828,7 @@ function cpuThink(side, dt) {
   I.use = -1; I.dodge = false; I.mega = false;
   if (m.fainted) return;
   const dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy) || 1;
+  if (e.hidden > 0 && e.flying) { I.mx = dx / d; I.my = dy / d; return; } // a CPU in the sky flies straight at the foe
   // CPU charges shots from range, where the telegraph matters less
   const ca = e.act; I.hold = -1;
   if (ca?.canCharge) { if (ca.cpuHold === undefined) ca.cpuHold = d > 260 && Math.random() < 0.3 + T.iq * 0.5 ? rand(0.3, TUNE.CHARGE_MAX) : 0; if (ca.t - ca.wind < ca.cpuHold) I.hold = ca.slot; }

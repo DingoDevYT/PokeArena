@@ -358,6 +358,7 @@ function assetSrcs(cfg) {
   for (const set of [...cfg.player.team, ...cfg.cpu.team]) {
     const sp = DEX.species[toId(set.species)]; if (!sp) continue;
     const keys = [sp.sprite, ...(sp.megas || []).map(id => DEX.species[id]?.sprite)];
+    if (sp.id === 'flowery') srcs.push(window.ORANGE_SPRITE.file); // Ja-orange!'s projectile sheet
     for (const k of keys) { const s = spriteOf(k); if (s) { srcs.push(s.portrait, ...Object.values(s.anims).map(a => a.file), ...Object.values(window.PORTRAITS?.[k] || {})); } }
     for (const id of set.moves || []) { const mv = DEX.moves[toId(id)]; if (mv?.fx) for (const n of [...(mv.fx.anims || []), mv.fx.hitAnim]) if (n && VFX.particles[n]) srcs.push(VFX.particles[n].file); if (mv?.fx?.beam && VFX.beams[mv.fx.beam]) srcs.push(...['head', 'body', 'tail'].map(k => VFX.beams[mv.fx.beam][k])); }
   }
@@ -547,11 +548,12 @@ const PICKER_FORMS = ['toxtricitylowkey'];
 // Grid of every species + battle form. Generation tabs (LT/RT, Tab, click) and type-to-search by name (keyboard).
 function SpeciesPicker(edit, slot) {
   // one entry per real dex number (the base species has the shortest id; forms append a suffix), plus PICKER_FORMS, and only species that have sprites
-  const base = {}; for (const id in DEX.species) { const n = DEX.species[id].num; if (n > 0 && (!base[n] || id.length < base[n].length)) base[n] = id; }
+  const base = {}; for (const id in DEX.species) { const n = DEX.species[id].num; if (n > 0 && id !== 'flowery' && (!base[n] || id.length < base[n].length)) base[n] = id; }
   const all = [...Object.values(base), ...PICKER_FORMS].filter(id => SPRITES[DEX.species[id]?.sprite]).sort((a, b) => DEX.species[a].num - DEX.species[b].num);
   const st = { sel: 0, tab: 0, q: '', ate: false, list: all };
   const refilter = () => {
     const q = toId(st.q), hits = all.filter(id => (!st.tab || GEN_OF(DEX.species[id].num) === st.tab) && toId(DEX.species[id].name).includes(q));
+    if (q === 'jarona') { st.list = ['flowery']; st.sel = 0; return; } // hidden unlock: the exact search text "jarona" shows him
     st.list = q ? [...hits.filter(id => toId(DEX.species[id].name).startsWith(q)), ...hits.filter(id => !toId(DEX.species[id].name).startsWith(q))] : hits;
     st.sel = 0;
   };

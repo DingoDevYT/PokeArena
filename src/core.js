@@ -96,7 +96,7 @@ const AUDIO = {
   // Game SFX from data/sfx.js: move(id) for attacks, gen('hit' | 'faint' | 'statUp' ...) for battle events.
   move(id, vol, x) { const s = window.MOVE_SFX && MOVE_SFX.moves[id]; if (s) this.play(s, vol, 1, x); return !!s; },
   gen(k, vol, x) { const s = window.MOVE_SFX && MOVE_SFX.generic[k]; if (s) this.play(s, vol, 1, x); return !!s; },
-  cry(speciesId, vol = 0.8, x, rate = 1) { this.play('assets/cry/' + speciesId + '.mp3', vol, rate, x); },
+  cry(speciesId, vol = 0.8, x, rate = 1) { if (speciesId === 'flowery') return; this.play('assets/cry/' + speciesId + '.mp3', vol, rate, x); },
   playMusic(src) {
     if (this.musicSrc === src) { if (this.music && this.music.paused) this.music.play().catch(() => {}); return; }
     if (this.music) this.music.pause();

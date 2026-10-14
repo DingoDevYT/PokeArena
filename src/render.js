@@ -503,7 +503,22 @@ function drawWorld(dt) {
   }
   drawWeather(dt);
 }
+// Ja-orange!: Orange's two flying frames (fist leads, trail behind), flipped to the travel direction, with a short orange afterimage trail
+function drawOrange(p) {
+  const o = window.ORANGE_SPRITE, im = img(o.file); if (!im) return;
+  const sc = SS, right = p.vx > 0, fi = Math.floor(p.t * 14) % o.frames;
+  const draw = (x, y, a, tint) => {
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); if (right) ctx.scale(-1, 1);
+    ctx.globalAlpha = a; ctx.drawImage(im, fi * o.fw, 0, o.fw, o.fh, -o.fw * sc / 2, -o.fh * sc / 2, o.fw * sc, o.fh * sc);
+    if (tint) { tintCv.width = o.fw; tintCv.height = o.fh; tintCtx.globalCompositeOperation = 'source-over'; tintCtx.clearRect(0, 0, o.fw, o.fh); tintCtx.drawImage(im, fi * o.fw, 0, o.fw, o.fh, 0, 0, o.fw, o.fh); tintCtx.globalCompositeOperation = 'source-atop'; tintCtx.fillStyle = tint; tintCtx.fillRect(0, 0, o.fw, o.fh); ctx.drawImage(tintCv, -o.fw * sc / 2, -o.fh * sc / 2, o.fw * sc, o.fh * sc); }
+    ctx.restore(); ctx.globalAlpha = 1;
+  };
+  const l = Math.hypot(p.vx, p.vy) || 1;
+  for (let i = 4; i >= 1; i--) draw(p.x - p.vx / l * i * 22, p.y - p.vy / l * i * 22, 0.5 - i * 0.1, 'rgba(255,150,40,0.7)');
+  draw(p.x, p.y, 1, null);
+}
 function drawProjectile(p) {
+  if (p.orange) return drawOrange(p);
   const fx = p.move.fx || {}, name = fx.anims?.[0] || fx.hitAnim || (p.move.type === 'Electric' ? 'Spark' : '');
   // whole-number scales only (2x or 3x) so projectile pixels stay square
   const k = p.r >= 22 ? 2 : p.r >= 11 ? 1.5 : 1;
@@ -537,10 +552,10 @@ function drawSideMon(s) {
   const grow = e.enterT > 0 ? 1 - e.enterT / 0.35 : 1;
   const alpha = blink ? 0.45 : insideGrass(e) ? 0.6 : 1;
   // dodge afterimage: a fading trail of the sprite at its recent positions
-  const tr = e.trail || (e.trail = []);
-  if (e.dodge && (!tr.length || Math.hypot(tr[tr.length - 1].x - e.x, tr[tr.length - 1].y - e.y) > 22)) tr.push({ x: e.x, y: e.y, z: e.z, anim: e.anim, animT: e.animT, face: e.face, t: B.time });
-  while (tr.length && B.time - tr[0].t > 0.22) tr.shift();
-  for (const g of tr) drawMonSprite(key, g.anim, g.animT, g.face, g.x, g.y, { z: g.z, alpha: 0.22 * (1 - (B.time - g.t) / 0.22), tint: 'rgba(190,225,255,0.45)', noOutline: true });
+  const tr = e.trail || (e.trail = []), jar = !!e.dash?.afterimage; // Jarona: long blue afterimages of himself
+  if ((e.dodge || jar) && (!tr.length || Math.hypot(tr[tr.length - 1].x - e.x, tr[tr.length - 1].y - e.y) > (jar ? 26 : 22))) tr.push({ x: e.x, y: e.y, z: e.z, anim: e.anim, animT: e.animT, face: e.face, t: B.time, life: jar ? 0.55 : 0.22, blue: jar });
+  while (tr.length && B.time - tr[0].t > tr[0].life) tr.shift();
+  for (const g of tr) drawMonSprite(key, g.anim, g.animT, g.face, g.x, g.y, { z: g.z, alpha: (g.blue ? 0.7 : 0.22) * (1 - (B.time - g.t) / g.life), tint: g.blue ? 'rgba(40,120,255,0.8)' : 'rgba(190,225,255,0.45)', noOutline: true });
   drawMonSprite(key, e.anim, e.animT, e.face, e.x, e.y, { z: e.z, stretch: e.dodge ? (a => [1 - 0.12 * a, 1 + 0.2 * a])(Math.sin((1 - e.dodge.t / (e.dodge.T || TUNE.DODGE_TIME)) * Math.PI)) : undefined, tint, alpha, loop: !e.animOnce, scale: SS * (grow < 1 ? Math.max(0.25, Math.round(grow * 4) / 4) : 1), outline: outlineTell(s, e, m) });
   const top = e.y - 30 * SS - e.z;
   if (e.protect > 0) ell(e.x, e.y - 14 * SS - e.z, 22 * SS, 22 * SS, 'rgba(120,200,255,0.25)', '#bfe8ff', 2);

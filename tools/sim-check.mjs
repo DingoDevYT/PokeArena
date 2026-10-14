@@ -13,9 +13,9 @@ const ctx = {
   MOUSE: {}, KEYS: {}, screenToWorld: () => ({ x: 0, y: 0 }), TYPE_COLOR: new Proxy({}, { get: () => '#fff' }),
 };
 vm.createContext(ctx);
-for (const f of ['data/dex.js', 'data/move-behaviour.js', 'data/vfx.js', 'data/sprites.js', 'data/sprites-custom.js', 'data/world.js']) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx);
+for (const f of ['data/dex.js', 'data/move-behaviour.js', 'data/vfx.js', 'data/sprites.js', 'data/sprites-custom.js', 'data/custom-species.js', 'data/world.js']) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx);
 for (const k of ['DEX', 'VFX', 'SPRITES', 'ARENAS', 'TRAINERS', 'MOVE_BEHAVIOUR']) ctx[k] = ctx.window[k];
-vm.runInContext(fs.readFileSync('src/battle.js', 'utf8') + '\n;this.startBattle=startBattle;this.updateBattle=updateBattle;this.getB=()=>B;this.confirmChoose=confirmChoose;this.LASERS=LASERS;this.TUNE=TUNE;', ctx);
+vm.runInContext(fs.readFileSync('src/battle.js', 'utf8') + '\n;this.startBattle=startBattle;this.updateBattle=updateBattle;this.getB=()=>B;this.confirmChoose=confirmChoose;this.LASERS=LASERS;this.TUNE=TUNE;this.fireMove=fireMove;this.activeMon=activeMon;', ctx);
 
 // bench: how often does each melee-style move actually land on a walking (and a dodging) target? usage: node tools/sim-check.mjs bench [walk|kite|dodge|cpu] [filterArch]
 if (process.argv[2] === 'bench') {
@@ -77,7 +77,10 @@ function randomTeam() {
     return { species: sp.id, level: 30 + Math.floor(Math.random() * 70), moves, ability: abil[Math.floor(Math.random() * abil.length)], item: items[Math.floor(Math.random() * items.length)], nature: 'Hardy' };
   });
 }
-const T = fuzz ? Array.from({ length: N }, (_, i) => ({ name: 'Fuzz' + i, team: randomTeam() })) : ctx.TRAINERS;
+// 'flowery' mode: every trainer's lead is Flowery with his four moves, and fired moves are counted so each one is proven to run
+const flo = process.argv[4] === 'flowery', fired = {};
+if (flo) { const of = ctx.fireMove; ctx.fireMove = side => { const id = ctx.activeMon(side).moves[side.ent.act.slot]?.id; if (side.team[side.cur].sp.id === 'flowery') fired[id] = (fired[id] || 0) + 1; return of(side); }; }
+const T = flo ? ctx.TRAINERS.map(t => ({ name: t.name, team: [{ species: 'flowery', level: 50, moves: D.species.flowery.learnset, ability: 'Levitate', item: '', nature: 'Hardy' }, ...t.team.slice(1)] })) : fuzz ? Array.from({ length: N }, (_, i) => ({ name: 'Fuzz' + i, team: randomTeam() })) : ctx.TRAINERS;
 let kos = 0, time = 0, timeouts = 0, errors = 0;
 for (let i = 0; i < N; i++) {
   const a = T[i % T.length], b = T[(i * 7 + 3) % T.length];
@@ -94,4 +97,5 @@ for (let i = 0; i < N; i++) {
 }
 console.log(`\n${N} battles, ${errors} errors, ${timeouts} timeouts, avg ${(time / Math.max(1, kos)).toFixed(1)} s per KO (target 45-60 for players; CPU-vs-CPU runs faster/slower than humans)`);
 if (fuzz) console.log('distinct moves exercised:', used.size);
+if (flo) { console.log('Flowery moves fired:', JSON.stringify(fired)); if (D.species.flowery.learnset.some(m => !fired[m])) { console.log('a Flowery move never fired'); process.exit(1); } }
 if (errors) process.exit(1);

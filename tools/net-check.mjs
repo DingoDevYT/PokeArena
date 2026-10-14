@@ -15,7 +15,7 @@ const mk = () => {
     TYPE_COLOR: new Proxy({}, { get: () => '#fff' }),
   };
   vm.createContext(ctx);
-  for (const f of ['data/dex.js', 'data/move-behaviour.js', 'data/vfx.js', 'data/sprites.js', 'data/sprites-custom.js', 'data/world.js']) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx);
+  for (const f of ['data/dex.js', 'data/move-behaviour.js', 'data/vfx.js', 'data/sprites.js', 'data/sprites-custom.js', 'data/custom-species.js', 'data/world.js']) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx);
   for (const k of ['DEX', 'VFX', 'SPRITES', 'ARENAS', 'TRAINERS', 'MOVE_BEHAVIOUR']) ctx[k] = ctx.window[k];
   vm.runInContext(fs.readFileSync('src/battle.js', 'utf8') + '\n' + fs.readFileSync('src/netsync.js', 'utf8') + '\n;this.X={startBattle,updateBattle,updateFxOnly,getB:()=>B,confirmChoose,NETSYNC,playerIntent};', ctx);
   return ctx;

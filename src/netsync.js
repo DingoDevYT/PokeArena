@@ -122,7 +122,7 @@ const NETSYNC = (() => {
     let sp = moveSpeed(m, side);
     if (e.act && !e.act.fired) sp *= e.act.charging ? 0.2 : 0.4; else if (e.laser) sp *= e.laser.laser.mv; else if (e.act) sp *= 0.6;
     if (e.beamSlow > 0) sp *= 0.6; if (e.lock > 0) sp *= 0.3;
-    if (e.hidden > 0) sp *= e.flying ? 1.5 : 1.25;
+    if (e.hidden > 0) sp *= e.flying ? (e.flySpd || 1.5) : 1.25;
     return { x: I.mx * sp, y: I.my * sp };
   }
   // between snapshots: keep time, animation, cooldowns, movement and projectiles going so it looks smooth
