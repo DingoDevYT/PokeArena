@@ -4,8 +4,8 @@
 // for snapshots and analog input, so one lost packet never holds up the newer ones behind it.
 const ONLINE = {
   PEER: 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', MQTT: 'https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js',
-  BROKER: 'wss://broker.emqx.io:8084/mqtt', TOPIC: 'pokearena/v1/lobby/', CHARS: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', VERSION: 2,
-  SNAP_DT: 0.04, TEAMS_DT: 0.5, MAX_MSG: 15000, // PeerJS JSON channels refuse messages of 16300 bytes or more
+  BROKER: 'wss://broker.emqx.io:8084/mqtt', TOPIC: 'pokearena/v1/lobby/', CHARS: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', VERSION: 3, // 3: diffed snapshots, object messages (see netsync.js)
+  MAX_MSG: 15000, // PeerJS JSON channels refuse messages of 16300 bytes or more; only reliable-channel messages can hit this, snapshots are built to fit
 };
 const libs = {};
 const loadLib = (url, name) => libs[url] ||= new Promise((ok, no) => {
@@ -29,8 +29,12 @@ function rawSend(conn, m) {
   } catch { return false; }
 }
 NETSYNC.send = m => rawSend(NET.conn, m);
-NETSYNC.sendFast = m => (NET.fast && NET.fast.open ? rawSend(NET.fast, m) : rawSend(NET.conn, m));
-const fastBacklog = () => (NET.fast && NET.fast.dataChannel ? NET.fast.dataChannel.bufferedAmount : 0);
+// snapshots and input are small objects by construction: no size check, no splitting; without the fast channel they fall back to the reliable one
+NETSYNC.sendFast = m => { if (!(NET.fast && NET.fast.open)) return rawSend(NET.conn, m); try { NET.fast.send(m); return true; } catch { return false; } };
+// bytes still queued in the browser for a channel; the sender skips a snapshot instead of queueing it behind a backlog
+const backlogOf = c => (c && c.open && c.dataChannel ? c.dataChannel.bufferedAmount : 0);
+NETSYNC.backlog = () => backlogOf(NET.fast && NET.fast.open ? NET.fast : NET.conn);
+NETSYNC.ctlBacklog = () => backlogOf(NET.conn);
 
 // ---------- what a peer may tell us: everything is re-validated, nothing is trusted as code or a URL ----------
 const cleanTeam = t => (Array.isArray(t) ? t : []).slice(0, 6).map(s => ({
@@ -94,10 +98,10 @@ function onData(m) {
       NETSYNC.reset();
       NET.cfg = { arena, weather: '', music: arena.music, player: host, cpu: mine, me: 1, guest: true };
       setScene(LoadingScene(NET.cfg));
-    } else if (m.t === 'snap') NETSYNC.apply(m.s);
-    else if (m.t === 'teams') NETSYNC.applyTeams(m.s);
-    else if (m.t === 'fx') NETSYNC.applyFx(m.s);
-    else if (m.t === 'rematch' && NET.cfg) { startBattleA(NET.cfg); AUDIO.playMusic(NET.cfg.music); }
+    } else if (m.t === 's') NETSYNC.apply(m);
+    else if (m.t === 'teams') NETSYNC.applyTeams(m);
+    else if (m.t === 'fx') NETSYNC.applyFx(m);
+    else if (m.t === 'rematch' && NET.cfg) { NETSYNC.rematch(); startBattleA(NET.cfg); AUDIO.playMusic(NET.cfg.music); }
     else if (m.t === 'deny') netLeave(String(m.why || 'The host refused.').slice(0, 80));
   }
 }
@@ -431,19 +435,11 @@ function onlineBattleUpdate(sc, dt) {
     if (backHit() && B.pausedBy === mi && !(sc.guard > 0)) { sc.guard = 0.5; netResume(); }
   }
   if (guest) {
-    const { analog, press } = NETSYNC.input(dt);
-    NETSYNC.step(dt);
-    NETSYNC.sendFast(analog);
-    if (press) NETSYNC.send(press);
+    NETSYNC.guestTick(dt); // input read + sent at its own rate, screen advanced
   } else {
     if (B.paused) NETSYNC.clearInput();
     updateBattle(dt); NETSYNC.harvest();
-    if ((sc.snapT = (sc.snapT || 0) + dt) >= ONLINE.SNAP_DT) {
-      sc.snapT = 0;
-      if (fastBacklog() < 48000) NETSYNC.sendFast({ t: 'snap', s: NETSYNC.snap() }); // a clogged link skips a frame instead of queueing stale ones
-      const fx = NETSYNC.fx(); if (fx) NETSYNC.send({ t: 'fx', s: fx });
-    }
-    if ((sc.teamT = (sc.teamT ?? 0) - dt) <= 0) { sc.teamT = ONLINE.TEAMS_DT; NETSYNC.send({ t: 'teams', s: NETSYNC.teams() }); }
+    NETSYNC.hostTick(dt); // snapshots (skipped while the link is backed up), effects, team changes
   }
   if (B.paused) return;
   if (B.choose && B.choose.side === mi) {
