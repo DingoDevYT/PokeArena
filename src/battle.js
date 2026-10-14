@@ -21,6 +21,8 @@ const TUNE = {
   FIELD_TIME_EXT: 48,    // with Heat Rock, Light Clay, etc. (8 turns)
   SWAP_CD: 8, SWAP_IFRAMES: 0.7, ENTRY_IFRAMES: 1.0,
   DODGE_DIST: 135, DODGE_TIME: 0.33, DODGE_IFRAMES: 0.34,
+  DODGE_SPEED_TIME: 0.35, // roll duration and i-frames scale by 1 + this * (speedFactor - 1): fast mons roll longer, slow ones shorter
+  DODGE_CD_MULT: 0.7, CD_MULT: 0.85, // dodge cooldown and every move cooldown are scaled by these
   CHARGE_MAX: 1.2, CHARGE_DMG: 0.8, CHARGE_SIZE: 1.2, // hold-to-charge shots: time to full, extra damage and size at full
   STATUS_MOVE_MIN_CD: 7, FIELD_MOVE_MIN_CD: 14,
   HEAL_MULT: 0.5, RECOVER_MIN_CD: 12, // every heal (moves, items, drain, abilities) is scaled by this; recovery moves get a long cooldown
@@ -130,7 +132,7 @@ function cooldownFor(move, m, foe) {
   if (move.weather || move.terrain || move.sideCondition) cd = Math.max(cd, TUNE.FIELD_MOVE_MIN_CD);
   if (m.status === 'par') cd *= 1.25;
   if (foe && abil(foe, 'pressure')) cd *= 1.1;
-  return cd;
+  return cd * TUNE.CD_MULT;
 }
 
 // ---------- the battle ----------
@@ -1208,7 +1210,7 @@ function updateSide(side, dt) {
   for (const k of ['confused', 'taunt', 'endure', 'recharge', 'quickClaw']) if (m.vol[k] > 0) m.vol[k] -= dt;
   if (e.hidden > 0) e.hidden -= dt;
   e.z = grounded(m) ? 0 : (7 + Math.sin(B.time * 3 + side.idx) * 2) * SS;
-  if (e.dodge) e.z += Math.sin((1 - e.dodge.t / TUNE.DODGE_TIME) * Math.PI) * 14 * SS;
+  if (e.dodge) e.z += Math.sin((1 - e.dodge.t / (e.dodge.T || TUNE.DODGE_TIME)) * Math.PI) * 14 * SS;
   if (m.fainted) { e.vx = e.vy = 0; return; }
 
   // status timers and chip damage
@@ -1224,8 +1226,9 @@ function updateSide(side, dt) {
     let dx = I.mx, dy = I.my; if (Math.hypot(dx, dy) < 0.2) { dx = -e.aimX; dy = -e.aimY; }
     const l = Math.hypot(dx, dy) || 1;
     cancelAttack(side); // dodge cancels any own attack: windup, charge, swing, dash, laser (cooldown stays spent)
-    e.dodge = { t: TUNE.DODGE_TIME, dx: dx / l, dy: dy / l }; e.iframes = Math.max(e.iframes, TUNE.DODGE_IFRAMES);
-    side.dodgeCd = clamp(2.2 - speedStat(m, side) / 250, 0.9, 2.2);
+    const dk = clamp(1 + TUNE.DODGE_SPEED_TIME * (speedFactor(m, side) - 1), 0.75, 1.35);
+    e.dodge = { t: TUNE.DODGE_TIME * dk, T: TUNE.DODGE_TIME * dk, dx: dx / l, dy: dy / l }; e.iframes = Math.max(e.iframes, TUNE.DODGE_IFRAMES * dk);
+    side.dodgeCd = clamp(2.2 - speedStat(m, side) / 250, 0.9, 2.2) * TUNE.DODGE_CD_MULT;
     spawnFx('Puff_White', e.x, e.y - 4 * SS, { scale: SS }); uiBlip(520, 0.04, 'triangle'); // dust cloud where it left from
   }
   // move execution

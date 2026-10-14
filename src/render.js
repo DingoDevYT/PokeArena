@@ -541,7 +541,7 @@ function drawSideMon(s) {
   if (e.dodge && (!tr.length || Math.hypot(tr[tr.length - 1].x - e.x, tr[tr.length - 1].y - e.y) > 22)) tr.push({ x: e.x, y: e.y, z: e.z, anim: e.anim, animT: e.animT, face: e.face, t: B.time });
   while (tr.length && B.time - tr[0].t > 0.22) tr.shift();
   for (const g of tr) drawMonSprite(key, g.anim, g.animT, g.face, g.x, g.y, { z: g.z, alpha: 0.22 * (1 - (B.time - g.t) / 0.22), tint: 'rgba(190,225,255,0.45)', noOutline: true });
-  drawMonSprite(key, e.anim, e.animT, e.face, e.x, e.y, { z: e.z, stretch: e.dodge ? (a => [1 - 0.12 * a, 1 + 0.2 * a])(Math.sin((1 - e.dodge.t / TUNE.DODGE_TIME) * Math.PI)) : undefined, tint, alpha, loop: !e.animOnce, scale: SS * (grow < 1 ? Math.max(0.25, Math.round(grow * 4) / 4) : 1), outline: outlineTell(s, e, m) });
+  drawMonSprite(key, e.anim, e.animT, e.face, e.x, e.y, { z: e.z, stretch: e.dodge ? (a => [1 - 0.12 * a, 1 + 0.2 * a])(Math.sin((1 - e.dodge.t / (e.dodge.T || TUNE.DODGE_TIME)) * Math.PI)) : undefined, tint, alpha, loop: !e.animOnce, scale: SS * (grow < 1 ? Math.max(0.25, Math.round(grow * 4) / 4) : 1), outline: outlineTell(s, e, m) });
   const top = e.y - 30 * SS - e.z;
   if (e.protect > 0) ell(e.x, e.y - 14 * SS - e.z, 22 * SS, 22 * SS, 'rgba(120,200,255,0.25)', '#bfe8ff', 2);
   if (m.status === 'slp' && Math.floor(B.time * 2) % 2 === 0) { ctx.fillStyle = '#fff'; pixelZ(e.x + 12 * SS, top + 4 - (B.time * 8 % 8)); }
