@@ -1,5 +1,5 @@
 # Builds the Flowery sprite strips from the local source rips (tools/flowery-src, gitignored).
-# Usage: ffmpeg -y -i tools/flowery-src/flowery-sheet.webp tools/.cache/flowery/sheet.png ; py -3.12 tools/build-flowery.py
+# Usage: py -3.12 tools/build-flowery.py  (needs tools/flowery-src/flowery-sheet.png, the original 2532px sheet)
 # Writes assets/sprite-custom/flowery/*.png, portrait.png, orange.png and prints the anim table pasted into data/custom-species.js.
 import json, os
 from PIL import Image
@@ -9,8 +9,9 @@ from scipy import ndimage as ndi
 SCALE = 1
 OUT = 'assets/sprite-custom/flowery'
 os.makedirs(OUT, exist_ok=True)
-A = np.array(Image.open('tools/.cache/flowery/sheet.png').convert('RGB')).astype(int)
-PAGE = np.array([17, 138, 202]); BOX = np.array([104, 210, 243])
+A = np.array(Image.open('tools/flowery-src/flowery-sheet.png').convert('RGB')).astype(int)  # the original sheet (Downloads/569577.png), 2532x2573
+PAGE = np.array([18, 139, 203]); BOX = np.array([106, 212, 245])
+K = A.shape[1] / 1476  # CELLS below were measured on a 1476px-wide downscaled copy; each is snapped to the real sheet's box it falls in
 PAL = np.array([(10,8,10),(48,36,28),(104,78,50),(240,216,20),(168,140,24),(236,220,140),(244,242,236),(216,120,44),(92,140,36)])
 def row(x0, pitch, n, w, y0, y1): return [(x0+i*pitch, y0, x0+i*pitch+w, y1) for i in range(n)]
 CELLS = {
@@ -21,28 +22,22 @@ CELLS = {
  'hurt': [(1233,68,1262,105)], 'deflect': [(1265,70,1289,105)],
  'pwr': [(1058,154,1077,188),(1077,154,1096,188)], 'pwrfin': row(1106,20,5,20,140,188),
 }
-def keymask(px):
-    d1 = np.abs(px-BOX).sum(-1); d2 = np.abs(px-PAGE).sum(-1)
-    return ~((d1 < 120) | (d2 < 120) | ((px[...,2]-px[...,0]) > 30))
-def clean(sub):  # key out the sheet background, drop specks, snap to the Flowery palette, majority-filter the compression noise
+_lab, _ = ndi.label(~(A == PAGE).all(-1))  # a box plus the sprite in it is one region, bounded by the page-colour gutters
+_boxes = ndi.find_objects(_lab)
+def snap(c):  # the real sheet box with the most area inside the scaled rect
+    x0, y0, x1, y1 = (int(round(v * K)) for v in c)
+    ids, cnt = np.unique(_lab[y0:y1, x0:x1], return_counts=True)
+    ids, cnt = ids[ids > 0], cnt[ids > 0]
+    sl = _boxes[ids[cnt.argmax()] - 1]
+    return (sl[1].start, sl[0].start, sl[1].stop, sl[0].stop)
+CELLS = {k: [snap(c) for c in v] for k, v in CELLS.items()}
+def keymask(px):  # exact: only the box and page colours are background
+    return ~((px == BOX).all(-1) | (px == PAGE).all(-1))
+def clean(sub):  # the sheet's own pixels, 1:1: only the background box colour is keyed out (hard alpha), nothing is recoloured or resampled
     m = keymask(sub)
-    m = ndi.binary_opening(m, structure=np.ones((2,2)))
-    lab, n = ndi.label(m, structure=np.ones((3,3)))
-    for i in range(1, n+1):
-        if (lab == i).sum() < 6: m[lab == i] = False
-    idx = ((sub[:,:,None,:]-PAL[None,None,:,:])**2).sum(-1).argmin(-1); idx[~m] = -1
-    H, W = idx.shape
-    for _ in range(3):
-        out = idx.copy()
-        for y in range(H):
-            for x in range(W):
-                if idx[y,x] < 0: continue
-                nb = idx[max(0,y-1):y+2, max(0,x-1):x+2].ravel(); nb = nb[nb >= 0]
-                cnt = np.bincount(nb, minlength=len(PAL))
-                if cnt[idx[y,x]] <= 3: out[y,x] = cnt.argmax()
-        idx = out
-    rgba = np.zeros((H, W, 4), np.uint8); ok = idx >= 0
-    rgba[ok,:3] = PAL[idx[ok]]; rgba[ok,3] = 255
+    H, W = m.shape
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[m, :3] = sub[m]; rgba[m, 3] = 255
     return rgba
 SRC = {k: [clean(A[c[1]:c[3], c[0]:c[2]]) for c in v] for k, v in CELLS.items()}
 mirror = lambda f: f[:, ::-1]
@@ -54,11 +49,11 @@ def anchor(f, upright):
     return xs.mean()
 # anim table: name -> (frames, durations, upright, dirs, hit, ret)  dirs: frames are the right-facing set, left rows are mirrored
 ANIMS = {
- 'Idle': (SRC['idle'], [10]*5, True, False), 'Walk': (SRC['idle'], [6]*5, True, False), 'Sleep': (SRC['sweat'], [14]*5, True, False),
- 'Hurt': ([SRC['hurt'][0]]*2, [2, 8], True, False), 'Dodge': ([SRC['deflect'][0]]*2, [9, 30], True, False),
- 'Faint': (SRC['blown'], [8, 40], True, False), 'Charge': (SRC['pwr'], [5, 5], True, False),
- 'Rise': (SRC['pwrfin'], [3, 3, 3, 5, 30], True, False),
- 'Attack': (SRC['windup'] + [SRC['punch'][1]], [3,3,3,3,3,14], True, True),
+ 'Idle': (SRC['idle'], [10]*5, True, True), 'Walk': (SRC['idle'], [6]*5, True, True), 'Sleep': (SRC['sweat'], [14]*5, True, True),
+ 'Hurt': ([SRC['hurt'][0]]*2, [2, 8], True, True), 'Dodge': ([SRC['deflect'][0]]*2, [9, 30], True, True),
+ 'Faint': (SRC['blown'], [8, 40], True, True), 'Charge': (SRC['pwr'], [5, 5], True, True),
+ 'Rise': (SRC['pwrfin'], [3, 3, 3, 5, 30], True, True),
+ 'Attack': (SRC['windup'] + [SRC['punch'][0]], [3,3,3,3,3,14], True, True),
  'Blow': (SRC['windup'] + [SRC['windup'][4]], [4,4,4,4,8,18], True, True),
  'Fair': ([SRC['fair'][1]], [30], False, True),
 }
@@ -87,8 +82,9 @@ for name, (frames, dur, upright, dirs) in ANIMS.items():
             for x in range(f.shape[1]):
                 if g[y,x,3] and 0 <= x+ox < fw: c[yy, x+ox] = g[y,x]
         return c
-    right = [cell(f) for f in frames]
-    left = [cell(f, True) for f in frames] if dirs else None
+    # every battle frame on the sheet faces LEFT (he is the enemy on the right in his fight): left rows are the source, right rows mirror it
+    left = [cell(f) for f in frames]
+    right = [cell(f, True) for f in frames]
     rows = [right if not dirs else None]*1
     if dirs:
         order = [right, right, right, right, right, left, left, left]  # PMD rows: 0 Down 1 DR 2 R 3 UR 4 Up 5 UL 6 L 7 DL
@@ -102,12 +98,12 @@ for name, (frames, dur, upright, dirs) in ANIMS.items():
     im.save(f'{OUT}/{name}-Anim.png')
     meta[name] = {'file': f'assets/sprite-custom/flowery/{name}-Anim.png', 'fw': int(fw*SCALE), 'fh': int(fh*SCALE), 'durations': dur,
                   'footY': int((foot-top)*SCALE), 'hit': HIT.get(name, -1), 'ret': -1, 'rush': -1}
-# portrait: head and shoulders of the first idle frame, 40x40
-f = SRC['idle'][0]; yy, xx = np.where(f[...,3] > 0)
-y0 = yy.min(); x0 = xx.min()
-crop = f[y0:y0+18, x0:x0+18]
-p = np.zeros((20, 20, 4), np.uint8); p[:crop.shape[0], :crop.shape[1]] = crop
-Image.fromarray(p, 'RGBA').resize((40, 40), Image.NEAREST).save(f'{OUT}/portrait.png')
+# portrait: the sheet's first PROFILE SPRITES face (17x28 box at 4,394), 1:1 on a black 28x28 square
+fx0, fy0, fx1, fy1 = (int(round(v * K)) for v in (4, 394, 21, 422))
+face = A[fy0:fy1, fx0:fx1]; S = max(face.shape[:2])
+p = np.zeros((S, S, 4), np.uint8); p[..., 3] = 255
+ox = (S - face.shape[1]) // 2; p[:face.shape[0], ox:ox + face.shape[1], :3] = face
+Image.fromarray(p, 'RGBA').save(f'{OUT}/portrait.png')
 # Orange's flying frames (JA-ORANGE column, first two), fist on the left, trail on the right, 1:1
 O = np.array(Image.open('tools/flowery-src/orange-sheet.png').convert('RGBA'))
 fr = [O[y:y+24, 2:62].copy() for y in (187, 213)]

@@ -89,7 +89,7 @@ function silhouette(im) {
 }
 // The current frame squashed flat onto the ground at the feet, so the shadow matches the pose.
 function drawMonShadow(key, animName, t, face, x, y, opts = {}) {
-  const a = animOf(key, animName), sc = opts.scale ?? SS;
+  const a = animOf(key, animName), sc = (opts.scale ?? SS) * (spriteOf(key)?.scale || 1);
   const im = a && img(a.file); if (!im) return false;
   const rows = Math.round(im.naturalHeight / a.fh), f = animFrame(a, t, opts.loop ?? true), row = rows >= 8 ? face : 0;
   const k = 0.3, dh = Math.max(2, Math.round(a.fh * sc * k)), lift = Math.min(1, (opts.z || 0) / (40 * SS));
@@ -121,7 +121,7 @@ function drawFrame(im, sx, sy, sw, sh, dx, dy, tint, alpha = 1, scale = 1, scale
   ctx.globalAlpha = 1;
 }
 function drawMonSprite(key, animName, t, face, x, y, opts = {}) {
-  const a = animOf(key, animName), sc = opts.scale ?? SS;
+  const a = animOf(key, animName), sc = (opts.scale ?? SS) * (spriteOf(key)?.scale || 1); // sprite.scale: per-sprite size (Flowery 0.75), still nearest-neighbour
   if (!a) return;
   const im = img(a.file); if (!im) return;
   const rows = Math.round(im.naturalHeight / a.fh);

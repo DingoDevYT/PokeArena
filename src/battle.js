@@ -74,6 +74,7 @@ function natureMod(nat, stat) { const n = DEX.natures[nat]; if (!n) return 1; re
 const hpScale = L => TUNE.HP_MULT * clamp(Math.pow(60 / L, 0.4), 0.7, 1.6);
 function calcStats(sp, L, nat) {
   const b = sp.baseStats, s = {};
+  if (sp.fixedStats) { const v = sp.fixedStats; return { hp: v / hpScale(L), atk: v, def: v, spa: v, spd: v, spe: v }; } // joke species: every shown stat (and max HP) is exactly this
   s.hp = sp.id === 'shedinja' ? 1 : Math.floor((2 * b.hp + 31) * L / 100) + L + 10;
   for (const k of ['atk', 'def', 'spa', 'spd', 'spe']) s[k] = Math.floor((Math.floor((2 * b[k] + 31) * L / 100) + 5) * natureMod(nat, k));
   return s;
