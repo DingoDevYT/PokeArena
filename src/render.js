@@ -46,6 +46,9 @@ function ellipseSprite(rx, ry, fill, stroke, lw) {
   g.putImageData(id, 0, 0); PCACHE.set(key, c); return c;
 }
 function ell(x, y, rx, ry, fill, stroke, lw = 1) { const c = ellipseSprite(rx, ry, fill, stroke, lw); ctx.drawImage(c, Math.round(x) - (c.width >> 1), Math.round(y) - (c.height >> 1)); }
+// ell on the arena art's own pixel grid (SS world px per art pixel), for floor decals like traps and hazard rings
+const snap2 = v => Math.round(v / SS) * SS;
+function ell2(x, y, rx, ry, fill, stroke, lw = SS) { const c = ellipseSprite(rx / SS, ry / SS, fill, stroke, lw / SS); ctx.drawImage(c, snap2(x) - (c.width >> 1) * SS, snap2(y) - (c.height >> 1) * SS, c.width * SS, c.height * SS); }
 function pline(x0, y0, x1, y1, color, w = 1) {
   x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
   ctx.fillStyle = color;
@@ -53,6 +56,8 @@ function pline(x0, y0, x1, y1, color, w = 1) {
   let err = dx + dy, n = 0;
   while (n++ < 2000) { ctx.fillRect(x0 - (w >> 1), y0 - (w >> 1), w, w); if (x0 === x1 && y0 === y1) break; const e2 = 2 * err; if (e2 >= dy) { err += dy; x0 += sx; } if (e2 <= dx) { err += dx; y0 += sy; } }
 }
+// pline on the arena art's pixel grid (SS world px per art pixel)
+function pline2(x0, y0, x1, y1, color, w = SS) { ctx.save(); ctx.scale(SS, SS); pline(x0 / SS, y0 / SS, x1 / SS, y1 / SS, color, Math.max(1, Math.round(w / SS))); ctx.restore(); }
 function seeded(seed) { let s = seed; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
 
 // ---------- sprite caches: outlined mon sheets, dimmed arena art ----------
@@ -304,27 +309,27 @@ const hazardPulse = (h, rate = 2.2) => Math.round((0.5 + 0.5 * Math.sin(B.time *
 function hazardRing(h) {
   const col = HAZARD_SIDE[h.owner] || '#fff', k = hazardPulse(h);
   const rx = (h.kind === 'stealthrock' ? 13 : h.kind === 'stickyweb' ? h.r : Math.round(h.r * 0.95)) + 3, ry = Math.round(rx * 0.5) + 1;
-  ctx.globalAlpha = 0.26 + 0.16 * k; ell(h.x, h.y, rx, ry, col);
-  ctx.globalAlpha = 0.9 + 0.1 * k; ell(h.x, h.y, rx + 1, ry + 1, null, '#0c0a14', 5); ell(h.x, h.y, rx, ry, null, col, 3);
+  ctx.globalAlpha = 0.26 + 0.16 * k; ell2(h.x, h.y, rx, ry, col);
+  ctx.globalAlpha = 0.9 + 0.1 * k; ell2(h.x, h.y, rx + 2, ry + 2, null, '#0c0a14', 6); ell2(h.x, h.y, rx, ry, null, col, 4);
   ctx.globalAlpha = 1;
 }
 // Particle sheet frame with a 1px dark outline (cached outlined sheet, same as the mons).
 function hazardSprite(name, x, y, scale, frame = 0, alpha = 1) {
   const p = VFX.particles[name], im = p && img(p.file); if (!im) return false;
   const w = p.fw * scale, h = p.fh * scale;
-  ctx.globalAlpha = alpha; ctx.drawImage(outlined(im, p.fw, p.fh), frame * p.fw, 0, p.fw, p.fh, Math.round(x - w / 2), Math.round(y - h / 2), w, h); ctx.globalAlpha = 1;
+  ctx.globalAlpha = alpha; ctx.drawImage(outlined(im, p.fw, p.fh), frame * p.fw, 0, p.fw, p.fh, snap2(x - w / 2), snap2(y - h / 2), w, h); ctx.globalAlpha = 1;
   return true;
 }
 // Plus-shaped sparkle that grows and fades over phase 0..1.
 function glint(x, y, phase) {
   const n = Math.round((phase < 0.5 ? phase : 1 - phase) * 2 * 3); if (n < 1) return;
-  x = Math.round(x); y = Math.round(y); ctx.fillStyle = '#fff'; ctx.fillRect(x - n, y, n * 2 + 1, 1); ctx.fillRect(x, y - n, 1, n * 2 + 1);
+  x = snap2(x); y = snap2(y); const p = SS; ctx.fillStyle = '#fff'; ctx.fillRect(x - n * p, y, (n * 2 + 1) * p, p); ctx.fillRect(x, y - n * p, p, (n * 2 + 1) * p);
 }
 function drawHazard(h) {
   if (h.kind === 'stealthrock') {
     const bob = Math.round(Math.sin(B.time * 3 + h.seed * 9) * 2);
-    ell(h.x, h.y + 3, 6, 2, 'rgba(0,0,0,0.3)');
-    if (!hazardSprite('Stealth_Rock_Front', h.x, h.y - 10 + bob, 1)) ell(h.x, h.y - 8 + bob, 5, 5, '#8a7a66', '#3b3128');
+    ell2(h.x, h.y + 3, 6, 2, 'rgba(0,0,0,0.3)');
+    if (!hazardSprite('Stealth_Rock_Front', h.x, h.y - 10 + bob, SS)) ell2(h.x, h.y - 8 + bob, 6, 6, '#8a7a66', '#3b3128');
     const ph = (B.time * 0.7 + h.seed * 5) % 1; if (ph < 0.3) glint(h.x - 4 + Math.floor(h.seed * 9), h.y - 14 + bob, ph / 0.3);
   } else if (h.kind === 'spikes' || h.kind === 'toxicspikes') {
     const r = seeded(Math.floor(h.seed * 1e4)), name = h.kind === 'spikes' ? 'Spikes_RSE' : 'Spikes_Purple_RSE', pts = [];
@@ -333,13 +338,13 @@ function drawHazard(h) {
     for (const [x, y] of pts) hazardSprite(name, x, y, SS);
     if (h.kind === 'spikes') { const ph = (B.time * 0.9 + h.seed * 7) % 1; if (ph < 0.3) glint(pts[Math.floor(h.seed * 70) % 7][0], pts[Math.floor(h.seed * 70) % 7][1] - 6, ph / 0.3); }
     else for (let i = 0; i < 3; i++) { // purple bubbles rising off the poison
-      const q = (B.time * 0.5 + h.seed * 3 + i / 3) % 1, bx = Math.round(h.x + Math.sin(h.seed * 40 + i * 2.3) * h.r * 0.7), by = Math.round(h.y - 4 - q * 18), s = q < 0.7 ? 4 : 2;
-      ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3; ctx.fillStyle = '#2a0a3a'; ctx.fillRect(bx - 2, by - 2, s + 2, s + 2); ctx.fillStyle = '#d9a0ff'; ctx.fillRect(bx - 1, by - 1, s, s);
-      ctx.fillStyle = '#fff'; ctx.fillRect(bx - 1, by - 1, 1, 1); ctx.globalAlpha = 1;
+      const q = (B.time * 0.5 + h.seed * 3 + i / 3) % 1, bx = snap2(h.x + Math.sin(h.seed * 40 + i * 2.3) * h.r * 0.7), by = snap2(h.y - 4 - q * 18), p = SS, s = (q < 0.7 ? 2 : 1) * p;
+      ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3; ctx.fillStyle = '#2a0a3a'; ctx.fillRect(bx - p, by - p, s + 2 * p, s + 2 * p); ctx.fillStyle = '#d9a0ff'; ctx.fillRect(bx, by, s, s);
+      ctx.fillStyle = '#fff'; ctx.fillRect(bx, by, p, p); ctx.globalAlpha = 1;
     }
   } else if (h.kind === 'stickyweb') {
     const p = VFX.particles.String_Shot_Web;
-    if (p) { const sc = Math.max(1, Math.round(h.r * 2 / p.fw)); hazardSprite('String_Shot_Web', h.x, h.y, sc, p.frames - 1, 0.8 + 0.2 * hazardPulse(h, 1.4));
+    if (p) { const sc = Math.max(SS, Math.round(h.r * 2 / p.fw / SS) * SS); hazardSprite('String_Shot_Web', h.x, h.y, sc, p.frames - 1, 0.8 + 0.2 * hazardPulse(h, 1.4));
       const ph = (B.time * 0.8 + h.seed * 4) % 1; if (ph < 0.3) glint(h.x + Math.cos(h.seed * 50) * h.r * 0.5, h.y + Math.sin(h.seed * 50) * h.r * 0.25, ph / 0.3); }
   }
 }

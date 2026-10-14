@@ -97,8 +97,8 @@ function drawQuakeDebris(w) {
     const segs = 7, shown = Math.ceil(segs * g), step = c.len / segs; let x = c.x, y = c.y, a = (sh(c.seed, 1) - 0.5) * 6.28;
     for (let i = 0; i < shown; i++) {
       const na = a + (sh(c.seed, 10 + i) - 0.5) * 1.3, nx = x + Math.cos(na) * step, ny = y + Math.sin(na) * step * 0.6;
-      ctx.globalAlpha = fade; pline(x + 1, y + 1, nx + 1, ny + 1, '#e8d6b0', 1); pline(x, y, nx, ny, '#140d06', i < 2 ? 4 : 3);
-      if (i === 2 || i === 4) { const ba = na + (i === 2 ? 0.9 : -0.9), bl = step * 2.2; pline(x, y, x + Math.cos(ba) * bl, y + Math.sin(ba) * bl * 0.6, '#140d06', 2); }
+      ctx.globalAlpha = fade; pline2(x + SS, y + SS, nx + SS, ny + SS, '#e8d6b0', SS); pline2(x, y, nx, ny, '#140d06', i < 2 ? 4 : SS);
+      if (i === 2 || i === 4) { const ba = na + (i === 2 ? 0.9 : -0.9), bl = step * 2.2; pline2(x, y, x + Math.cos(ba) * bl, y + Math.sin(ba) * bl * 0.6, '#140d06', SS); }
       x = nx; y = ny; a = na;
     }
   }
@@ -109,9 +109,9 @@ function drawQuakeDebris(w) {
     while (v > 25 && t > 2 * v / 900) { t -= 2 * v / 900; v *= 0.55; }
     const h = v > 25 ? Math.max(0, v * t - 450 * t * t) : 0, run = Math.min(age, 1.3), x = r.x + r.vx * run * 0.9, y = r.y + r.vy * run * 0.9;
     const sz = 3 + Math.floor(sh(r.seed, 2) * 4), fade = age > 1.8 ? clamp((2.3 - age) / 0.5, 0, 1) : 1;
-    ctx.globalAlpha = fade * 0.4; ell(x, y, sz + 1, (sz + 1) * 0.5, '#000');
-    ctx.globalAlpha = fade; ell(x, y - h - sz * 0.6, sz, sz * 0.8, sh(r.seed, 3) < 0.5 ? '#7e6646' : '#5c4a32', '#2a1d10', 1);
-    ctx.fillStyle = '#c9b08a'; ctx.fillRect(Math.round(x - sz * 0.4), Math.round(y - h - sz * 1.1), 2, 1);
+    ctx.globalAlpha = fade * 0.4; ell2(x, y, sz + 2, (sz + 2) * 0.5, '#000');
+    ctx.globalAlpha = fade; ell2(x, y - h - sz * 0.6, sz + 1, (sz + 1) * 0.8, sh(r.seed, 3) < 0.5 ? '#7e6646' : '#5c4a32', '#2a1d10', SS);
+    ctx.fillStyle = '#c9b08a'; ctx.fillRect(snap2(x - sz * 0.4), snap2(y - h - sz * 1.1), SS * 2, SS);
   }
   ctx.globalAlpha = 1;
 }
@@ -170,41 +170,43 @@ function drawTrap(t) {
   const rx = t.r, ry = t.r * 0.62, col = t.col;
   const fade = clamp(Math.min(t.t / 0.2, (t.dur - t.t) / 0.35), 0, 1) * (t.dur - t.t < 1 && Math.floor(B.time * 12) % 2 ? 0.45 : 1);
   ctx.globalAlpha = fade * 0.55;
-  const dz = ditherEll(rx, ry, col); ctx.drawImage(dz, Math.round(t.x) - (dz.width >> 1), Math.round(t.y) - (dz.height >> 1));
+  drawDither2(ditherEll(rx / SS, ry / SS, col), t.x, t.y);
   ctx.globalAlpha = fade;
-  ell(t.x, t.y, rx, ry, col + '30');
+  ell2(t.x, t.y, rx, ry, col + '30');
   const q = (t.t * 0.9) % 1;
   ctx.globalAlpha = fade * (1 - q);
-  if (q > 0.08) ell(t.x, t.y, rx * q, ry * q, null, col, 2);
+  if (q > 0.08) ell2(t.x, t.y, rx * q, ry * q, null, col, SS);
   ctx.globalAlpha = fade;
-  // one big looping sheet in the middle (fire / sand / water vortex)
+  // one big looping sheet in the middle (fire / sand / water vortex); every sheet is drawn at a multiple of SS so it matches the arena's pixels
   const big = t.big && VFX.particles[t.big];
-  if (big) particle(t.big, t.x, t.y - big.fh * 0.25, t.t, { ft: 2, scale: Math.max(1, Math.round(rx * 2 / big.fw)), alpha: fade });
-  // small sheets scattered through the patch, slowly swirling (faster for vortexes that pull)
-  const rnd = seeded(Math.floor(t.seed)), n = Math.round(clamp(rx / 6, 8, 16)), spin = t.t * (t.pull ? 2.2 : 0.35);
-  for (let i = 0; i < n; i++) {
+  if (big) particle(t.big, snap2(t.x), snap2(t.y - big.fh * 0.25), t.t, { ft: 2, scale: Math.max(SS, Math.round(rx * 2 / big.fw / SS) * SS), alpha: fade });
+  // small sheets scattered through the patch, slowly swirling (faster for vortexes that pull); fewer when the sheet is large
+  const rnd = seeded(Math.floor(t.seed)), spin = t.t * (t.pull ? 2.2 : 0.35), n0 = Math.round(clamp(rx / 6, 8, 16));
+  for (let i = 0; i < n0; i++) {
     const name = t.fx[i % t.fx.length], p = VFX.particles[name]; if (!p) continue;
-    const a = rnd() * Math.PI * 2 + spin, d = (0.25 + rnd() * 0.7) * rx;
-    particle(name, t.x + Math.cos(a) * d, t.y + Math.sin(a) * d * 0.62 - 6, t.t + rnd() * 3, { ft: 4, scale: p.fw <= 20 ? SS : 1, alpha: fade });
+    const a = rnd() * Math.PI * 2 + spin, d = (0.25 + rnd() * 0.7) * rx, ph = rnd() * 3;
+    if (p.fw > 20 && i % 2) continue;
+    particle(name, snap2(t.x + Math.cos(a) * d), snap2(t.y + Math.sin(a) * d * 0.62 - 6), t.t + ph, { ft: 4, scale: SS, alpha: fade });
   }
   // outline, outside in: 1px dark rim, the placer's colour ring (red-pink for side 0, blue for side 1), a dark gap, then the status-colour
   // edge that pulses between 1 and 3 px and beats faster as the trap runs out. Everything sits outside the real hitbox radius (rx, ry).
   const rem = t.dur - t.t, hurry = Math.max(0, 2 - rem), p = Math.round(1 + Math.sin(t.t * 5 + 5 * hurry * hurry)), grow = d => [rx + d, ry + d * 0.85]; // the rings grow a bit rounder than the patch so the top and bottom bands stay thick enough to read
   ctx.globalAlpha = fade;
-  ell(t.x, t.y, ...grow(11), null, '#0c0a14', 1);
-  ell(t.x, t.y, ...grow(10), null, OWNER_COL[t.side] || OWNER_COL[0], 4);
-  ell(t.x, t.y, ...grow(6), null, '#0c0a14', 2);
-  ell(t.x, t.y, ...grow(2 + p), null, col, 3);
-  ell(t.x, t.y, ...grow(0), null, '#0c0a14', 1);
+  ell2(t.x, t.y, ...grow(14), null, '#0c0a14', SS);
+  ell2(t.x, t.y, ...grow(12), null, OWNER_COL[t.side] || OWNER_COL[0], SS * 2);
+  ell2(t.x, t.y, ...grow(8), null, '#0c0a14', SS);
+  ell2(t.x, t.y, ...grow(6), null, col, SS * (1 + (p > 1 ? 1 : 0)));
+  ell2(t.x, t.y, ...grow(0), null, '#0c0a14', SS);
   // tick flash: the patch lights up white for a moment each time it hits (t.flashT is set by trapTouch in src/battle.js)
   if (t.flashT > 0) {
-    const f = clamp(t.flashT / 0.22, 0, 1), dz2 = ditherEll(rx, ry, '#ffffff');
-    ctx.globalAlpha = fade * f * 0.8; ctx.drawImage(dz2, Math.round(t.x) - (dz2.width >> 1), Math.round(t.y) - (dz2.height >> 1));
-    ctx.globalAlpha = fade * f; ell(t.x, t.y, ...grow(5), null, '#ffffff', 3);
+    const f = clamp(t.flashT / 0.22, 0, 1);
+    ctx.globalAlpha = fade * f * 0.8; drawDither2(ditherEll(rx / SS, ry / SS, '#ffffff'), t.x, t.y);
+    ctx.globalAlpha = fade * f; ell2(t.x, t.y, ...grow(4), null, '#ffffff', SS);
   }
   ctx.globalAlpha = 1;
 }
 const OWNER_COL = ['#f08a8a', '#7fd0e8'];
+const drawDither2 = (c, x, y) => ctx.drawImage(c, snap2(x) - (c.width >> 1) * SS, snap2(y) - (c.height >> 1) * SS, c.width * SS, c.height * SS);
 
 // Checkerboard-dithered ellipse in one colour (cached): reads as a tinted patch while staying hard-pixel.
 const DITHER = new Map();
