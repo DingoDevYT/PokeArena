@@ -35,12 +35,12 @@ window.ADV_NPCS = [
     trainer: { cls: 'Picnicker', name: 'Wren', sight: 4, money: 20, team: [['nickit', 0], ['aron', 1], ['nacli', 1], ['nickit', 2], ['aron', 2], ['cufant', 3]], say: 'You came down the road? Then you have to battle me!', lose: 'Aww. Good battle though.' } },
 
   // ---------- Route 22: the orchard road (map-lab pilot 1; villagers). Flavour lines only. ----------
-  { id: 'r22-keeper', x: 871, y: 492, sprite: 'npc3-apron-woman', face: 4, move: 'still', lines: ['The orchard trees want picking every few days in season. My back knows it.'] },
+  { id: 'r22-keeper', x: 875, y: 492, sprite: 'npc3-apron-woman', face: 6, move: 'still', lines: ['The orchard trees want picking every few days in season. My back knows it.'] },
   { id: 'r22-bench', x: 869, y: 497, sprite: 'npc2-old-man', face: 2, move: 'still', lines: ['I come and sit by the orchard gate. Nothing much happens, and that suits me.'] },
   { id: 'r22-walker', x: 845, y: 476, sprite: 'npc1-explorer', face: 6, move: 'still', lines: ['There is an old ruined gate out in the west meadow. Nobody knows who built it.'] },
   { id: 'r22-kid', x: 853, y: 479, sprite: 'npc4-vest-boy', face: 0, move: 'wander', r: 2, lines: ['I am looking for Combee. They like the flowers by the road.'] },
   { id: 'r22-stall', x: 873, y: 496, sprite: 'npc1-red-cap-man', face: 0, move: 'still', lines: ['Fresh off the trees this morning. Best fruit on the whole road.'] },
-  { id: 'r22-pond', x: 856, y: 472, sprite: 'npc4-ponytail-girl', face: 0, move: 'still', lines: ['The pond is so still today. You can see every cloud in it.'] },
+  { id: 'r22-pond', x: 870, y: 499, sprite: 'npc4-ponytail-girl', face: 2, move: 'still', lines: ['The pond is so still today. You can see every cloud in it.'] },
 
   // ---------- Route 7: the grazing country (ranchers, hikers) ----------
   { id: 'r7-walt', x: 226, y: 930, sprite: 'npc2-bearded-man', face: 0, move: 'still', lines: ['Those turbines sell power all over. Goldacre makes more than it needs.'],
