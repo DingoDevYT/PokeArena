@@ -1197,7 +1197,8 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(['frostfall', 'sprucevale', 'route17', 'route19', 'pokemonleague'].every(z => { const s = seen(z); return !s.has('rain') && !s.has('storm') && !s.has('sand'); }) && seen('frostfall').has('snow'), 'snow zones snow and never rain');
   ok(['dunereach', 'route15'].every(z => { const s = seen(z); return s.has('sand') && !s.has('rain') && !s.has('storm') && !s.has('snow'); }), 'the desert has sandstorms and never rain or snow');
   ok(seen('goldacre').size >= 4 && !seen('goldacre').has('sand') && !seen('goldacre').has('snow') && seen('saltbay').has('rain') && seen('sporehaven').has('fog'), 'a town has a spread of weather, the coast rains, the fungal zones fog over');
-  const fog = z => { let a = 0, b = 0; for (let i = 0; i < 4000; i++) if (WX.kindFor(z, i, z) === 'fog') (i % 4 === 1 ? a++ : b++); return a / (b / 3); }; ok(fog('goldacre') > 1.8, 'mornings (6 to 12) are foggier than the rest of the day');
+  const fog = z => { const n = [0, 0], f = [0, 0]; for (let i = 0; i < 4000; i++) { const h = (i * WX.SLOT) % 24; if (h < 4) continue; const m = h < 10 ? 0 : 1; n[m]++; if (WX.kindFor(z, i, z) === 'fog') f[m]++; } return (f[0] / n[0]) / (f[1] / n[1]); };   // a slot's hour: slots are WX.SLOT game hours long
+  ok(fog('goldacre') > 1.8, 'mornings (slots starting 4 to 10) are foggier than the rest of the day');
   // easing: the strength moves smoothly in 0..1, a change fades the old kind out and the new one in over about 3 s, caves and rooms are always clear
   ADVW.zone = () => 'goldacre'; ADVW.hourSet = 12; ADVW.weather = 'rain'; let t = 0, lo = 9, hi = -9, mono = true, prev = 0;
   const run = (secs, x = 5000) => { const trace = []; for (let i = 0; i < secs * 60; i++) { t += 1 / 60; WX.update(t, x, 5000); lo = Math.min(lo, WX.cur.k); hi = Math.max(hi, WX.cur.k); trace.push(WX.cur.k); } return trace; };

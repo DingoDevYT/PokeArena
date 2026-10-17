@@ -37,7 +37,7 @@ window.ADV_NPCS = [
   // ---------- Route 22: the orchard road (map-lab pilot 1; villagers). Flavour lines only. ----------
   { id: 'r22-keeper', x: 875, y: 492, sprite: 'npc3-apron-woman', face: 6, move: 'still', lines: ['The orchard trees want picking every few days in season. My back knows it.'] },
   { id: 'r22-bench', x: 869, y: 497, sprite: 'npc2-old-man', face: 2, move: 'still', lines: ['I come and sit by the orchard gate. Nothing much happens, and that suits me.'] },
-  { id: 'r22-walker', x: 845, y: 476, sprite: 'npc1-explorer', face: 6, move: 'still', lines: ['There is an old ruined gate out in the west meadow. Nobody knows who built it.'] },
+  { id: 'r22-walker', x: 844, y: 475, sprite: 'npc1-explorer', face: 6, move: 'still', lines: ['There is an old ruined gate out in the west meadow. Nobody knows who built it.'] },
   { id: 'r22-kid', x: 853, y: 479, sprite: 'npc4-vest-boy', face: 0, move: 'wander', r: 2, lines: ['I am looking for Combee. They like the flowers by the road.'] },
   { id: 'r22-stall', x: 873, y: 496, sprite: 'npc1-red-cap-man', face: 0, move: 'still', lines: ['Fresh off the trees this morning. Best fruit on the whole road.'] },
   { id: 'r22-pond', x: 870, y: 499, sprite: 'npc4-ponytail-girl', face: 2, move: 'still', lines: ['The pond is so still today. You can see every cloud in it.'] },
