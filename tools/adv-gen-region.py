@@ -1,7 +1,7 @@
 """Kenora region generator: builds the whole island from Landon's three map PNGs into data/adv/ (chunks, world.js, zones.js).
 Run: py -3.12 -I tools/adv-gen-region.py [--only G7] [--nogap]   (--only writes just the chunks around that place and skips world.js / zones.js; --nogap closes the Route 5 hedge gaps, for sealing checks)
 Deterministic (fixed seeds). Random props (scatter) use one RNG per chunk and per call, seeded from (call, chunk x, chunk y), and the hand-placed Route decorators use pure hashes, so editing one place only changes that place's chunks. Needs PIL, numpy, scipy; numba is used for the flood fill when installed. See docs/REGION.md."""
-import sys, os, re, json, time, collections, zlib, hashlib, heapq
+import sys, os, re, json, time, collections, zlib, hashlib, heapq, shutil
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
@@ -112,7 +112,7 @@ def P(name):
 # position for every tile, so a mask drawn against the maps' layout (a box round a lake, a distance from a town that reaches past its disc) is written against them; hand-set old
 # points go through wpt / wpf. ADV_GEN_K=1 gives the identity (the old world).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from adv_warp import Warp
-K = float(os.environ.get('ADV_GEN_K', '.6'))
+K = float(os.environ.get('ADV_GEN_K', '.8'))       # the owner's pick: routes keep about 60% of their length
 loc = np.array(mapimg('LOCATIONS.png').convert('RGB')).astype(np.int16)
 nearc = lambda c, tol, a=None: np.abs((loc if a is None else a) - np.array(c, np.int16)).sum(2) <= tol
 OLDC = {}
@@ -160,6 +160,11 @@ def waxis(way):
     for (xa, ya), (xb, yb) in zip(way, way[1:]):
         x, y = wpt(xb, yb); px, py = out[-1]; out.append((px, y) if xa == xb else (x, py) if ya == yb else (x, y))
     return out
+# the hand-built map-lab windows (tools/adv-region-export.py WINDOWS; their maps are maplab/maps/*.json, 2 x 2 lab cells per tile): the exporter overwrites them after this
+_ex = open(os.path.join(ROOT, 'tools', 'adv-region-export.py'), encoding='utf8').read(); LABWIN = []
+for _m in re.finditer(r"dict\(map='([^']+)', wx=(\d+), wy=(\d+)", _ex[_ex.index('WINDOWS = ['):_ex.index('ROOMS = [')]):
+    _sz = json.load(open(os.path.join(ROOT, _m.group(1))))['size']; LABWIN.append((int(_m.group(2)), int(_m.group(3)), _sz[0] // 2, _sz[1] // 2))
+LABWIN_OLD = [(840, 464, 48, 48), (240, 928, 64, 48), (808, 416, 64, 48)]      # where they stood on the 1.0 island, same order (NPCs in them move with the window, not the warp)
 log('plan B warp K', K, 'grid', WARP.W1, 'x', WARP.H1, 'tiles,', CW, 'x', CHN, 'chunks; town shifts', SHIFT, 'smallest dG', round(WARP.minsv, 3))
 
 # ---------------------------------------------------------------- 1. biomes
@@ -505,6 +510,10 @@ mat[cls == C['snow']] = SNOW
 mat[mount | cave] = ASH
 mat[mount & (cls == C['cap'])] = SNOW
 mat[(cls == C['cap']) & ~mount & land] = SNOW
+labap = np.zeros((HP, WP), bool)                     # a grass apron round each lab window (they are drawn as grass country): no snow or desert ruled off along the window edge
+for _x, _y, _w, _h in LABWIN: labap[max(0, _y - 6):_y + _h + 6, max(0, _x - 6):_x + _w + 6] = True
+labap = ndi.binary_dilation(labap, disk(1)) & (noise(3, 404) > -1.2) | labap & ~ndi.binary_erosion(labap, disk(4))
+mat[labap & land & ~mount & np.isin(mat, [SNOW, DUNE])] = GRASS
 # water: deep in the middle, shallow near shore, sand shores where a beach is near
 dl = ndi.distance_transform_edt(water)
 sandy = dil(beachc | (mat == DUNE), 3)
@@ -679,17 +688,26 @@ town_out = {}
 DECO = []                                            # [code, centre x, centre y, deco list] from the hand layouts
 NPC_SRC = open(os.path.join(OUT, 'npcs.js'), encoding='utf8', newline='').read().split('\n'); NPCS = []       # (id, x, y, face, trainer?, line index)
 _ws = re.search(r'"scale":([0-9.]+)', open(os.path.join(OUT, 'world.js'), encoding='utf8').read()); NPC_WARP = K != 1 and not _ws    # plan B: npcs.js still has old-scale positions, carry them over
+def npc_map(x, y):
+    """an old-scale NPC tile: inside a lab window it moves with the window's own scale (the map was laid onto it), elsewhere through the warp"""
+    w = next((k for k, (a, b, c, d) in enumerate(LABWIN_OLD) if a <= x < a + c and b <= y < b + d), None)
+    if w is None or len(LABWIN) != len(LABWIN_OLD): return wpt(x, y)
+    (a, b, c, d), (a2, b2, c2, d2) = LABWIN_OLD[w], LABWIN[w]; return a2 + int((x - a) * c2 / c), b2 + int((y - b) * d2 / d)
 if NPC_WARP:
     for _i, _l in enumerate(NPC_SRC):
         _m = re.match(r"(\s*\{ id: '[^']+', )x: (\d+), y: (\d+),", _l)
-        if _m: _x, _y = wpt(int(_m.group(2)), int(_m.group(3))); NPC_SRC[_i] = _m.group(1) + f'x: {_x}, y: {_y},' + _l[_m.end():]
+        if _m:
+            _x, _y = npc_map(int(_m.group(2)), int(_m.group(3))); _l = _m.group(1) + f'x: {_x}, y: {_y},' + _l[_m.end():]
+            _l = re.sub(r'course: (\[\[[\d, \[\]]*\]\])', lambda m_: 'course: ' + json.dumps([list(npc_map(*p_)) for p_ in json.loads(m_.group(1))]), _l)   # a coach's course is tiles too
+            NPC_SRC[_i] = _l
 for _i, _l in enumerate(NPC_SRC):
     _m = re.match(r"\s*\{ id: '([^']+)', x: (\d+), y: (\d+),.*?face: (\d)", _l)
     if _m: NPCS.append((_m.group(1), int(_m.group(2)), int(_m.group(3)), int(_m.group(4)), 'trainer:' in _l or (_i + 1 < len(NPC_SRC) and NPC_SRC[_i + 1].lstrip().startswith('trainer:')), _i))
 for _id, _x, _y, _f, _tr, _i in NPCS: occ[_y - 1:_y + 2, _x - 1:_x + 2] = True       # nothing is planted on a person (the fixer at the end moves one only if its spot became unusable)
 NPC_AT = {n[0]: n[5] for n in NPCS}
+NPC_SET = []                                         # hand rules that put an NPC somewhere (the waymarker readers): npcs.js is rewritten when any ran
 def npc_set(id_, x, y):
-    li = NPC_AT[id_]; NPC_SRC[li] = re.sub(r'x: \d+, y: \d+,', f'x: {x}, y: {y},', NPC_SRC[li], 1)
+    li = NPC_AT[id_]; NPC_SET.append(id_); NPC_SRC[li] = re.sub(r'x: \d+, y: \d+,', f'x: {x}, y: {y},', NPC_SRC[li], 1)
     for k, n in enumerate(NPCS):
         if n[0] == id_: NPCS[k] = (n[0], x, y) + n[3:]
 ROOM_DOORS = []
@@ -1119,10 +1137,10 @@ for i, b in enumerate(bnd):                                   # a stack of timbe
         c = g6ring(arc3, d3, (b + bnd[i + 1]) // 2, 5.5, 8)
         if c: p = c[int(hq('g6t', i) * len(c))]; g6put(('logShort', 'fallenLog', 'fallenLog', 'fallenLog')[(i // 2) % 4], p[0], p[1], 2)
 # Route 111: a landing every 22 to 32 tiles, on alternating sides: cleared pad, stacks, a parked log truck, now and then the loader
-la = 8
+la = 4 if K != 1 else 8                # plan B: Route 111 is about 20 tiles between the two towns now; start the first landing nearer the town
 for i in range(40):
     la += 15 + int(hq('g6l', i) * 9)         # v2: the road is now a 3 wide band of straight runs (shorter by its old wiggles), so the landings come a little closer
-    c = g6ring(arc111, d111, la, 6, 7.5)
+    c = g6ring(arc111, d111, la, 6, 7.5) or (g6ring(arc111, d111, la, 4.5, 9) if K != 1 else [])
     if not c: continue
     c.sort(key=lambda p: hq('g6c', i, p[0], p[1])); x0, y0 = c[0]; sgn = -1 if i % 2 else 1
     pad = (np.abs(XX - x0) <= 8) & (np.abs(YY - y0) <= 6) & (d111 >= 3.5) & land & (dg6 > 41); g6clear |= pad
@@ -1444,7 +1462,7 @@ def r1put(nm, a, off, r=1):
     return None
 for n_ in range(1, 10):                                        # stone 1 is the last before the memorial, stone 9 the first out of the Route 2 junction; every other one on the far side
     a = R1LEN - 14 - (n_ - 1) * 15.5; sd_ = 1 if n_ % 2 else -1; p = r1put('standingStoneMint', a, sd_ * 3)
-    st_ = r1cell(p[2], p[3] - sd_) if p else r1cell(a, sd_ * 2); [npc_set(f'r1-stone{n_}', st_[0], st_[1]) for n0 in NPCS if n0[0] == f'r1-stone{n_}' and max(abs(n0[1] - st_[0]), abs(n0[2] - st_[1])) > 3]        # the unseen reader stands beside its stone, on the road side
+    st_ = r1cell(p[2], p[3] - sd_) if p else r1cell(a, sd_ * 2); [npc_set(f'r1-stone{n_}', st_[0], st_[1]) for n0 in NPCS if n0[0] == f'r1-stone{n_}' and (n0[1], n0[2]) != tuple(st_)]        # the unseen reader stands beside its stone, on the road side
     print(f'  WAYMARK {n_}: arc {a:.0f} stone {p} stand {st_} (road cell {r1cell(a, 0)}, side {sd_})')
 r1put('streetSign', 5, 3); r1put('benchTeal', R1LEN * .5, -3); r1put('stoneGrey', R1LEN * .5 + 3, -4); r1put('flowersWhite', R1LEN * .5 - 2, -4)
 for y, x in np.argwhere(road1 & ~crack):                       # weeds in the seams: never solid, so the road stays open
@@ -1597,12 +1615,13 @@ moved = []; taken = set()
 for id_, x, y, face, tr, li in NPCS:
     txt = NPC_SRC[li] + (NPC_SRC[li + 1] if tr else ''); sm = re.search(r'sight: (\d)', txt); sight = int(sm.group(1)) if sm else 0; zname = WHERE.get(id_.split('-')[0])
     if tr and not sm: continue
+    if any(a <= x < a + c and b <= y < b + d for a, b, c, d in LABWIN): taken.add((x, y)); continue     # inside a lab window: its ground comes from the exporter, checked by tools/adv-check.mjs
     if npc_good(x, y, face, tr, sight, zname, taken): taken.add((x, y)); continue
     for dx, dy in sorted(((a, b) for a in range(-7, 8) for b in range(-7, 8)), key=lambda d: (abs(d[0]) + abs(d[1]), d)):
         if npc_good(x + dx, y + dy, face, tr, sight, zname, taken):
             NPC_SRC[li] = NPC_SRC[li].replace(f'x: {x}, y: {y},', f'x: {x + dx}, y: {y + dy},', 1); taken.add((x + dx, y + dy)); moved.append((id_, (x, y), (x + dx, y + dy))); break
     else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot within 7 tiles')
-if moved or NPC_WARP:
+if moved or NPC_WARP or NPC_SET:
     open(os.path.join(OUT, 'npcs.js'), 'w', encoding='utf8', newline='').write('\n'.join(NPC_SRC))
 log('NPC fixer moved', len(moved), [m[0] for m in moved])
 
@@ -1621,6 +1640,7 @@ for nm, x, y in props: bucket.setdefault((int(x // (T * CH)), int(y // (T * CH))
 os.makedirs(os.path.join(OUT, 'chunks'), exist_ok=True)
 if not ONLY:
     for f in os.listdir(os.path.join(OUT, 'chunks')): os.remove(os.path.join(OUT, 'chunks', f))
+    if os.path.realpath(OUT) == os.path.realpath(os.path.join(ROOT, 'data', 'adv')): shutil.rmtree(os.path.join(ROOT, 'maplab', 'out', 'region-pilot', 'backup'), ignore_errors=True)   # the map-lab exporter's copies of the chunks it patched are stale now: it takes fresh ones on its next run
 blank = []; total = 0; nfiles = 0
 o_t = TOWN[ONLY] if ONLY else None
 for cy in range(CHN):

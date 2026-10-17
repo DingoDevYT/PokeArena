@@ -22,6 +22,7 @@ let n = 0;
 const ok = (cond, msg) => { assert.ok(cond, msg); n++; };
 const eq = (a, b, msg) => { assert.equal(a, b, msg); n++; };
 const deepEq = (a, b, msg) => { assert.deepEqual(a, b, msg); n++; };
+const loadWorld = (W = window.ADV_WORLD) => { for (let r = 0; r < W.chunksH; r++) for (let c = 0; c < W.chunksW; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); } };   // plan B: the 0.8x island is small enough to load whole
 const bld = id => window.ADV_WORLD.buildings.find(b => b.id === id), bnpcs = id => bld(id).interior.npcs;   // S2: what a building holds, from the world data
 
 // fn(x, y) -> { h, m, o, k, d } overrides for that cell
@@ -223,7 +224,7 @@ ADV.setWorld(null);
 // ---------- 8. living wild Pokemon: zones, clock, levels, evolutions, spawner, behaviours, pile-on queue, tall grass ----------
 const seeded = seed => () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
 ADVW.rnd = seeded(7);
-eq(ADVW.zone(10672 * S, 28400 * S), 'goldacre', 'the Kenora spawn is in the Goldacre zone'); eq(ADVW.zone(-5, -5), '', 'outside the grid is no zone');
+eq(ADVW.zone(7440 * S, 22416 * S), 'goldacre', 'the Kenora spawn is in the Goldacre zone'); eq(ADVW.zone(-5, -5), '', 'outside the grid is no zone');
 eq(ADV.rle('3x2,7').join(), '3,3,7', 'RLE helper is exported');
 // day / night tables by the clock
 ADVW.hourSet = 12; ok(!ADVW.night() && ADVW.table('route5').some(e => e[0] === 'bunnelby') && !ADVW.table('route5').some(e => e[0] === 'nickit'), 'noon uses the day table');
@@ -629,8 +630,8 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   // the real world: piers and the dock are walkable, the sea is Surf's, a cast finds dry ground, the shore is dressed
   const W5 = window.ADV_WORLD, tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T]; ADV.reset(); ADV.setWorld(W5); ADV.fallback = false;
   const loadAround = (c0, c1, r0, r1) => { for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); } };
-  loadAround(1, 4, 24, 25);
   const T5c = W5.towns.T5, cx5 = Math.floor(T5c.x / T), cy5 = Math.floor(T5c.y / T);
+  loadAround(Math.floor((cx5 - 60) / 32), Math.floor((cx5 + 30) / 32), Math.floor((cy5 - 20) / 32), Math.floor((cy5 + 30) / 32));
   ok(W5.palette.includes('boardwalk') && !W5.water.includes('boardwalk'), 'the boardwalk mat is walkable ground');
   let pe = ADV.entity(...tile(cx5 - 13, cy5 + 2), 0); walk(pe, -1, 0, 7);
   ok(pe.x < (cx5 - 28) * T && pe.x > (cx5 - 35) * T, 'on foot, Lane A runs out along the pier to its head (' + Math.floor(pe.x / T - cx5) + ' tiles west of the centre)'); const pcell = [Math.floor(pe.x / T), Math.floor(pe.y / T)];
@@ -640,10 +641,10 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   const fw = ADVW.fishMake(P5, { id: 'magikarp', lv: 8, top: 11 }, P5.x - 40, P5.y); ok(fw && fw.g.local && fw.st === 'pop' && ADVW.groups.includes(fw.g), 'the bite is a lone local wild mon'); ADVW.kill(fw); ok(!ADVW.groups.includes(fw.g), 'and it is gone once the fight ends');
   let se = ADV.entity(...tile(cx5 - 13, cy5 + 2), 0); se.surf = true; walk(se, -1, 0, 8); ok(se.x < (cx5 - 36) * T, 'with Surf you pass the pier head into the bay (' + Math.floor(se.x / T - cx5) + ' tiles west)');
   walk(se, 1, 0, 8); ok(se.x > (cx5 - 28) * T, 'and come back to the boards');
-  loadAround(5, 8, 22, 25); const cnt = (c0, c1, r0, r1, names, x0, x1, y0, y1) => { let k = 0; for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) for (const p of ADV.chunks.get(ADV.key(c, r))?.props || []) if (names.includes(p.n) && p.x >= x0 * T && p.x <= x1 * T && p.y >= y0 * T && p.y <= y1 * T) k++; return k; };
-  ok(cnt(5, 7, 24, 25, ['maRowboat'], 164, 238, 800, 815) >= 1, 'Route 9 bank: a rowboat on the inlet (drying racks, nets and crab pots are missing art)');
-  const camp = ADV.chunks.get(ADV.key(8, 22)); ok(camp && camp.props.filter(p => p.n === 'tentPair').length === 3 && camp.props.some(p => p.n === 'noticeBoard' && Math.abs(p.x - 262.5 * T) < 40 * S), 'Route 10 campsite: three tents and the register board');
-  let de = ADV.entity(...tile(265, 717), 0); walk(de, 1, 0, 5); ok(de.x > 275 * T && ADV.isWater(Math.floor(de.x / T) + 3, 717), 'the campsite dock runs out into the lake on foot');
+  loadAround(4, 7, 17, 20); const cnt = (c0, c1, r0, r1, names, x0, x1, y0, y1) => { let k = 0; for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) for (const p of ADV.chunks.get(ADV.key(c, r))?.props || []) if (names.includes(p.n) && p.x >= x0 * T && p.x <= x1 * T && p.y >= y0 * T && p.y <= y1 * T) k++; return k; };
+  ok(cnt(4, 6, 19, 20, ['maRowboat'], 138, 192, 636, 648) >= 1, 'Route 9 bank: a rowboat on the inlet (drying racks, nets and crab pots are missing art)');
+  const camp = ADV.chunks.get(ADV.key(6, 17)); ok(camp && camp.props.filter(p => p.n === 'tentPair').length === 3 && camp.props.some(p => p.n === 'noticeBoard' && Math.abs(p.x - 210.5 * T) < 40 * S), 'Route 10 campsite: three tents and the register board');
+  let de = ADV.entity(...tile(213, 568), 0); walk(de, 1, 0, 5); ok(de.x > 223 * T && ADV.isWater(Math.floor(de.x / T) + 3, 568), 'the campsite dock runs out into the lake on foot');
   // teachers, music and the people
   const ND = window.ADV_NPCS, tch = ND.filter(d => d.script === 'teach');
   eq(tch.map(d => d.id + ':' + d.skill).sort().join(), 'l4-speaker:sense,r9-teacher:fishing,s5-fish:fishing,s5-surf:surf', 'four teachers: fishing on Route 9 (before the town) and in Salt Bay, surfing in Salt Bay, Sensing Shadow Pokemon at Quiet Plain');
@@ -656,8 +657,8 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 // ---------- T7 Longshore: the beach resort, its shallow bay, and Route 6's seafront strip (dock, castles, the resort spilling up the road) ----------
 {
   const W7 = window.ADV_WORLD, tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T]; ADV.reset(); ADV.setWorld(W7); ADV.fallback = false;
-  for (let r = 26; r <= 32; r++) for (let c = 0; c <= 8; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
   const T7c = W7.towns.T7, cx7 = Math.floor(T7c.x / T), cy7 = Math.floor(T7c.y / T), pal = (c, r) => ADV.palette[ADV.mat(c, r)], zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T);
+  for (let r = Math.max(0, (cy7 - 100) >> 5); r <= (cy7 + 60) >> 5; r++) for (let c = 0; c <= (cx7 + 180) >> 5; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
   eq(W7.buildings.filter(b => b.town === 'T7').length, 7, 'Longshore has 7 buildings: a Center, the beach store and 5 houses'); ok(['t7-center', 't7-mart'].every(r => W7.buildings.some(b => b.id === r)), 'Longshore has its Center and its beach store');
   ok(!window.ADV_NPCS.some(d => d.script === 'teach' && /^(t7|r6)-/.test(d.id)), 'no Skill is taught in Longshore or on Route 6 (rented surf gear is only flavour; Salt Bay teaches)');
   // the sea never gets deep: the whole bay stays shallow out to 50 tiles, a sand beach runs along it
@@ -760,9 +761,9 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const W6 = window.ADV_WORLD, G6c = W6.towns.G6, cx6 = Math.floor(G6c.x / T), cy6 = Math.floor(G6c.y / T), O8 = window.TRAINER_OW8, ex = window.ADV_TILESET.props;
   ADV.reset(); ADV.setWorld(W6); ADV.fallback = false;
-  for (let r = 22; r <= 31; r++) for (let c = 16; c <= 24; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
+  loadWorld();
   const zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T), tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T];
-  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) all.push(p);
+  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) if (p.x >= (cx6 + -85) * T && p.x < (cx6 + 203) * T && p.y >= (cy6 + -162) * T && p.y < (cy6 + 158) * T) all.push(p);   // the props round the town (the box the old chunk range covered)
   const of = (...m) => all.filter(p => m.includes(p.n)), inz = (ps, z) => ps.every(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === z);
   // doors and rooms
   eq(W6.buildings.filter(b => b.town === 'G6').length, 9, 'Pinegrove has 9 buildings: a Center, the Outfitters, the forestry office, 5 houses and the sawmill gym'); ok(['g6-center', 'g6-mart', 'g6-gym'].every(r => W6.buildings.some(b => b.id === r)), 'Pinegrove has its Center, its Outfitters and its gym');
@@ -797,7 +798,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   const r3p = all.filter(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === 'route3'); ok(r3p.filter(p => /^(logShort|fallenLog)$/.test(p.n)).length >= 1, 'timber stacked on Route 3'); const st3 = r3p.filter(p => /^(stump|fallenLog|logShort)/.test(p.n)).length, sa3 = r3p.filter(p => /^(pineSapling|saplingTree|miniTree|poplar)/.test(p.n) && !/Bush/.test(p.n)).length; ok(st3 >= 4 && sa3 >= 4, 'felled stands show stumps, replanted stands show saplings (' + st3 + ', ' + sa3 + ')');
 
   // Route 111: landings with trucks, stacks, barrels, crates and a loader
-  const r111p = all.filter(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === 'route111'); const c111 = nm => r111p.filter(p => nm.test(p.n)).length; ok(c111(/^vanGrey$/) >= 2 && c111(/^(logShort|fallenLog)$/) >= 4 && c111(/^(barrelOrange|crateWide)$/) >= 2, 'Route 111 has its timber landings (' + c111(/^vanGrey$/) + ' trucks, ' + c111(/^(logShort|fallenLog)$/) + ' stacks, ' + c111(/^(barrelOrange|crateWide)$/) + ' barrels and crates, ' + c111(/^bulldozer$/) + ' loaders)');
+  const r111p = all.filter(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === 'route111'); const c111 = nm => r111p.filter(p => nm.test(p.n)).length; ok(c111(/^vanGrey$/) >= 1 && c111(/^(logShort|fallenLog)$/) >= 3 && c111(/^(barrelOrange|crateWide)$/) >= 1, 'Route 111 has its timber landings (plan B: about 20 tiles between Pinegrove and Spindlewood now, room for one; ' + c111(/^vanGrey$/) + ' trucks, ' + c111(/^(logShort|fallenLog)$/) + ' stacks, ' + c111(/^(barrelOrange|crateWide)$/) + ' barrels and crates, ' + c111(/^bulldozer$/) + ' loaders)');
   eq(zoneAt(cx6 + 9, cy6 - 60), 'route3', 'north of the town is Route 3'); eq(zoneAt(cx6 + 40, cy6 + 4), 'route111', 'east of the town is Route 111');
   // both roads walk on foot from the town to the end of the road
   let n3 = ADV.entity(...tile(cx6 + 10, cy6 + 4), 0); walk(n3, 0, -1, 28); ok(n3.y < (cy6 - 75) * T, 'Route 3 walks on foot from the town to its far end (reached ' + Math.floor(n3.y / T - cy6) + ')');
@@ -814,9 +815,9 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const W6 = window.ADV_WORLD, S6 = W6.towns.T6, cx = Math.floor(S6.x / T), cy = Math.floor(S6.y / T), O8 = window.TRAINER_OW8, ex = window.ADV_TILESET.props;
   ADV.reset(); ADV.setWorld(W6); ADV.fallback = false;
-  for (let r = 24; r <= 28; r++) for (let c = 21; c <= 25; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
+  loadWorld();
   const pal = (c, r) => ADV.palette[ADV.mat(c, r)], zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T), tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T];
-  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) all.push(p);
+  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) if (p.x >= (cx + -69) * T && p.x < (cx + 91) * T && p.y >= (cy + -66) * T && p.y < (cy + 94) * T) all.push(p);   // the props round the town (the box the old chunk range covered)
   const of = (...m) => all.filter(p => m.includes(p.n)), cell = p => [Math.floor(p.x / T), Math.floor(p.y / T)];
   // doors and rooms: a Center, the dock store and five houses; no gym, nobody teaches a Skill
   eq(W6.buildings.filter(b => b.town === 'T6').length, 7, 'Spindlewood has 7 buildings: a Center, the dock store and 5 houses'); ok(['t6-center', 't6-mart'].every(r => W6.buildings.some(b => b.id === r)), 'Spindlewood has its Center and its dock store');
@@ -862,9 +863,9 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const W8 = window.ADV_WORLD, G8c = W8.towns.G8, cx = Math.floor(G8c.x / T), cy = Math.floor(G8c.y / T), ex = window.ADV_TILESET.props, TI = window.ADV_TILESET_INT.props;
   ADV.reset(); ADV.setWorld(W8); ADV.fallback = false;
-  for (let r = 27; r <= 33; r++) for (let c = 16; c <= 24; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
+  loadWorld();
   const zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T), tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T];
-  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) all.push(p);
+  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) if (p.x >= (cx + -115) * T && p.x < (cx + 173) * T && p.y >= (cy + -130) * T && p.y < (cy + 94) * T) all.push(p);   // the props round the town (the box the old chunk range covered)
   const of = (...m) => all.filter(p => m.includes(p.n)), inz = (ps, z) => ps.filter(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === z);
   // doors and rooms: a Center, the general store, the wardens' lodge, five houses, the gym; no Skill taught
   eq(W8.buildings.filter(b => b.town === 'G8').length, 9, 'Sporehaven has 9 buildings: a Center, the store, the lodge, 5 houses and the gym'); ok(['g8-center', 'g8-mart', 'g8-lodge', 'g8-gym'].every(r => W8.buildings.some(b => b.id === r)), 'Sporehaven has its Center, store, lodge and gym');
@@ -927,9 +928,9 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const W9 = window.ADV_WORLD, T8c = W9.towns.T8, cx = Math.floor(T8c.x / T), cy = Math.floor(T8c.y / T);
   ADV.reset(); ADV.setWorld(W9); ADV.fallback = false;
-  for (let r = 30; r <= 36; r++) for (let c = 17; c <= 25; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
+  loadWorld();
   const zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T), tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T];
-  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) all.push(p);
+  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) if (p.x >= (cx + -226) * T && p.x < (cx + 62) * T && p.y >= (cy + -83) * T && p.y < (cy + 141) * T) all.push(p);   // the props round the town (the box the old chunk range covered)
   const of = (...m) => all.filter(p => m.includes(p.n)), inz = (ps, z) => ps.filter(p => zoneAt(Math.floor(p.x / T), Math.floor(p.y / T)) === z);
   // buildings: a Center, the general store, the watch house, five houses; no gym, no Skill taught, every building a walk-in interior
   eq(W9.buildings.filter(b => b.town === 'T8').length, 8, 'Duskmoss has 8 buildings: a Center, the store, the watch house and 5 houses'); ok(['t8-center', 't8-mart', 't8-lodge'].every(r => W9.buildings.some(b => b.id === r)), 'Duskmoss has its Center, store and watch house');
@@ -954,11 +955,11 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   };
   const T103 = window.ADV_NPCS.filter(d => /^r103-/.test(d.id) && d.trainer); ok(T103.length >= 3 && T103.length <= 5, T103.length + ' Route 103 trainers');
   for (const d of T103) ok(reach(...tile(d.x, d.y + 1)) || reach(...tile(d.x, d.y - 1)) || reach(...tile(d.x + 1, d.y)) || reach(...tile(d.x - 1, d.y)), 'on foot from the Center: ' + d.id);
-  { const fy = [...Array(60)].map((_, k) => 1100 + k).find(y => ADV.palette[ADV.mat(604, y)] === 'path'); ok(fy && reach(...tile(604, fy)), 'on foot from the Center: the far (west) end of Route 103 at tile 604, ' + fy); eq(zoneAt(604, fy), 'route103', 'and it is Route 103'); }
+  { const fy = [...Array(60)].map((_, k) => 880 + k).find(y => ADV.palette[ADV.mat(485, y)] === 'path'); ok(fy && reach(...tile(485, fy)), 'on foot from the Center: the far (west) end of Route 103 at tile 485, ' + fy); eq(zoneAt(485, fy), 'route103', 'and it is Route 103'); }
   // the road: 3 wide dirt, the dark beach beside it, sea cliffs (a raised ledge with a rock face) inland of the beach
-  { const col = x => [...Array(60)].map((_, k) => 1100 + k).filter(y => ADV.palette[ADV.mat(x, y)] === 'path'); ok([604, 624, 644, 664].every(x => col(x).length >= 2 && col(x).length <= 4), 'Route 103 is 2 to 4 tiles wide on the south leg'); }
-  const dark = (() => { let k = 0; for (let y = 1060; y < 1136; y++) for (let x = 590; x < 760; x++) if (ADV.palette[ADV.mat(x, y)] === 'ashGround') k++; return k; })(); ok(dark >= 800, dark + ' tiles of dark sand along the shore');
-  const ledges = (() => { let k = 0; for (let y = 1060; y < 1136; y++) for (let x = 590; x < 760; x++) if (ADV.h(x, y) === 1) k++; return k; })(); ok(ledges >= 400, ledges + ' tiles of cliff ledge on the black shore (1 level, with stairs: the generator flood fill proves they are reachable)');
+  { const col = x => [...Array(60)].map((_, k) => 880 + k).filter(y => ADV.palette[ADV.mat(x, y)] === 'path'); ok([485, 501, 517, 533].every(x => col(x).length >= 2 && col(x).length <= 4), 'Route 103 is 2 to 4 tiles wide on the south leg'); }
+  const dark = (() => { let k = 0; for (let y = 855; y < 920; y++) for (let x = 465; x < 615; x++) if (ADV.palette[ADV.mat(x, y)] === 'ashGround') k++; return k; })(); ok(dark >= 600, dark + ' tiles of dark sand along the shore');
+  const ledges = (() => { let k = 0; for (let y = 855; y < 920; y++) for (let x = 465; x < 615; x++) if (ADV.h(x, y) === 1) k++; return k; })(); ok(ledges >= 400, ledges + ' tiles of cliff ledge on the black shore (1 level, with stairs: the generator flood fill proves they are reachable)');
   // people: outdoors on free ground (checked above); plain flavour, nothing from the story pass
   const ids9 = window.ADV_NPCS.filter(d => /^t8-/.test(d.id)); ok(ids9.length >= 8 && ids9.length <= 14 && ids9.every(d => !d.trainer), `${ids9.length} outdoor villagers, no trainers`);
   const lines9 = [...ids9.flatMap(d => d.lines), ...T103.flatMap(d => [...d.lines, d.trainer.say, d.trainer.lose])];
@@ -973,9 +974,9 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const W4 = window.ADV_WORLD, L4c = W4.towns.L4, cx = Math.floor(L4c.x / T), cy = Math.floor(L4c.y / T);
   ADV.reset(); ADV.setWorld(W4); ADV.fallback = false;
-  for (let r = 29; r <= 36; r++) for (let c = 13; c <= 18; c++) { const f = new URL(`../data/adv/chunks/${c}_${r}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); else ADV.fillChunk(c, r); }
+  loadWorld();
   const zoneAt = (c, r) => ADVW.zone((c + 0.5) * T, (r + 0.5) * T), tile = (c, r) => [(c + 0.5) * T, (r + 0.5) * T], pal = (c, r) => ADV.palette[ADV.mat(c, r)];
-  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) all.push(p);
+  const all = []; for (const [, ch] of ADV.chunks) for (const p of ch.props || []) if (p.x >= (cx + -70) * T && p.x < (cx + 122) * T && p.y >= (cy + -185) * T && p.y < (cy + 71) * T) all.push(p);   // the props round the town (the box the old chunk range covered)
   const around = (ps, x, y, r) => ps.filter(p => Math.hypot(p.x / T - x, p.y / T - y) <= r), of = (...m) => all.filter(p => m.includes(p.n));
   // the landmark: nothing built, nothing fenced, no trees, markers in the grass, wind
   ok(!W4.buildings.some(b => b.town === 'L4') && !W4.doors.some(d => d.town === 'L4'), 'Quiet Plain has no building, no room and no door');
@@ -986,17 +987,17 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(zoneAt(cx, cy) === 'quietplain' && zoneAt(cx + 10, cy + 14) === 'quietplain', 'the whole plain is Quiet Plain'); const E4 = window.ADV_ENC;
   ok(E4.quietplain.day.some(e => e[0] === 'greavard') && E4.quietplain.night.some(e => e[0] === 'duskull'), 'Greavard on the plain by day, Duskull by night'); ok(![...E4.route1.day, ...E4.route1.night].some(e => ['pidgey', 'starly', 'spearow', 'wingull', 'taillow', 'hoppip'].includes(e[0])), 'no birds on Route 1');
   // Route 1: an old paved road, 2 to 4 wide on the straights, cracked (grass holes and weeds in the seams), nothing solid on it
-  const corr = []; for (let y = 981; y < 1100; y++) for (let x = 480; x < 545; x++) if (pal(x, y) === 'pavingStone') corr.push([x, y]);
+  const corr = []; for (let y = 787; y < 884; y++) for (let x = 382; x < 447; x++) if (pal(x, y) === 'pavingStone') corr.push([x, y]);
   ok(corr.length >= 380, corr.length + ' tiles of old paving on Route 1');
-  for (const y of [1010, 1014, 1030, 1036, 1052, 1058, 1076]) { const w = [...Array(65)].filter((_, i) => pal(480 + i, y) === 'pavingStone').length; ok(w >= 2 && w <= 4, `Route 1 is 2 to 4 tiles wide at row ${y} (${w})`); }
+  for (const y of [808, 812, 826, 830, 844, 856, 872]) { const w = [...Array(65)].filter((_, i) => pal(382 + i, y) === 'pavingStone').length; ok(w >= 2 && w <= 4, `Route 1 is 2 to 4 tiles wide at row ${y} (${w})`); }
   const weeds = all.filter(p => ['grassBlades', 'dryTuft', 'leafPlantGrey'].includes(p.n) && pal(Math.floor(p.x / T), Math.floor((p.y - 3) / T)) === 'pavingStone'); ok(weeds.length >= 40, weeds.length + ' weeds forced up through the seams');
-  ok(all.filter(p => ADV.propDef(p.n)?.solid && p.x / T >= 480 && p.x / T < 545 && p.y / T >= 981 && p.y / T < 1100 && pal(Math.floor(p.x / T), Math.floor((p.y - 3) / T)) === 'pavingStone').length === 0, 'nothing solid stands on the paving');
+  ok(all.filter(p => ADV.propDef(p.n)?.solid && p.x / T >= 382 && p.x / T < 447 && p.y / T >= 787 && p.y / T < 884 && pal(Math.floor(p.x / T), Math.floor((p.y - 3) / T)) === 'pavingStone').length === 0, 'nothing solid stands on the paving');
   const holes = (() => { let k = 0; for (const [x, y] of corr) for (const [dx, dy] of [[1, 0], [-1, 0]]) if (pal(x + dx, y + dy) === 'grass' && pal(x + 2 * dx, y + 2 * dy) === 'pavingStone') k++; return k; })(); ok(holes >= 6, holes + ' grass holes inside the paving');
   // nine waymarker stones counting down toward the memorial, each with a reader's line
   const WM = [...Array(9)].map((_, i) => window.ADV_NPCS.find(d => d.id === 'r1-stone' + (i + 1))); ok(WM.every(Boolean) && WM.every(d => d.sprite === null && !d.trainer && !d.script), 'nine waymarker stones as unseen readers');
-  const stones = of('standingStoneMint').filter(p => p.x / T >= 480 && p.x / T < 545 && p.y / T >= 981 && p.y / T < 1100); eq(stones.length, 9, 'nine waymarker stones stand beside Route 1');
+  const stones = of('standingStoneMint').filter(p => p.x / T >= 382 && p.x / T < 447 && p.y / T >= 787 && p.y / T < 878); eq(stones.length, 9, 'nine waymarker stones stand beside Route 1');
   ok(WM.every(d => stones.some(p => Math.hypot(p.x / T - d.x - 0.5, p.y / T - d.y - 0.5) <= 3.2)), 'each reader stands by a stone (within 3 tiles, the generator\'s rule: the first stone stands just inside Quiet Plain, its reader on the Route 1 side)');
-  ok(WM.every((d, i) => new RegExp('\\b' + (i + 1) + '\\b').test(d.lines.join(' '))) && WM.every((d, i) => !i || Math.hypot(d.x - cx, d.y - cy) > Math.hypot(WM[i - 1].x - cx, WM[i - 1].y - cy)), 'the numbers count down toward the memorial: stone 1 is nearest, stone 9 farthest');
+  ok(WM.every((d, i) => new RegExp('\\b' + (i + 1) + '\\b').test(d.lines.join(' '))) && WM.every((d, i) => !i || d.y < WM[i - 1].y), 'the numbers count down toward the memorial: stone 1 is nearest, stone 9 farthest (the road runs south to it; on the 0.8x island its jogs make straight-line distance a poor measure)');
   // the ghost-speaker: free, for anyone, no badge, no lesson; the name stays open
   const sp = window.ADV_NPCS.find(d => d.id === 'l4-speaker'); ok(sp && sp.script === 'teach' && sp.skill === 'sense' && sp.sprite === 'npc1-robed-woman' && !sp.trainer && !sp.fee, 'the ghost-speaker teaches Sensing Shadow Pokemon for nothing');
   { const sv = ADVS.fresh({ name: 'Ash', avatar: 'red', home: 'G7', starter: ADVP.mon('bulbasaur', 5) }); eq(sv.badges, 0, 'a fresh save with no badges and nothing done'); ok(ADVP.teach(sv, 'sense').length >= 1 && sv.skills.sense === 1, 'walks away knowing Sensing Shadow Pokemon'); eq(ADVP.teach(sv, 'sense').length, 0, 'and it is taught once'); }
@@ -1005,7 +1006,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(window.ADV_NPCS.filter(d => /^(l4|r1)-/.test(d.id)).every(d => [...d.lines, ...(d.known || []), ...(d.trainer ? [d.trainer.say, d.trainer.lose] : [])].every(s => !/umbra|statue|vesper|dunereach|\bship\b|sanctuary/i.test(s))), 'nobody here connects the two monuments or names the story');
   // on foot: from the Route 2 junction down the road to its end, and to the speaker and the far visitors
   const reach = (tx, ty) => {
-    const R = 16 * S, X0 = 470 * T, Y0 = 975 * T, GW = 190, GH = 330, seen = new Uint8Array(GW * GH), q = [], s0 = tile(539, 984), at = (x, y) => (Math.floor((y - Y0) / R)) * GW + Math.floor((x - X0) / R);
+    const R = 16 * S, X0 = 374 * T, Y0 = 782 * T, GW = 190, GH = 330, seen = new Uint8Array(GW * GH), q = [], s0 = tile(426, 790), at = (x, y) => (Math.floor((y - Y0) / R)) * GW + Math.floor((x - X0) / R);
     q.push(s0); seen[at(...s0)] = 1;
     for (let i = 0; i < q.length; i++) for (const [dx, dy] of [[R, 0], [-R, 0], [0, R], [0, -R]]) { const x = q[i][0] + dx, y = q[i][1] + dy; if (x < X0 || y < Y0 || x >= X0 + GW * R || y >= Y0 + GH * R || seen[at(x, y)] || ADV.blocked(x, y, 0, 9)) continue; seen[at(x, y)] = 1; q.push([x, y]); }
     return seen[at(tx, ty)] === 1;

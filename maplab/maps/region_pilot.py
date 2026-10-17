@@ -1,17 +1,20 @@
-"""Region rebuild pilot: Route 22 'the orchard road' (docs/REGION-REBUILD.md). A 96 x 96 map-lab cell map = 48 x 48 game cells.
+"""Region rebuild pilot: Route 22 'the orchard road' (docs/REGION-REBUILD.md). Drawn as a 96 x 96 map-lab cell map (48 x 48 game cells); since plan B
+(the 0.8x island, section 13) it is laid onto an 80 x 80 lab map (40 x 40 game cells, window origin world (672, 376)) through labscale.Sc: the numbers below are the drawing's.
   py -3.12 -I maplab/maps/region_pilot.py            writes maplab/maps/region_pilot.json, lints it, renders maplab/out/region-pilot/maplab.png
 Every ground feature sits on EVEN lab coordinates (a game cell is 2 x 2 lab cells), so the exporter's 2 x 2 downsample for collision never splits a feature.
 Exits (lab cells): west gateway x0, rows 2..7 (game rows 1..3 of the window = world y 465..467); south gateway rows 95, x48..53 (game x 24..26 = world x 864..866)."""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import build as B
+from labscale import Sc, Scaled
 R = B.R
+SC = Sc(40 / 48, 40 / 48)
 PINK = ['round_pink0', 'round_pink1', 'round_orange0', 'round_pink0', 'round_red0', 'round_pink1']
 GREEN, ROUND, FLOWERS, SMALL = B.GREEN, B.ROUND, B.FLOWERS, B.SMALL
 
 
 def pilot():
-    m = B.Map('region_pilot', 96, 96, path='d')
+    m0 = B.Map('region_pilot', 80, 80, path='d'); m = Scaled(m0, SC)
     # roads: 4 lab cells (2 game cells) wide, 6 at the two gateways so they meet the 3 cell wide neighbours
     for r in [(0, 2, 7, 7), (8, 4, 33, 7), (30, 4, 33, 23), (30, 22, 37, 25), (34, 22, 37, 43), (34, 40, 53, 43), (50, 40, 53, 71), (50, 68, 57, 71), (54, 68, 57, 79), (50, 76, 57, 79), (50, 76, 53, 87), (48, 88, 53, 95),
               (54, 56, 73, 59),                    # lane east to the cottage and the produce stall
@@ -78,14 +81,14 @@ def pilot():
     for i, (cx, cy) in enumerate([(16, 14), (26, 14), (30, 46), (22, 52), (44, 40), (56, 52), (58, 70), (80, 60), (42, 82), (8, 70), (36, 7), (88, 14)]):
         m.cluster(FLOWERS, cx, cy, 3, 200 + i, r=2)
     m.scatter(SMALL, 110, (0, 6, 95, 92), 205)
-    return m
+    return m0
 
 
 if __name__ == '__main__':
     m = pilot(); p = m.dump(); warn = m.lint()
     for w in warn: print('  [region_pilot]', w)
     mp = json.load(open(p)); mp['start'] = [0, 2]   # probe start: the west gateway (game cell)
-    mp['probes'] = {'outside west': [-1, 2], 'south gate': [25, 47]}
+    mp['probes'] = {'outside west': [-1, 2], 'south gate': [21, 39]}
     json.dump(mp, open(p, 'w'), indent=1)
     im = R.render(mp)
     out = os.path.join(os.path.dirname(HERE), 'out', 'region-pilot'); os.makedirs(out, exist_ok=True)
