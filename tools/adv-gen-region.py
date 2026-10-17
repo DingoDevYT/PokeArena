@@ -64,6 +64,76 @@ def snap_road(ridge, q=3):
             if cov[i, j] >= cov[i + 1, j + 1]: c[i, j] = True
             else: c[i + 1, j + 1] = True
     return _up(c, q)
+def dp(pts, tol):
+    """Douglas-Peucker: the corners of a cell path that stays within tol of it"""
+    if len(pts) < 3: return list(pts)
+    a, b = np.array(pts[0], float), np.array(pts[-1], float); v = b - a; L = np.hypot(*v)
+    d = [abs(v[0] * (p[1] - a[1]) - v[1] * (p[0] - a[0])) / L if L else np.hypot(p[0] - a[0], p[1] - a[1]) for p in pts]
+    k = int(np.argmax(d))
+    if d[k] <= tol: return [pts[0], pts[-1]]
+    return dp(pts[:k + 1], tol)[:-1] + dp(pts[k:], tol)
+def octi_road(ridge, tol=3.0, w=1):
+    """plan B roads: each stretch of the centre line becomes straight and 45 degree legs (the diagonal path tiles draw the slants), dilated to 2w+1 wide"""
+    c = np.zeros_like(ridge)
+    for path in trace(ridge):
+        v = dp(path, tol); x1, y1 = v[0]
+        for i, (xt, yt) in enumerate(v[1:]):
+            x0, y0 = x1, y1; dx, dy = xt - x0, yt - y0; sx, sy = int(np.sign(dx)), int(np.sign(dy)); n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
+            if (i < len(v) - 2 and 0 < n < 3 <= m or n == 1 <= m): n = 0; dx, dy = (dx, 0) if abs(dx) > abs(dy) else (0, dy)       # a leg a step or two off straight: straight, the next leg takes up the offset (no 1 tile jog; on the last leg a 1 tile offset is dropped, the 3 wide band still meets the junction)
+            elif i < len(v) - 2 and 0 < m < 3 <= n: m = 0; dx, dy = sx * n, sy * n                                 # nearly 45 degrees: a clean diagonal
+            x1, y1 = x0 + dx, y0 + dy; n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
+            st = (sx, 0) if abs(dx) > abs(dy) else (0, sy); a = m // 2
+            x, y = x0, y0; c[y, x] = True
+            for step in [st] * a + [(sx, sy)] * n + [st] * (m - a):
+                x += step[0]; y += step[1]; c[y, x] = True
+    return ndi.binary_dilation(c, ndi.generate_binary_structure(2, 1), iterations=w)
+def octi_legs(v, closed=False):
+    """integer vertices -> unit steps of straight and 45 degree legs (a leg a step or two off straight goes straight and the next leg takes up the offset)"""
+    out = [v[0]]; x1, y1 = v[0]
+    for i, (xt, yt) in enumerate(v[1:]):
+        x0, y0 = x1, y1; dx, dy = xt - x0, yt - y0; n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
+        last = i == len(v) - 2
+        if not last and 0 < n < 3 <= m: dx, dy = (dx, 0) if abs(dx) > abs(dy) else (0, dy)
+        elif not last and 0 < m < 3 <= n: dx, dy = int(np.sign(dx)) * n, int(np.sign(dy)) * n
+        x1, y1 = x0 + dx, y0 + dy; sx, sy = int(np.sign(dx)), int(np.sign(dy)); n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
+        st = (sx, 0) if abs(dx) > abs(dy) else (0, sy); a = m // 2; x, y = x0, y0
+        for step in [st] * a + [(sx, sy)] * n + [st] * (m - a): x += step[0]; y += step[1]; out.append((x, y))
+    return out
+def octi_mask(m, tol=1.6, keep=None):
+    """plan B shores: the boundary of a mask traced along the cell edges, simplified, redrawn as straight and 45 degree runs and filled again (4x
+    supersampled: a cell the slant cuts in half stays outside, so it draws the diagonal water tile). keep: cells that stay as they were"""
+    from PIL import ImageDraw
+    H_, W_ = m.shape; a = np.pad(m, 1); nxt = {}
+    # directed unit edges with the mask on the left, on the corner lattice of the padded grid (corner (X, Y) = the top left of padded cell (X, Y))
+    for (i, j) in np.argwhere(a[1:, :] & ~a[:-1, :]): nxt.setdefault((j + 1, i + 1), []).append((j, i + 1))          # mask below: runs west
+    for (i, j) in np.argwhere(~a[1:, :] & a[:-1, :]): nxt.setdefault((j, i + 1), []).append((j + 1, i + 1))          # mask above: runs east
+    for (i, j) in np.argwhere(a[:, 1:] & ~a[:, :-1]): nxt.setdefault((j + 1, i), []).append((j + 1, i + 1))          # mask right: runs south
+    for (i, j) in np.argwhere(~a[:, 1:] & a[:, :-1]): nxt.setdefault((j + 1, i + 1), []).append((j + 1, i))          # mask left: runs north
+    im = Image.new('1', (W_ * 4 + 8, H_ * 4 + 8), 0); used = set(); loops = 0
+    for st in list(nxt):
+        for e0 in list(nxt[st]):
+            if (st, e0) in used: continue
+            loop = [st]; p, q = st, e0
+            while (p, q) not in used:
+                used.add((p, q)); loop.append(q); cand = [r for r in nxt.get(q, []) if (q, r) not in used]
+                if not cand: break
+                d0 = (q[0] - p[0], q[1] - p[1]); cand.sort(key=lambda r: [(d0[1] * -1, d0[0]), d0, (d0[1], -d0[0])].index((r[0] - q[0], r[1] - q[1])) if (r[0] - q[0], r[1] - q[1]) in [(-d0[1], d0[0]), d0, (d0[1], -d0[0])] else 3)
+                p, q = q, cand[0]
+            if len(loop) < 8: continue
+            pts = [(int(x), int(y)) for x, y in loop[:-1]]; j0 = pts.index(min(pts)); pts = pts[j0:] + pts[:j0]     # start on the loop's extreme corner (a true vertex)
+            # simplify from the point farthest from the start, so a closed loop has two fixed ends
+            k = max(range(len(pts)), key=lambda i: (pts[i][0] - pts[0][0]) ** 2 + (pts[i][1] - pts[0][1]) ** 2)
+            v = dp(pts[:k + 1], tol)[:-1] + dp(pts[k:] + [pts[0]], tol)
+            o = octi_legs(v)
+            loops += 1; ImageDraw.Draw(tmp := Image.new('1', im.size, 0)).polygon([(x * 4, y * 4) for x, y in o], fill=1)
+            im = Image.fromarray(np.array(im) ^ np.array(tmp))
+    cov = np.array(im)[4:4 + H_ * 4, 4:4 + W_ * 4].reshape(H_, 4, W_, 4).mean((1, 3))
+    out = cov > .7                                    # a cell the slant halves covers ~.62 (the line's own px count in): outside
+    for _ in range(3):                                # a 1 tile strip pinched between two runs of the mask (a diagonal one draws as a checkerboard), or a lone tip, joins the mask
+        nb = np.roll(out, 1, 0).astype(np.int8) + np.roll(out, -1, 0) + np.roll(out, 1, 1) + np.roll(out, -1, 1)
+        out |= ~out & ((np.roll(out, 1, 0) & np.roll(out, -1, 0)) | (np.roll(out, 1, 1) & np.roll(out, -1, 1)) | (nb >= 3))
+    if keep is not None: out = np.where(keep, m, out)
+    return out
 def rcorner(r):
     """a rounded corner as per-row insets (cells left out, top row first): steps of 2 along the edge, never a 1 tile sawtooth; r=4 -> [4, 2, 0]"""
     return [1] if r <= 2 else [3, 1] if r == 3 else [r - 2 * j for j in range(r // 2 + 1) if r - 2 * j > 0]
@@ -191,6 +261,13 @@ bl = set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]])) - {0}
 sea = dil(np.isin(lab, list(bl)), 12) & water0
 inl = dil(water0 & ~sea, 1)                           # rivers stay at least 4 tiles wide
 sea = ndi.gaussian_filter(sea.astype(np.float32), 2.0) > .5; inl = ndi.gaussian_filter(inl.astype(np.float32), 1.4) > .5      # v2: soft curved shores, no 1 tile jags
+if K != 1:                                           # plan B: the sea shore in straight and 45 degree runs (the diagonal water tiles draw the slants); the lab windows keep theirs
+    _keep = np.zeros((HP, WP), bool)
+    for _x, _y, _w, _h in LABWIN: _keep[max(0, _y - 4):_y + _h + 4, max(0, _x - 4):_x + _w + 4] = True
+    _ks = _keep.copy()                                # the coastal towns keep the shore their hand layouts were drawn against (quays, piers, bollards)
+    for _i, _c in enumerate(WARP.codes): _ks |= np.hypot(XX - WARP.t[_i][0], YY - WARP.t[_i][1]) <= RIGID.get(_c, RADIUS[_c[0]]) + 3
+    _n0 = int(sea.sum()); sea = octi_mask(sea, keep=_ks); log('sea shore made octilinear', _n0, '->', int(sea.sum()))
+    _n0 = int(inl.sum()); inl = octi_mask(inl, keep=_keep) & ~sea; log('lake and river banks made octilinear', _n0, '->', int(inl.sum()))
 water = sea | inl
 land = ~water
 beachc = (cls == C['beach']) & land
@@ -213,11 +290,15 @@ RIVER = [(*wpf(x, y), r) for x, y, r in RIVER]; CHAN = [[(*wpf(x, y), r) for x, 
 riv = stroke(RIVER); chan = [stroke(c) for c in CHAN]
 for (px, py, rx, ry) in ((237, 874, 11, 6), (242, 825, 4.5, 4), (296, 806, 4, 3.5), (297, 824, 3.5, 3), (228, 846, 5, 3.5)): px, py = wpf(px, py); riv |= ((XX - px) / rx) ** 2 + ((YY - py) / ry) ** 2 <= 1
 for c in chan: riv |= c
-riv = blocky(riv, 3, .42)                              # v2: the river bends in straight runs of 3+ with rounded corners, not a 1 tile staircase
+if K == 1: riv = blocky(riv, 3, .42)
+else: _u = octi_mask(inl | riv, keep=_keep) & ~sea; riv = _u & dil(riv, 3); inl = _u   # plan B: straight and 45 degree banks, the river and the lakes laid as one shape (no slivers where they meet)
+# v2 (K == 1): the river bends in straight runs of 3+ with rounded corners, not a 1 tile staircase
 FORDC = wpt(255, 848)                                    # ford: a wadeable band across the river, 30 tiles downstream of the bridge
-ford = riv & ((XX - FORDC[0]) ** 2 + (YY - FORDC[1]) ** 2 <= 5.2 ** 2)
+ford = riv & (((XX - FORDC[0]) ** 2 + (YY - FORDC[1]) ** 2 <= 5.2 ** 2) if K == 1 else (np.maximum(np.abs(XX - FORDC[0]), np.abs(YY - FORDC[1])) <= 4))   # plan B: a square, so its edges run straight across the slanted river
 assert ford.sum() > 30, 'ford centre is not on the river'
-water |= riv & ~ford; inl |= riv; land = ~water; beachc &= land
+water |= riv & ~ford; inl |= riv
+if K != 1: water = sea | (inl & ~ford)
+land = ~water; beachc &= land
 
 # ---------------------------------------------------------------- 3. markers and roads
 terr16 = terr.astype(np.int16)
@@ -322,7 +403,7 @@ if K != 1:                                           # plan B: join each pair of
     _lb, _n = ndi.label(~ridge); _sz = ndi.sum(~ridge, _lb, range(1, _n + 1)); ridge |= np.isin(_lb, [i + 1 for i, v in enumerate(_sz) if v <= 12])
     ridge = reroute(thin(ridge), sea | inl)
 dt = onnew(dt_o); roadt = onnew(roadt.astype(np.float32)) > .5
-band = snap_road(ridge, 3) & ~(dil(sea, 1))           # v2: a 3 wide road laid as blocks of 3, long straight runs and proper corners where the artwork's line wanders (no 1 tile sawtooth)
+band = (snap_road(ridge, 3) if K == 1 else octi_road(ridge)) & ~(dil(sea, 1))           # v2: a 3 wide road laid as blocks of 3, long straight runs and proper corners where the artwork's line wanders (no 1 tile sawtooth)
 log('road band tiles', int(band.sum()))
 
 # ---------------------------------------------------------------- 4. heights
@@ -456,7 +537,7 @@ def poly_mask(pts):
         n = int(max(abs(xb - xa), abs(yb - ya))) * 2 + 1
         for j in range(n + 1): m[int(ya + (yb - ya) * j / n), int(xa + (xb - xa) * j / n)] = True
     return m
-ROAD103 = road103_line(); road103 = dil(poly_mask(ROAD103), 1) & land & ~mount & ~cave
+ROAD103 = road103_line(); road103 = (dil(poly_mask(ROAD103), 1) if K == 1 else octi_road(poly_mask(ROAD103))) & land & ~mount & ~cave
 rz[road103 & ~roadc] = 103; roadc |= road103; band |= road103; LABELS[103] = (int(ROAD103[0][0] * S), int(ROAD103[0][1] * S))
 log('T8 Route 103 road', int(road103.sum()), 'tiles from', ROAD103[0][:2], 'to', ROAD103[-1][:2])
 
@@ -477,7 +558,7 @@ def smooth_poly(way, k=6):
     return [(x + .5, y + .5) for x, y in sm.tolist()]
 R1PTS = [(x + .5, y + .5) for x, y in R1WAY]
 R1LEN = float(sum(np.hypot(a[0] - b[0], a[1] - b[1]) for a, b in zip(R1PTS, R1PTS[1:])))
-road1_new = dil(poly_mask(R1PTS), 1) & land & ~mount & ~cave & ~((rz == 2) & roadc)
+road1_new = (dil(poly_mask(R1PTS), 1) if K == 1 else octi_road(poly_mask(R1PTS))) & land & ~mount & ~cave & ~((rz == 2) & roadc)
 band &= ~r1_old; roadc &= ~r1_old; rz[r1_old] = 0
 rz[road1_new] = 1; roadc |= road1_new; band |= road1_new
 log('L4 Route 1 road', int(road1_new.sum()), 'tiles, length', int(R1LEN), 'from', R1S, 'to', R1WAY[-1])
@@ -511,6 +592,17 @@ mat[cls == C['snow']] = SNOW
 mat[mount | cave] = ASH
 mat[mount & (cls == C['cap'])] = SNOW
 mat[(cls == C['cap']) & ~mount & land] = SNOW
+if K != 1:                                           # plan B: the map's white surf lines and green coast outline came through as slivers of snow and grass along the beaches; each takes the nearest solid ground
+    _ds = ndi.distance_transform_edt(~(water & ~land)); _fr = land & ~mount & ~cave & (_ds <= 4)
+    _thin = np.zeros_like(_fr)
+    for _m in (SNOW, GRASS): _thin |= _fr & (mat == _m) & ~ndi.binary_opening((mat == _m) & land, disk(2))
+    _thin &= dil(mat == SAND, 3)
+    for _m in (SAND, DUNE, SNOW, SWAMP, GRASS):          # and lone specks of one ground in another (1 to 3 tiles)
+        _lb, _n = ndi.label((mat == _m) & land & ~mount & ~cave); _sz = ndi.sum(_lb > 0, _lb, range(1, _n + 1)); _thin |= np.isin(_lb, [i + 1 for i, v in enumerate(_sz) if v <= 3])
+    _lb, _n = ndi.label((mat == SNOW) & land & ~mount, np.ones((3, 3))); _sz = ndi.sum(_lb > 0, _lb, range(1, _n + 1)); _near = np.unique(_lb[(_ds <= 6) & (_lb > 0)])
+    _thin |= np.isin(_lb, [i for i in _near if _sz[i - 1] < 40])                          # a small patch of 'snow' by the sea is surf
+    _src = land & ~_thin & ~mount; _, (_iy, _ix) = ndi.distance_transform_edt(~_src, return_indices=True); mat[_thin] = mat[_iy[_thin], _ix[_thin]]
+    log('coast slivers re-grounded', int(_thin.sum()))
 labap = np.zeros((HP, WP), bool)                     # a grass apron round each lab window (they are drawn as grass country): no snow or desert ruled off along the window edge
 for _x, _y, _w, _h in LABWIN: labap[max(0, _y - 6):_y + _h + 6, max(0, _x - 6):_x + _w + 6] = True
 labap = ndi.binary_dilation(labap, disk(1)) & (noise(3, 404) > -1.2) | labap & ~ndi.binary_erosion(labap, disk(4))
@@ -737,9 +829,15 @@ for t in TL:
                                       interior=dict(floor=it['floor'], walls=it['walls'], props=it['props'], npcs=it['npcs'], exits=[[fp['ex'], fp['d'] - 1]])))
                 BLD_DOORS.append(dict(x=int((cc_ + .5) * T), y=int(y_ * T - 3)))
             elif rm: ROOM_DOORS.append(dict(room=rm[0], town=code, x=int((cc_ + .5) * T), y=int(y_ * T - 3)))   # S1b: the door line; walking up into it enters the room, the exit lands 30 px below it
+        wet = []
         for nm, x, y in j.get('props', []):
+            if water[cy + y, cx + x] and not re.search(r'(?i)boat|raft|lily|buoy|water|coral', nm) and not any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in j.get('boards', [])):
+                near_ = [(abs(dx_) + abs(dy_), dx_, dy_) for dy_ in range(-3, 4) for dx_ in range(-3, 4) if not water[cy + y + dy_, cx + x + dx_] and not occ[cy + y + dy_, cx + x + dx_]]
+                if not near_: wet.append(nm); continue     # the plan was drawn on land the river or the sea covers here: the nearest dry free cell, else left out
+                _, dx_, dy_ = min(near_); x, y = x + dx_, y + dy_    # the plan was drawn on land the river or the sea now covers here
             props.append([nm, int((cx + x + .5) * T), int((cy + y + 1) * T - 1)]); sd = P(nm).get('solid')
             if sd: occ[cy + y - 1:cy + y + 1, cx + x - int(sd[2] // T) - 1:cx + x + int(sd[2] // T) + 2] = True
+        if wet: print(f'  {code}: {len(wet)} plan props on water with no dry cell near, left out', sorted(set(wet))[:8])
         for x0, y0, x1, y1 in j.get('boards', []): board(cy + y0, cy + y1, cx + x0, cx + x1)
         if 'mouth' in j: cave_mouth('w', cx + j['mouth'][0], cy + j['mouth'][1])    # T4: the Route 4 cave's west mouth (door-front tile, like a building)
         if not j.get('noconnect'): connect(t, PATH)      # noconnect (L4): the re-laid Route 1 reaches the landmark itself, no dirt connector
@@ -1622,10 +1720,10 @@ for id_, x, y, face, tr, li in NPCS:
     if tr and not sm: continue
     if any(a <= x < a + c and b <= y < b + d for a, b, c, d in LABWIN): taken.add((x, y)); continue     # inside a lab window: its ground comes from the exporter, checked by tools/adv-check.mjs
     if npc_good(x, y, face, tr, sight, zname, taken): taken.add((x, y)); continue
-    for dx, dy in sorted(((a, b) for a in range(-7, 8) for b in range(-7, 8)), key=lambda d: (abs(d[0]) + abs(d[1]), d)):
+    for dx, dy in sorted(((a, b) for a in range(-20, 21) for b in range(-20, 21)), key=lambda d: (abs(d[0]) + abs(d[1]), d)):   # 20: a river or shore redrawn can move a zone edge past a hand-set spot
         if npc_good(x + dx, y + dy, face, tr, sight, zname, taken):
             NPC_SRC[li] = NPC_SRC[li].replace(f'x: {x}, y: {y},', f'x: {x + dx}, y: {y + dy},', 1); taken.add((x + dx, y + dy)); moved.append((id_, (x, y), (x + dx, y + dy))); break
-    else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot within 7 tiles')
+    else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot within 20 tiles')
 if moved or NPC_WARP or NPC_SET:
     open(os.path.join(OUT, 'npcs.js'), 'w', encoding='utf8', newline='').write('\n'.join(NPC_SRC))
 log('NPC fixer moved', len(moved), [m[0] for m in moved])

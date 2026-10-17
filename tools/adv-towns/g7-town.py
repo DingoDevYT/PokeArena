@@ -76,10 +76,10 @@ for k, (fx, fy) in enumerate(((-15, -9), (-5, -15), (-17, -19), (-6, -26), (11, 
     at('~', (fx + 4 * side, fy - 1)); at('_', (fx + 4 * side + side, fy - 1)); at('q', (fx - 4 * side, fy - 1)); at('z', (fx - 5 * side, fy - 2)); at('%', (fx - 3 * side, fy + 1))
 at('%', (-13, -5), (-13, -13), (-8, -22), (-16, -30), (22, -5), (27, -18), (22, -26), (4, 17), (-5, 18), (-4, 25), (3, 25))
 at('*', (-12, -7), (-9, -17), (-13, -26), (21, -13), (23, -27), (-4, 20), (3, 22), (15, 18), (-18, 4), (-28, 4))
-# the orchard north-west: four rows of fruit trees inside a picket fence, its gate on the mills track
-for k, y in enumerate((-40, -37, -34, -31)):
-    for x in range(-40, -24, 3): put(x + (k % 2), y, 'k')
-for x in range(-41, -23): put(x, -42, 'i'); put(x, -29, 'i')
+# the orchard north-west: two rows of fruit trees inside a picket fence, between the mills track and the north lane (the river and Route 8's cart track take the land further west)
+for k, y in enumerate((-32, -29)):
+    for x in range(-30, -19, 3): put(x + (k % 2), y, 'k')
+for x in range(-31, -18): put(x, -34, 'i'); put(x, -27, 'i')
 # pasture east of the market road: pens and a field shelter; the windmill farmyard south-east
 at('u', (30, -30), (33, -30), (36, -30), (30, -26), (36, -26)); at('y', (33, -26)); at('x', (40, -27))
 at('X', (36, 6)); at('u', (24, 12), (27, 12), (30, 12)); at('x', (31, 19), (36, 25), (22, 24)); at('y', (28, 24)); at('z', (20, 22)); at('q', (21, 22), (35, 18)); at('j', (16, 33), (-30, 28))

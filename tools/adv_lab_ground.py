@@ -44,6 +44,40 @@ def cut(im, M, gx=0, gy=0):
     x0 = M + (G // 2 + gx) * 2 * R.T; y0 = M + (G // 2 + gy) * 2 * R.T
     return im.crop((x0, y0, x0 + 2 * R.T, y0 + 2 * R.T))
 
+DIAG = {'NE': ((1, -1), 'N'), 'NW': ((-1, -1), 'N'), 'SE': ((1, 1), 'S'), 'SW': ((-1, 1), 'S')}
+def diag_tile(src, fill, ground, n, vs, off, phase, band=7):
+    """src: the straight edge tile (32 x 32 RGBA, the other ground on the vs side: 'N' top or 'S' bottom, the edge on row 16); fill / ground: this set's centre
+    tile and the plain ground beside it (they paint everything more than `band` px from the line, pixel for pixel, so the texture runs on into the neighbours);
+    n: the normal pointing into the other ground; off: where the line sits (+11.31 through the outer cell's lower step, -11.31 through the inner cell's upper
+    step); phase: where this cell starts along the edge (the edge art repeats once per cell along the line, so neighbouring diagonal cells join)"""
+    import numpy as np
+    a, f, gr = (np.array(im.convert('RGBA')) for im in (src, fill, ground)); o = np.zeros_like(a); k = 2 ** -.5; nx, ny = n[0] * k, n[1] * k; tx, ty = -ny, nx
+    for y in range(32):
+        for x in range(32):
+            u, v = x + .5 - 16, y + .5 - 16
+            d = u * nx + v * ny + off                                   # distance into the other ground
+            if d > band: o[y, x] = gr[y, x]; continue
+            if d < -band: o[y, x] = f[y, x]; continue
+            row = 16 - d if vs == 'N' else 16 + d
+            t = (u * tx + v * ty) * k + 16 + phase                      # along the edge, one art period per cell
+            sr, sc = int(min(31, max(0, round(row - .5)))), int(round(t - .5)) % 32
+            px = a[sr, sc]
+            if (px == gr[sr, sc]).all() and d > 0: o[y, x] = gr[y, x]       # plain ground in the source: keep this cell's own ground (no stretched texture)
+            elif (px == f[sr, sc]).all() and d < 0: o[y, x] = f[y, x]        # plain fill in the source: keep this cell's own fill
+            else: o[y, x] = px
+    return Image.fromarray(o)
+def diagonals(tiles, d, add, ground):
+    """the eight diagonal roles of one autotile set (role -> tile index into tiles): dXX outer corners, eXX inner corners"""
+    out = {}; first = lambda v: v[0] if isinstance(v, list) else v; fill = tiles[first(d['C'])]
+    for o, (n, vs) in DIAG.items():
+        src = tiles[first(d[vs])]; k = 2 ** -.5; tx, ty = -n[1] * k, n[0] * k; oy = 32 if vs == 'N' else -32
+        out['d' + o] = add(diag_tile(src, fill, ground, n, vs, 16 * k, 0)); out['e' + o] = add(diag_tile(src, fill, ground, n, vs, -16 * k, oy * ty * k))
+    import numpy as np
+    for o, (p_, q_) in {'NE': ('eNE', 'eSW'), 'NW': ('eNW', 'eSE')}.items():          # a 3 wide diagonal: the middle cell is an inner corner of both edges at once
+        A, Bq, F = (np.array(tiles[i]) if not isinstance(i, Image.Image) else np.array(i) for i in (out[p_], out[q_], fill))
+        m = (Bq != F).any(2); A[m] = Bq[m]; out['x' + o] = add(Image.fromarray(A))
+    return out
+
 def build():
     """(tiles, mats): 32 px RGBA tiles and {mat: {role: index or [indices]}} into them"""
     tiles = []; mats = {}
@@ -65,6 +99,14 @@ def build():
                         if px[x, y][:3] == pb[x, y][:3]: px[x, y] = (0, 0, 0, 0)
             d[role] = add(t)
         mats[name] = d
+    # diagonal edges (the owner allowed derived diagonal tiles): a 45 degree road edge runs through the middle of each staircase step, so an outer-corner cell
+    # (dNE...) keeps the small triangle of path below the line and the inner-corner cell under it (eNE...) loses the small triangle above it. Each pixel is
+    # resampled from the straight edge tile of the same side (N or S) at the same distance across the edge, its along-edge position taken from the line, so
+    # the fringe, the outline and the dirt are the original art laid at 45 degrees.
+    import numpy as np
+    plain = min(mats['grass']['C'], key=lambda i: int((lambda a: (a[..., 0] > a[..., 1] + 20).sum())(np.array(tiles[i]).astype(int))))   # a meadow tile with no tuft or flower in it
+    for name in ('path', 'ford'):
+        mats[name].update(diagonals(tiles, mats[name], add, tiles[plain]))
     # path and tall grass on the other grounds (snow, ash, swamp, sand, dune): the lab art is drawn on the meadow, so its edges carry grass. For a path the green
     # pixels of each role tile are replaced by that ground's own centre tile (the same edit tools/adv-build-derived.py makes); a tall grass bed on those grounds takes
     # the derived sheet's own tile for that ground (frost leaves, grey tufts...), copied pixel for pixel. adv-world.js picks them by the neighbour's ground (def.by).
@@ -79,12 +121,48 @@ def build():
     by = {}
     for key, mname in GROUNDS.items():
         c = ts['mats'][mname]['C']; base = np.array(etile(c[0] if isinstance(c, list) else c)); d = {}
-        for role in ROLES:
+        for role in [r for r in mats['path'] if r not in ('by', 'mode')]:
             t = np.array(tiles[mats['path'][role]]); r_, g_, b_ = (t[..., k].astype(int) for k in range(3))
             green = (g_ > r_ + 12) & (g_ > b_ + 6)
             t[green] = base[green]; d[role] = add(Image.fromarray(t))
         by[key] = d
     mats['path']['by'] = by
+    # cliff rims and face tops on any ground: the exterior sheet's cliff art paints the raised ground as its own light grass, a green block on snow and a paler
+    # strip on the lab meadow. Each copy keeps the art's lip, outline and rock and swaps the green pixels for that ground's centre tile (adv-render.js cliff)
+    cb = {}
+    for key, gt in [('grass', np.array(tiles[plain]))] + [(k, np.array(etile((lambda c: c[0] if isinstance(c, list) else c)(ts['mats'][m]['C'])))) for k, m in GROUNDS.items()]:
+        d = {}
+        for name, v in ts['cliff'].items():
+            if not (name.startswith('rim') or name == 'faceTop'): continue
+            def one(i):
+                t = np.array(etile(i)); r_, g_, b_ = (t[..., k].astype(int) for k in range(3)); green = (g_ > r_ + 12) & (g_ > b_ + 6) & (t[..., 3] > 0)
+                t[green] = gt[green]; return add(Image.fromarray(t))
+            d[name] = {r: one(i) for r, i in v.items()} if isinstance(v, dict) else one(v)
+        cb[key] = d
+    mats['cliffBy'] = cb
+    # shoreline diagonals: the exterior sheet's water draws its shore on the cell edge, so a 45 degree coast cuts each outer corner cell from corner to corner.
+    # dXX keeps the water half (its rim resampled from the straight N or S edge tile, across the slant) and leaves the land half clear; adv-render.js draws
+    # the land neighbour's own ground under it (mode 'under'), and adv-water.js masks and foams the water pixels as on any edge tile.
+    seen = {}
+    def ecopy(i):
+        if i not in seen: seen[i] = add(etile(i))
+        return seen[i]
+    for m in ('water', 'waterDeep', 'sandWater', 'sandWaterDeep'):
+        src = ts['mats']['water' if m == 'waterDeep' else 'sandWater' if m == 'sandWaterDeep' else m]   # deep water draws as the shallow: its darker tile only stepped in square blocks along a slanted shore, and adv-water.js already darkens the water by its distance from the shore
+        d = {r: ([ecopy(i) for i in v] if isinstance(v, list) else ecopy(v)) for r, v in src.items() if r in ROLES}
+        first = lambda v: v[0] if isinstance(v, list) else v
+        C = np.array(etile(first(src['C'])))
+        for o, (n, vs) in DIAG.items():
+            E = np.array(etile(first(src[vs]))); k = 2 ** -.5; nx, ny = n[0] * k, n[1] * k; tx, ty = -ny, nx; o_ = np.zeros_like(C)
+            for y in range(32):
+                for x in range(32):
+                    u, v = x + .5 - 16, y + .5 - 16; dep = -(u * nx + v * ny)          # px into the water from the corner to corner line
+                    if dep < 0: continue
+                    if dep > 8: o_[y, x] = C[y, x]; continue
+                    row = int(min(31, dep)) if vs == 'N' else 31 - int(min(31, dep)); col = int((u * tx + v * ty) * k + 16) % 32
+                    o_[y, x] = E[row, col]
+            d['d' + o] = add(Image.fromarray(o_))
+        d['mode'] = 'under'; mats[m] = d
     tb = dv['mats']['tallgrass'].get('by', {})
     mats['tallgrass'] = {**mats['tallgrass'], 'mode': 'self', 'by': {k: {'C': add(dtile(v['C'] if not isinstance(v['C'], list) else v['C'][0]))} for k, v in tb.items()}}
     return tiles, mats

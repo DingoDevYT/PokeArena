@@ -3,11 +3,20 @@
 'use strict';
 const ADV = (() => {
   const T = 32, CH = 32, N = CH * CH;   // T = the art tile; a map draws it S times bigger (S = A.OUT outdoors, 1 in rooms and the cave), see S / Tp / Tc
-  const ROLES = ['C', 'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'iNE', 'iNW', 'iSE', 'iSW'];
+  const ROLES = ['C', 'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'iNE', 'iNW', 'iSE', 'iSW', 'dNE', 'dNW', 'dSE', 'dSW', 'eNE', 'eNW', 'eSE', 'eSW', 'xNE', 'xNW'];
+  // 45 degree edges (tools/adv_lab_ground.py diagonals): an outer corner in a diagonal run is dXX, the inner corner under it eXX, the middle of a 3 wide diagonal
+  // (an inner corner of both edges) xNE / xNW. A set without them draws the plain corner (BASE).
+  const BASE = { dNE: 'NE', dNW: 'NW', dSE: 'SE', dSW: 'SW', eNE: 'iNE', eNW: 'iNW', eSE: 'iSE', eSW: 'iSW', xNE: 'iNE', xNW: 'iNW' };
+  const CHAIN = { NE: [[1, 1], [-1, -1]], SW: [[1, 1], [-1, -1]], NW: [[1, -1], [-1, 1]], SE: [[1, -1], [-1, 1]] };   // where an outer corner's diagonal run continues
   const STAIR = [null, [0, -1], [0, 1], [1, 0], [-1, 0]];                 // by kind 1..4: ascent direction
   const LEDGE = [null, null, null, null, null, [0, 1], [1, 0], [-1, 0]];  // by kind 5..7: drop direction
   const SIDES = { N: [[0, -1]], S: [[0, 1]], E: [[1, 0]], W: [[-1, 0]], NE: [[0, -1], [1, 0]], NW: [[0, -1], [-1, 0]], SE: [[0, 1], [1, 0]], SW: [[0, 1], [-1, 0]], iNE: [[1, -1]], iNW: [[-1, -1]], iSE: [[1, 1]], iSW: [[-1, 1]] };   // the neighbours an edge role faces
-  const hash = (c, r) => (Math.imul(c, 73856093) ^ Math.imul(r, 19349663)) >>> 0;
+  for (const [k, v] of Object.entries(BASE)) SIDES[k] = SIDES[v];
+  const hash = (c, r) => {   // variant pick per cell; the final mix (murmur3 fmix) keeps a modulo of it from falling into a lattice
+    let h = Math.imul(c, 73856093) ^ Math.imul(r, 19349663);
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    return (h ^ (h >>> 16)) >>> 0;
+  };
   const key = (cx, cy) => (cx + 512) * 1024 + (cy + 512);
   const rle = s => { const o = []; for (const t of s.split(',')) { const i = t.indexOf('x'); if (i < 0) o.push(+t); else for (let k = +t.slice(i + 1), v = +t.slice(0, i); k > 0; k--) o.push(v); } return o; };   // "12x3,5" = 12, 12, 12, 5
   const unrle = a => typeof a === 'string' ? rle(a) : a;
@@ -53,8 +62,8 @@ const ADV = (() => {
       if (w.groups) { this.grp = Int16Array.from(pal, (_, i) => i); for (const g of w.groups) for (const n of g) if (pal.indexOf(n) >= 0) this.grp[pal.indexOf(n)] = pal.indexOf(g[0]); }
       if (w.water || it) { this.wset = new Uint8Array(pal.length); for (const n of [...(w.water || ['water']), ...(it ? it.blocked : [])]) if (pal.indexOf(n) >= 0) this.wset[pal.indexOf(n)] = 1; }
       if (w.blank) this.blank = new Set(w.blank);
-      const dj = !this.fallback && typeof window !== 'undefined' && window.ADV_TILESET_DERIVED?.joins; this.jn = null;
-      if (dj) { this.jn = new Uint8Array(pal.length * pal.length); for (const [a, bs] of Object.entries(dj)) for (const b of bs) if (pal.indexOf(a) >= 0 && pal.indexOf(b) >= 0) this.jn[pal.indexOf(a) * pal.length + pal.indexOf(b)] = 1; }
+      const dj = !this.fallback && typeof window !== 'undefined' && [window.ADV_TILESET_DERIVED?.joins, window.ADV_TILESET_REGION?.joins].filter(Boolean); this.jn = null;   // region joins: the beach sand meets the sea without its grass fringe
+      if (dj && dj.length) { this.jn = new Uint8Array(pal.length * pal.length); for (const j of dj) for (const [a, bs] of Object.entries(j)) for (const b of bs) if (pal.indexOf(a) >= 0 && pal.indexOf(b) >= 0) this.jn[pal.indexOf(a) * pal.length + pal.indexOf(b)] = 1; }
       this.live = []; this.roomK = new Set();   // live rooms (the Route 4 cave: wild mons live in it and players share it) are loaded with the world and stay loaded
       for (const [id, d] of Object.entries(this.rooms)) if (d.live) { this.loadRoom(d); this.live.push({ id, zone: d.zone, x0: d.cx * T * CH, y0: d.cy * T * CH, x1: (d.cx + (d.cw || 1)) * T * CH, y1: (d.cy + (d.ch || 1)) * T * CH }); }
     },
@@ -186,8 +195,8 @@ const ADV = (() => {
 
     // ---------- autotiling ----------
     pick(def, role, c, r) {
-      let id = def[role]; if (id === undefined) id = def.C;
-      const b = def.by && this.groundBy(def, role, c, r); if (b) id = b[role] ?? b.C;
+      let id = def[role] ?? def[BASE[role]]; if (id === undefined) id = def.C;
+      const b = def.by && this.groundBy(def, role, c, r); if (b) id = b[role] ?? b[BASE[role]] ?? b.C;
       return Array.isArray(id) ? id[hash(c, r) % id.length] : id;
     },
     // derived sets (tileset-derived.js): def.by[ground] = the tiles drawn where the cell meets that ground. mode nb: an edge tile of this def by the neighbour on the edge's side; base: the plain tile an overlay
@@ -206,7 +215,7 @@ const ADV = (() => {
       const i = (r & 31) * 32 + (c & 31), g = this.grp; if (layer || !g ? ch[layer ? 'over' : 'mat'][i] === m : g[ch.mat[i]] === g[m]) return true;
       return !layer && !!this.jn && this.jn[m * this.palette.length + ch.mat[i]] === 1;   // jn: a snow cell counts a path beside it as snow (tileset-derived.js joins), the path draws the edge
     },
-    roleOf(c, r, m, layer) {
+    role0(c, r, m, layer) {
       const s = (dc, dr) => this.same(c + dc, r + dr, m, layer);
       const n = s(0, -1), so = s(0, 1), e = s(1, 0), w = s(-1, 0);
       const v = !n ? 'N' : !so ? 'S' : '', hz = !e ? 'E' : !w ? 'W' : '';
@@ -216,6 +225,17 @@ const ADV = (() => {
       if (!s(1, 1)) return 'iSE';
       if (!s(-1, 1)) return 'iSW';
       return 'C';
+    },
+    diagOuter(c, r, m, layer, role) { return !!CHAIN[role] && CHAIN[role].some(([a, b]) => this.same(c + a, r + b, m, layer) && this.role0(c + a, r + b, m, layer) === role); },
+    roleOf(c, r, m, layer) {
+      const role = this.role0(c, r, m, layer);
+      if (CHAIN[role]) return this.diagOuter(c, r, m, layer, role) ? 'd' + role : role;
+      if (role[0] !== 'i') return role;
+      const o = role.slice(1), vy = o[0] === 'N' ? -1 : 1, hx = o[1] === 'E' ? 1 : -1, s = (dc, dr) => this.same(c + dc, r + dr, m, layer);
+      const run = (dc, dr) => s(dc, dr) && this.role0(c + dc, r + dr, m, layer) === o && this.diagOuter(c + dc, r + dr, m, layer, o);
+      if (!run(0, vy) && !run(hx, 0)) return role;
+      if (!s(-hx, -vy)) return 'x' + (o === 'NE' || o === 'SW' ? 'NE' : 'NW');   // the opposite corner is open too: the middle of a 3 wide diagonal
+      return 'e' + o;
     },
     autotile(ch) {
       const ts = this.ts(); if (!ts) return; ch.gv = (ch.gv | 0) + 1;   // gv: the renderer's cached ground for this chunk is stale

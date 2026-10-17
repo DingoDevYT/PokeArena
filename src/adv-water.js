@@ -22,6 +22,7 @@ const ADVWA = {
     const ids = new Set([ADV.pick(def, 'C', 0, 0)]); for (let f = 0; f < (def.frames ? def.frames.length : 1); f++) ids.add(ADV.frameId(def, 0, ADV.pick(def, 'C', 0, 0), f));
     const k = this.cv('pc', 32, 32), n = new Map();
     for (const id of ids) { k.clearRect(0, 0, 32, 32); k.drawImage(sh, (id % ts.cols) * 32, Math.floor(id / ts.cols) * 32, 32, 32, 0, 0, 32, 32); const d = k.getImageData(0, 0, 32, 32).data; for (let i = 0; i < d.length; i += 4) if (d[i + 3] >= 128) { const v = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2]; n.set(v, (n.get(v) || 0) + 1); } }
+    if (!n.size) return null;   // the sheet is still loading: try again next frame
     const cols = [...n.keys()].map(v => [v >> 16, (v >> 8) & 255, v & 255]), top = [...n.entries()].sort((a, b) => b[1] - a[1])[0][0];
     return def.wpal = { cols, rgb: [top >> 16, (top >> 8) & 255, top & 255].join(',') };
   },

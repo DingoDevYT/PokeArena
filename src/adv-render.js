@@ -5,6 +5,7 @@
 const ADVR = {
   cv: document.createElement('canvas'),
   zoom: 2, zm: 4, T: 64, S: 2,   // zoom = last drawn; zm = the player's pick: DEVICE px per ART px, 1 farthest .. 6 closest, 4 = Normal, the default (Settings, mouse wheel, shoulders)
+  GRASSY: new Set(['grass', 'rgGrass', 'wetGrass', 'tallgrass', 'dryGrass']),   // grounds whose cliff rims take the lab meadow copy
   ART: 2,   // world px per art px: sprites, interior sheets and the 2x exterior all draw their art pixels 2 world px big
   NAMES: ['Farthest', 'Far', 'Medium', 'Normal', 'Close', 'Closest'], ZMAX: 6, ZDEF: 4,   // his pick 2026-10-15: the old 'Closer' (4) is the perfect default, with room to go further in and out
   frame: 0,
@@ -45,8 +46,14 @@ const ADVR = {
     if (this.fa) { const tc = this.tinted(sh, sx, sy, 32, 32); g.globalAlpha = this.fa; for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) g.drawImage(tc, x + i * z, y + j * z, z, z); g.globalAlpha = 1; }   // a wall facing away from the sun
   },
   // cliff pieces the real tileset lacks come from the placeholder
-  cliff(g, name, role, x, y) {
+  cliff(g, name, role, x, y, c, r) {
     const pick = ts => { const v = ts && ts.cliff && ts.cliff[name]; return role && v !== null && typeof v === 'object' ? v[role] : v; };
+    const rg = !ADV.fallback && window.ADV_TILESET_REGION, cb = c !== undefined && rg && rg.cliffBy;
+    if (cb) {   // a rim or face top on the generated island: the copy of the cliff art whose grass is the raised cell's own ground (tools/adv_lab_ground.py)
+      const m = ADV.palette[ADV.mat(c, r)], key = window.ADV_TILESET_DERIVED?.keys?.[m] || (this.GRASSY.has(m) ? 'grass' : null), v = key && cb[key] && cb[key][name];
+      const id = role && v !== null && typeof v === 'object' ? v[role] : v;
+      if (id >= 0) return this.tile(g, id, x, y, rg);
+    }
     const ts = ADV.ts(), ph = window.ADV_TILESET_PLACEHOLDER;
     if (pick(ts) >= 0) this.tile(g, pick(ts), x, y, ts); else this.tile(g, pick(ph), x, y, ph);
   },
@@ -76,6 +83,10 @@ const ADVR = {
     const def = ADV.defOf(ADV.palette[ch.mat[i]]);
     if (def) {
       if (def.overlay) { const bd = ADV.defOf(def.base || 'grass'); if (bd) this.tile(g, ADV.pick(bd, 'C', c, r), x, y, ADV.originOf(bd), bd.density); }
+      if (def.mode === 'under') {   // a diagonal shore tile (tools/adv_lab_ground.py) leaves its land half clear: the land neighbour's own ground goes under it
+        const rn = ADV.roleName(c, r, 0);
+        if (rn && rn[0] === 'd') { const nd = ADV.defOf(ADV.palette[ADV.mat(c, r + (rn[1] === 'N' ? -1 : 1))]); if (nd && nd !== def) this.tile(g, ADV.pick(nd, 'C', c, r), x, y, ADV.originOf(nd), nd.density); }
+      }
       this.tile(g, ADV.frameId(def, ch.role[i], ch.tile[i], this.frame), x, y, ADV.originOf(def), def.density);
     }
     if (ch.otile[i] >= 0 && ch.over[i]) {
@@ -99,7 +110,7 @@ const ADVR = {
     const n = this.lower(c, r, h, 0, -1), e = this.lower(c, r, h, 1, 0), w = this.lower(c, r, h, -1, 0);
     if (!baked && (n || e || w)) {
       const name = n ? (e ? 'rimNE' : w ? 'rimNW' : 'rimN') : e ? (k === 6 ? 'ledgeE' : 'rimE') : (k === 7 ? 'ledgeW' : 'rimW');
-      this.cliff(g, name, null, x, y);
+      this.cliff(g, name, null, x, y, c, r);
     }
   },
   face(g, ch, i, c, r, h) {
@@ -111,7 +122,7 @@ const ADVR = {
     const role = !this.hasFace(c - 1, r) ? 'L' : !this.hasFace(c + 1, r) ? 'R' : 'M';
     const special = st && st[1] === -1 && ADV.h(c, r + 1) + 1 === h ? 'stairsN' : ch.kind[i] === 5 ? 'ledgeS' : '';
     this.fa = this.sun && !special ? this.sun.face : 0;
-    for (let k = 0; k < n; k++) this.cliff(g, special || (k ? 'face' : 'faceTop'), special ? null : role, c * T, (r + 1) * T - h * T + k * T);
+    for (let k = 0; k < n; k++) this.cliff(g, special || (k ? 'face' : 'faceTop'), special ? null : role, c * T, (r + 1) * T - h * T + k * T, c, r);
     this.fa = 0;
   },
   // terrain gets the sprite outline: 1 art px of #0c0a14 just outside the raised silhouette wherever the ground drops (above a rim, beside a side drop, under a face), joined at the corners. The stair opening stays clear.
