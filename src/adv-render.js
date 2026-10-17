@@ -340,10 +340,14 @@ const ADVR = {
     const px = X => (X - x0) / A, py = (Y, L) => (Y - L * T - y0) / A;
     // cliffs: every run of raised cells of one height is a block (h - L) T tall over level L; equal runs in following rows merge into one block
     const open = new Map(), emit = o => { for (let L = 0; L < o.v; L++) { const n = (o.v - L) * T; this.sweep(sm.lv[L], px(o.c * T), py(o.r0 * T, L), px((o.e + 1) * T), py((o.r + 1) * T, L), S.dx * n / A, S.dy * n / A); } };
+    // a map-lab cliff cell with an outline (smask) is swept as that outline, so its shadow follows the rock edge and the rounded corners; it breaks the box runs
+    const sil = [], om = (c, r) => { const ch = ADV.chunkAt(c, r); return ch && ch.smask ? ch.smask[(r & 31) * 32 + (c & 31)] : -1; };
+    const hb = (c, r) => { const v = ADV.h(c, r); if (v > 0 && om(c, r) >= 0) { sil.push([c, r, v, om(c, r)]); return 0; } return v; };
+    const HB = new Map(), hbk = (c, r) => { const k = c + ',' + r; if (!HB.has(k)) HB.set(k, hb(c, r)); return HB.get(k); };
     for (let r = r0; r <= r1; r++) {
       for (let c = c0; c <= c1;) {
-        const v = ADV.h(c, r); if (v <= 0) { c++; continue; }
-        let e = c; while (e + 1 <= c1 && ADV.h(e + 1, r) === v) e++;
+        const v = hbk(c, r); if (v <= 0) { c++; continue; }
+        let e = c; while (e + 1 <= c1 && hbk(e + 1, r) === v) e++;
         const key = c * 4096 + e * 8 + v, o = open.get(key);
         if (o && o.r === r - 1) o.r = r; else { if (o) emit(o); open.set(key, { c, e, v, r0: r, r }); }
         c = e + 1;
@@ -351,6 +355,19 @@ const ADVR = {
       for (const [key, o] of open) if (o.r < r) { emit(o); open.delete(key); }
     }
     for (const o of open.values()) emit(o);
+    const ms = window.ADV_TILESET_REGION?.cliffMasks || [], mc = this.cmc || (this.cmc = []);
+    for (const [c, r, v, mi] of sil) {
+      let im = mc[mi];
+      if (!im) {   // 32 rows of 32 bits (hex) -> a 32 x 32 white-on-clear canvas
+        im = mc[mi] = document.createElement('canvas'); im.width = im.height = 32; const g = im.getContext('2d'), id = g.createImageData(32, 32), hx = ms[mi] || '';
+        for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if ((parseInt(hx.substr(y * 8 + (x >> 3) * 2, 2), 16) >> (7 - (x & 7))) & 1) id.data.set([255, 255, 255, 255], (y * 32 + x) * 4);
+        g.putImageData(id, 0, 0);
+      }
+      for (let L = 0; L < v; L++) {
+        const k = sm.lv[L], n = (v - L) * T, ddx = S.dx * n / A, ddy = S.dy * n / A, N = Math.ceil(Math.max(Math.abs(ddx), Math.abs(ddy))) + 1, X = px(c * T), Y = py(r * T, L);
+        for (let s = 0; s <= N; s++) k.drawImage(im, Math.round(X + ddx * s / N), Math.round(Y + ddy * s / N), T / A, T / A);
+      }
+    }
     // props: buildings and solid blocks as boxes, the rest as their sprite sheared along the sun from the foot
     const X0 = x0 - R, X1 = x0 + w * A + R, Y0 = y0 - R, Y1 = y0 + h * A + 4 * T;
     for (const ch of ADV.chunks.values()) for (const p of ch.props) {

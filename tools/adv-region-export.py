@@ -67,7 +67,7 @@ def unrle(a):
         out.append(str(a[i]) if j - i == 1 else f'{a[i]}x{j - i}'); i = j
     return ','.join(out)
 def write_chunk(path, cx, cy, d):
-    parts = [f'{k}:{json.dumps(d[k], separators=(",", ":"))}' for k in ('h', 'mat', 'over', 'kind', 'deck', 'bake', 'fbake', 'props') if k in d]
+    parts = [f'{k}:{json.dumps(d[k], separators=(",", ":"))}' for k in ('h', 'mat', 'over', 'kind', 'deck', 'bake', 'fbake', 'smask', 'props') if k in d]
     open(path, 'w', encoding='utf-8').write(f'ADV.chunk({cx},{cy},{{{",".join(parts)}}});\n')
 
 
@@ -100,12 +100,13 @@ def main():
     world = open(os.path.join(ROOT, 'data/adv/world.js'), encoding='utf-8').read()
     pal = json.loads(re.search(r'"palette":(\[[^\]]*\])', world)[1]); P = len(pal)
     ID = {'rgGrass': P, 'rgPath': P + 1, 'rgWater': P + 2}; TG = pal.index('tallgrass')
-    tiles, tid = [], {}; rects, SL = {}, []
+    tiles, tid = [], {}; rects, SL = {}, []; masks, mid = [], {}   # masks: cliff shadow outlines (32 rows of 32 bits, hex), shared by all windows
     for win in WINDOWS:
         mp = json.load(open(os.path.join(ROOT, win['map']))); W, H = mp['size']; gw, gh = W // 2, H // 2; wx, wy = win['wx'], win['wy']
         assert W % 2 == 0 and H % 2 == 0 and wx % 8 == 0 and wy % 8 == 0 and gw % 8 == 0 and gh % 8 == 0
         # ---- ground bake: the lab renderer minus props, fences and actors, cut into 32 px game cells
         img = R.render({**mp, 'objects': [], 'actors': [], 'fences': []}).convert('RGBA'); assert img.size == (W * 16, H * 16)
+        ART = dict(R.LAST['art'])   # lab cell -> (opaque, green) of the cliff tile drawn there; a raised lab cell with none is solid top
         bake = []
         for gy in range(gh):
             for gx in range(gw):
@@ -125,7 +126,20 @@ def main():
                 wet, path, tall = sum(c in WET for c in ch), sum(c not in NONPATH for c in ch), sum(c in TALL for c in ch)
                 m = 'rgWater' if wet >= 2 else 'rgPath' if path >= 2 else 'rgGrass'
                 smat[gx, gy] = ID[m]; sover[gx, gy] = TG if tall >= 2 and m == 'rgGrass' else 0
-        N = gw * gh; dh, dmat, dover, dkind, dbake, dfb = [-1] * N, [ID['rgGrass']] * N, [0] * N, [0] * N, [-1] * N, [-1] * N
+        N = gw * gh; dh, dmat, dover, dkind, dbake, dfb, dsm = [-1] * N, [ID['rgGrass']] * N, [0] * N, [0] * N, [-1] * N, [-1] * N, [-1] * N
+        def cliffmask(gx, gy):
+            """the plan outline (32 x 32, True = solid) of the raised data cell seen at screen cell (gx, gy): its own cliff art, and above a face the face's
+            rounded ends, so a sun shadow swept from it follows the rock edge and the rounded corners instead of the tile square"""
+            m = np.ones((32, 32), bool)
+            for j in (0, 1):
+                for i in (0, 1):
+                    a = ART.get((2 * gx + i, 2 * gy + j))
+                    if a is not None: m[j * 16:j * 16 + 16, i * 16:i * 16 + 16] = a[0]
+            if gy + 1 < gh and face[gy + 1][gx]:
+                for i in (0, 1):
+                    a = ART.get((2 * gx + i, 2 * gy + 3))
+                    if a is not None: m[:, i * 16:i * 16 + 16] &= a[0].mean(0) >= 0.5   # columns where the face itself is rock
+            return m
         for gy in range(gh):
             for gx in range(gw):
                 if face[gy][gx]:
@@ -135,6 +149,12 @@ def main():
                 d = gy + lg[gy][gx]; assert d < gh, f'{win["map"]}: plateau cell {gx},{gy} claims a data row outside the window'
                 assert dh[d * gw + gx] < 0, f'{win["map"]}: two visible cells claim data cell {gx},{d} (a drop of more than one level, or a plateau closer than a face row to another)'
                 dh[d * gw + gx] = lg[gy][gx]; dmat[d * gw + gx] = smat[gx, gy]; dover[d * gw + gx] = sover[gx, gy]; dbake[d * gw + gx] = bake[gy * gw + gx]
+                if lg[gy][gx] > 0:
+                    cm = cliffmask(gx, gy)
+                    if not cm.all():
+                        k = np.packbits(cm, axis=1).tobytes().hex()
+                        if k not in mid: mid[k] = len(masks); masks.append(k)
+                        dsm[d * gw + gx] = mid[k]
         for gy in range(gh):
             for gx in range(gw):
                 if face[gy][gx] and stair[gy][gx]:
@@ -165,7 +185,7 @@ def main():
         for dr in mp.get('doors', []):   # a cave stamp on a face: the door line is the top edge of the lowland cell in front of it (the foot stops there), x the stamp centre
             hl = levelAt(dr['x'] * 16 + 24, (dr['y'] + 2) * 16); doors.append(dict(room=dr['room'], x=wx * 32 + dr['x'] * 16 + 24, y=wy * 32 + (dr['y'] + 2) * 16 + 32 * hl))
         pr = {k: dcell(*v) for k, v in mp.get('probes', {}).items()}; sc = [[wx + i % gw, wy + i // gw] for i in range(N) if dkind[i]]
-        SL.append(dict(doors=doors, probes=pr, stairs=sc, start=dcell(*mp['start']) if 'start' in mp else None, win=win, gw=gw, gh=gh, bake=dbake, fbake=dfb, kind=dkind, mat=dmat, over=dover, hh=dh, props=props, slots=slots))
+        SL.append(dict(doors=doors, probes=pr, stairs=sc, start=dcell(*mp['start']) if 'start' in mp else None, win=win, gw=gw, gh=gh, bake=dbake, fbake=dfb, smask=dsm, kind=dkind, mat=dmat, over=dover, hh=dh, props=props, slots=slots))
 
     # ---- cave rooms: the lab cave map at 2x (a room is drawn at scale 1 with 2x art), one chunk grid far from the world, ground baked per lab cell
     RM = []
@@ -215,7 +235,7 @@ def main():
         if d.get('noOutline'): o['noOutline'] = True
         if d.get('k', 1) > 1: o['density'] = d['k']   # nearest upscaled art for a room (scale 1, 2x art): one art pixel is k sheet px
         pdefs[n] = o
-    ts = dict(file='assets/adv/region.png', T=32, cols=COLS, mats={n: {'C': 0} for n in ID}, props=pdefs, doors=[d for S in SL for d in S['doors']])
+    ts = dict(file='assets/adv/region.png', T=32, cols=COLS, mats={n: {'C': 0} for n in ID}, props=pdefs, doors=[d for S in SL for d in S['doors']], cliffMasks=masks)
     js = 'window.ADV_TILESET_REGION = ' + json.dumps(ts, separators=(',', ':')) + """;
 // Generated by tools/adv-region-export.py. adv-world.js reads the sheet itself (lookup, chunk bake, autotile); this file only registers the region materials with the world.
 (function () {
@@ -240,19 +260,20 @@ def main():
             path = os.path.join(ROOT, f'data/adv/chunks/{cx}_{cy}.js'); backup(path)
             d = parse_chunk(os.path.join(BK, f'{cx}_{cy}.js'))   # always rebuild from the original
             h, m, o, k = rle(d['h']), rle(d['mat']), rle(d['over']), rle(d['kind']); dk = rle(d['deck']) if 'deck' in d else [-1] * 1024
-            bk = rle(d['bake']) if 'bake' in d else [-1] * 1024; fb = [-1] * 1024
+            bk = rle(d['bake']) if 'bake' in d else [-1] * 1024; fb = [-1] * 1024; sm = [-1] * 1024
             for i in range(1024):
                 wxc, wyc = cx * 32 + (i & 31), cy * 32 + (i >> 5)
                 if (wxc, wyc) in heal: m[i] = pal.index('grass')
                 if x0 <= wxc < x1 and y0 <= wyc < y1:
                     g = (wyc - y0) * gw + (wxc - x0)
-                    h[i], k[i], dk[i], m[i], o[i], bk[i], fb[i] = S['hh'][g], S['kind'][g], -1, S['mat'][g], S['over'][g], S['bake'][g], S['fbake'][g]
+                    h[i], k[i], dk[i], m[i], o[i], bk[i], fb[i], sm[i] = S['hh'][g], S['kind'][g], -1, S['mat'][g], S['over'][g], S['bake'][g], S['fbake'][g], S['smask'][g]
             keep = [p for p in d.get('props', []) if not (x0 * 32 <= p[1] < x1 * 32 and y0 * 32 <= p[2] < y1 * 32) and not p[0].startswith('rg')]   # rg* props are this tool's own: never carried over, so a backup taken after a run cannot double them
             new = [p for p in S['props'] if p[1] // 1024 == cx and p[2] // 1024 == cy]
             out = dict(h=unrle(h), mat=unrle(m), over=unrle(o), kind=unrle(k))
             if 'deck' in d or any(v >= 0 for v in dk): out['deck'] = unrle(dk)
             out['bake'] = unrle(bk)
             if any(v >= 0 for v in fb): out['fbake'] = unrle(fb)
+            if any(v >= 0 for v in sm): out['smask'] = unrle(sm)
             out['props'] = keep + new
             write_chunk(path, cx, cy, out); print(f'chunk {cx}_{cy}: {len(new)} new props, {len(d.get("props", [])) - len(keep)} old removed')
         zid = Z['ids'].index(win['zone'])

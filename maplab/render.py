@@ -74,6 +74,7 @@ CLIFF = {'grass': (7, 80), 'autumn': (14, 80), 'snow': (21, 76), 'rock': (0, 76)
 BASE['rock'] = ([(74, 88), (74, 89)], [(74, 90), (74, 91)])   # dirt valley floor; plateaus are bare brown rock
 BASE['highland'] = BASE['grass']; CLIFF['highland'] = CLIFF['rock']   # grass valleys, bare rock plateaus
 ROCKTOP = {'rock', 'highland'}
+LAST = {}   # the last render's cliff art per lab cell (opaque, green masks) and level function, read by tools/adv-region-export.py (cliff shadow outlines)
 STAIR2 = set()    # sets whose stairs are a two tile pair (columns c0+3, c0+4); every lab set so far has a one tile stair that repeats across the opening
 HOLE = {'grass': (7, 74), 'ridge': (7, 74), 'autumn': (14, 74), 'rock': (0, 74), 'highland': (0, 74)}   # face rows of the face-with-cave-hole strip above each set
 BASE['ridge'] = BASE['grass']; CLIFF['ridge'] = CLIFF['grass']   # grass valleys and grass-topped plateaus (rock faces, the top keeps the meadow)
@@ -448,6 +449,7 @@ def _render(mp, W, H, base):
         hc, hrw = HOLE[cset(lv(hx, hy))]
         for i in range(3):
             for j in range(2): t = tile(hc + i, hrw + j); put(t, (hx + i) * T, (hy + j) * T); a = np.array(t); art[hx + i, hy + j] = (a[..., 3] >= 128, (a[..., 1] > a[..., 0]) & (a[..., 1] > a[..., 2]))
+    LAST.update(art=art, lv=lv)
     terrain_outline(img, lv, cl, art, W, H)
 
     grass_im = {}
