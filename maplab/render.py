@@ -458,6 +458,7 @@ def _render(mp, W, H, base):
             k = at(x, y)
             if isinstance(k, tuple) and k[0] == 'tall':
                 grass_im[x, y] = quarters(lambda a, b: at(a, b) == k, x, y, *k[1]); put(grass_im[x, y], x * T, y * T)
+    LAST['grass'] = grass_im   # the tall grass blades alone per lab cell (transparent): the exporter's wade overlay
 
     # water mirror: stamps and actors reflect on the blue pixels of water cells (w/v/V), flipped about the foot line, 35% opaque,
     # tinted toward the water colour, rows nudged sideways by round(sin(y * 0.7)) px for a wobble. Mirrored into ia, pasted back below.

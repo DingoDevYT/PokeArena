@@ -67,7 +67,7 @@ def unrle(a):
         out.append(str(a[i]) if j - i == 1 else f'{a[i]}x{j - i}'); i = j
     return ','.join(out)
 def write_chunk(path, cx, cy, d):
-    parts = [f'{k}:{json.dumps(d[k], separators=(",", ":"))}' for k in ('h', 'mat', 'over', 'kind', 'deck', 'bake', 'fbake', 'smask', 'props') if k in d]
+    parts = [f'{k}:{json.dumps(d[k], separators=(",", ":"))}' for k in ('h', 'mat', 'over', 'kind', 'deck', 'bake', 'fbake', 'smask', 'obake', 'props') if k in d]
     open(path, 'w', encoding='utf-8').write(f'ADV.chunk({cx},{cy},{{{",".join(parts)}}});\n')
 
 
@@ -108,7 +108,7 @@ def main():
         img = R.render({**mp, 'objects': [], 'actors': [], 'fences': []}).convert('RGBA'); assert img.size == (W * 16, H * 16)
         gr2 = [r.ljust(W, '.') for r in mp['ground']] + ['.' * W] * (H - len(mp['ground']))
         ART = dict(R.LAST['art'])   # lab cell -> (opaque, green) of the cliff tile drawn there; a raised lab cell with none is solid top
-        bake = []
+        bake = []; GRASS = dict(R.LAST.get('grass', {}))   # lab cell -> its tall grass blades (transparent), for the wade overlay
         for gy in range(gh):
             for gx in range(gw):
                 t = img.crop((gx * 32, gy * 32, gx * 32 + 32, gy * 32 + 32)); k = t.tobytes()
@@ -131,7 +131,17 @@ def main():
                 wet, path, tall = sum(c in WET for c in ch), sum(c not in NONPATH for c in ch), sum(c in TALL for c in ch)
                 m = 'rgWater' if wet >= 2 else 'rgPath' if path >= 2 else 'rgGrass'
                 smat[gx, gy] = ID[m]; sover[gx, gy] = TG if tall >= 2 and m == 'rgGrass' else 0
-        N = gw * gh; dh, dmat, dover, dkind, dbake, dfb, dsm = [-1] * N, [ID['rgGrass']] * N, [0] * N, [0] * N, [-1] * N, [-1] * N, [-1] * N
+        N = gw * gh; dh, dmat, dover, dkind, dbake, dfb, dsm, dob = [-1] * N, [ID['rgGrass']] * N, [0] * N, [0] * N, [-1] * N, [-1] * N, [-1] * N, [-1] * N
+        def grassover(gx, gy):
+            """the game cell's tall grass blades alone (32 x 32, transparent elsewhere) as a sheet tile id, or -1: drawn over the feet of anyone standing in it"""
+            parts = [(i, j, GRASS.get((2 * gx + i, 2 * gy + j))) for j in (0, 1) for i in (0, 1)]
+            if not any(im is not None for *_, im in parts): return -1
+            t = Image.new('RGBA', (32, 32))
+            for i, j, im in parts:
+                if im is not None: t.alpha_composite(im.convert('RGBA'), (i * 16, j * 16))
+            k = t.tobytes()
+            if k not in tid: tid[k] = len(tiles); tiles.append(t)
+            return tid[k]
         def cliffmask(gx, gy):
             """the plan outline (32 x 32, True = solid) of the raised data cell seen at screen cell (gx, gy): its own cliff art, and above a face the face's
             rounded ends, so a sun shadow swept from it follows the rock edge and the rounded corners instead of the tile square"""
@@ -154,6 +164,7 @@ def main():
                 d = gy + lg[gy][gx]; assert d < gh, f'{win["map"]}: plateau cell {gx},{gy} claims a data row outside the window'
                 assert dh[d * gw + gx] < 0, f'{win["map"]}: two visible cells claim data cell {gx},{d} (a drop of more than one level, or a plateau closer than a face row to another)'
                 dh[d * gw + gx] = lg[gy][gx]; dmat[d * gw + gx] = smat[gx, gy]; dover[d * gw + gx] = sover[gx, gy]; dbake[d * gw + gx] = bake[gy * gw + gx]
+                if sover[gx, gy]: dob[d * gw + gx] = grassover(gx, gy)
                 if lg[gy][gx] > 0:
                     cm = cliffmask(gx, gy)
                     if not cm.all():
@@ -190,7 +201,7 @@ def main():
         for dr in mp.get('doors', []):   # a cave stamp on a face: the door line is the top edge of the lowland cell in front of it (the foot stops there), x the stamp centre
             hl = levelAt(dr['x'] * 16 + 24, (dr['y'] + 2) * 16); doors.append(dict(room=dr['room'], x=wx * 32 + dr['x'] * 16 + 24, y=wy * 32 + (dr['y'] + 2) * 16 + 32 * hl))
         pr = {k: dcell(*v) for k, v in mp.get('probes', {}).items()}; sc = [[wx + i % gw, wy + i // gw] for i in range(N) if dkind[i]]
-        SL.append(dict(doors=doors, probes=pr, stairs=sc, start=dcell(*mp['start']) if 'start' in mp else None, win=win, gw=gw, gh=gh, bake=dbake, fbake=dfb, smask=dsm, kind=dkind, mat=dmat, over=dover, hh=dh, props=props, slots=slots))
+        SL.append(dict(doors=doors, probes=pr, stairs=sc, start=dcell(*mp['start']) if 'start' in mp else None, win=win, gw=gw, gh=gh, bake=dbake, fbake=dfb, smask=dsm, obake=dob, kind=dkind, mat=dmat, over=dover, hh=dh, props=props, slots=slots))
 
     # ---- cave rooms: the lab cave map at 2x (a room is drawn at scale 1 with 2x art), one chunk grid far from the world, ground baked per lab cell
     RM = []
@@ -267,15 +278,15 @@ def main():
                 path = os.path.join(ROOT, f'data/adv/chunks/{cx}_{cy}.js'); backup(path)
                 d = parse_chunk(os.path.join(BK, f'{cx}_{cy}.js'))   # always rebuild from the original
                 CHS[cx, cy] = dict(path=path, d=d, h=rle(d['h']), m=rle(d['mat']), o=rle(d['over']), k=rle(d['kind']), dk=rle(d['deck']) if 'deck' in d else [-1] * 1024,
-                                   bk=rle(d['bake']) if 'bake' in d else [-1] * 1024, fb=[-1] * 1024, sm=[-1] * 1024,
+                                   bk=rle(d['bake']) if 'bake' in d else [-1] * 1024, fb=[-1] * 1024, sm=[-1] * 1024, ob=[-1] * 1024,
                                    props=[p for p in d.get('props', []) if not p[0].startswith('rg')], n0=len(d.get('props', [])), new=0)   # rg* props are this tool's own: never carried over, so a backup taken after a run cannot double them
-            C = CHS[cx, cy]; d, h, m, o, k, dk, bk, fb, sm = C['d'], C['h'], C['m'], C['o'], C['k'], C['dk'], C['bk'], C['fb'], C['sm']
+            C = CHS[cx, cy]; d, h, m, o, k, dk, bk, fb, sm, ob = C['d'], C['h'], C['m'], C['o'], C['k'], C['dk'], C['bk'], C['fb'], C['sm'], C['ob']
             for i in range(1024):
                 wxc, wyc = cx * 32 + (i & 31), cy * 32 + (i >> 5)
                 if (wxc, wyc) in heal: m[i] = pal.index('grass')
                 if x0 <= wxc < x1 and y0 <= wyc < y1:
                     g = (wyc - y0) * gw + (wxc - x0)
-                    h[i], k[i], dk[i], m[i], o[i], bk[i], fb[i], sm[i] = S['hh'][g], S['kind'][g], -1, S['mat'][g], S['over'][g], S['bake'][g], S['fbake'][g], S['smask'][g]
+                    h[i], k[i], dk[i], m[i], o[i], bk[i], fb[i], sm[i], ob[i] = S['hh'][g], S['kind'][g], -1, S['mat'][g], S['over'][g], S['bake'][g], S['fbake'][g], S['smask'][g], S['obake'][g]
             new = [p for p in S['props'] if p[1] // 1024 == cx and p[2] // 1024 == cy]
             C['props'] = [p for p in C['props'] if not (x0 * 32 <= p[1] < x1 * 32 and y0 * 32 <= p[2] < y1 * 32)] + new; C['new'] += len(new)
         zid = Z['ids'].index(win['zone'])
@@ -292,6 +303,7 @@ def main():
         out['bake'] = unrle(C['bk'])
         if any(v >= 0 for v in C['fb']): out['fbake'] = unrle(C['fb'])
         if any(v >= 0 for v in C['sm']): out['smask'] = unrle(C['sm'])
+        if any(v >= 0 for v in C['ob']): out['obake'] = unrle(C['ob'])
         out['props'] = C['props']
         write_chunk(C['path'], cx, cy, out); print(f'chunk {cx}_{cy}: {C["new"]} new props, {C["n0"] + C["new"] - len(C["props"])} old removed')
     Z['cells'] = [unrle(r) for r in rows]

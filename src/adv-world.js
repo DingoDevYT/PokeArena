@@ -126,10 +126,11 @@ const ADV = (() => {
 
     // ---------- chunks ----------
     chunk(cx, cy, d) {
-      d = { ...d, h: unrle(d.h), mat: unrle(d.mat), over: unrle(d.over), kind: unrle(d.kind), deck: d.deck && unrle(d.deck), bake: d.bake && unrle(d.bake), fbake: d.fbake && unrle(d.fbake), smask: d.smask && unrle(d.smask) };
+      d = { ...d, h: unrle(d.h), mat: unrle(d.mat), over: unrle(d.over), kind: unrle(d.kind), deck: d.deck && unrle(d.deck), bake: d.bake && unrle(d.bake), fbake: d.fbake && unrle(d.fbake), smask: d.smask && unrle(d.smask), obake: d.obake && unrle(d.obake) };
       const k = key(cx, cy), deck = new Int8Array(N).fill(-1), S = this.Tc(cx * CH) / T;
       for (let i = 0; i < N; i++) if (d.kind[i] === 8) deck[i] = d.deck && d.deck[i] >= 0 ? d.deck[i] : d.h[i] + 1;
-      const ch = { cx, cy, h: Int8Array.from(d.h), mat: Uint8Array.from(d.mat), over: Uint8Array.from(d.over), kind: Uint8Array.from(d.kind), deck, bake: d.bake ? Int16Array.from(d.bake) : null, fbake: d.fbake ? Int16Array.from(d.fbake) : null, smask: d.smask ? Int16Array.from(d.smask) : null,   // smask: the cliff shadow outline of a raised map-lab cell (an index into the region sheet's cliffMasks; -1 = the full square)
+      const ch = { cx, cy, h: Int8Array.from(d.h), mat: Uint8Array.from(d.mat), over: Uint8Array.from(d.over), kind: Uint8Array.from(d.kind), deck, bake: d.bake ? Int16Array.from(d.bake) : null, fbake: d.fbake ? Int16Array.from(d.fbake) : null, smask: d.smask ? Int16Array.from(d.smask) : null, obake: d.obake ? Int16Array.from(d.obake) : null,   // obake: a map-lab tall grass cell's blades alone (region sheet tile), drawn over feet by ADVR.wade
+          // smask: the cliff shadow outline of a raised map-lab cell (an index into the region sheet's cliffMasks; -1 = the full square)
           // bake: a tile id of the region sheet per cell (-1 = none), the ground of a map-lab zone
         props: (d.props || []).map(p => { const o = { n: p[0], x: p[1] * S, y: p[2] * S, z: p[3] === undefined ? undefined : p[3] * S }, b = this.bk.get(o.n + '|' + o.x + '|' + o.y); if (b) o.b = b; return o; }),
         tile: new Int16Array(N), role: new Uint8Array(N), otile: new Int16Array(N), orole: new Uint8Array(N) };

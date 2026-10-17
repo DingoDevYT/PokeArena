@@ -208,7 +208,9 @@ const ADVR = {
     const cl = ADV.cellAt(e.x, e.y), g = ctx; if (!cl || !cl.over || ADV.palette[cl.over] !== 'tallgrass' || Math.abs(e.z - cl.h * this.T) > 1) return;
     const T = this.T, id = cl.ch.otile[cl.i], od = ADV.defOf('tallgrass'), sy = e.y - e.z, top = sy - spriteH * 0.4;
     g.save(); g.beginPath(); g.rect(Math.round(e.x - 20), Math.round(top), 40, Math.round(sy - top) + 3); g.clip();
-    for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 0; dr++) this.tile(g, id, (cl.c + dc) * T, cl.r * T - cl.h * T + dr * T, od && ADV.originOf(od), od && od.density);
+    if (cl.ch.obake && cl.ch.obake[cl.i] >= 0) {   // a map-lab bed: its own blades from the region sheet (the ground bake already holds the full grass)
+      for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 0; dr++) { const c = cl.c + dc, r = cl.r + dr, ch = ADV.chunkAt(c, r), o = ch && ch.obake ? ch.obake[(r & 31) * 32 + (c & 31)] : -1; if (o >= 0) this.tile(g, o, c * T, r * T - cl.h * T, window.ADV_TILESET_REGION); }
+    } else for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 0; dr++) this.tile(g, id, (cl.c + dc) * T, cl.r * T - cl.h * T + dr * T, od && ADV.originOf(od), od && od.density);
     g.restore();
   },
 
