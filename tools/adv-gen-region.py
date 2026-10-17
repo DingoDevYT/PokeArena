@@ -12,7 +12,12 @@ except Exception:
 Image.MAX_IMAGE_PIXELS = None
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 MAPS = 'C:/Users/lando/Desktop/dungeons-pokemon/MAPS/KENORA REGION W- '
-OUT = os.path.join(ROOT, 'data', 'adv')
+OUT = os.environ.get('ADV_GEN_OUT') or os.path.join(ROOT, 'data', 'adv')   # ADV_GEN_OUT: a copy of data/adv to generate into (a trial run never touches the live world)
+REPO_MAPS = {'TERRAIN ONLY.png': 'terrain-only.webp', 'LOCATIONS.png': 'locations.webp'}   # tools/kenora-maps: the owner's maps at 1717 x 2000, the same art as the 3640 x 4240 originals
+def mapimg(name):
+    """one of the owner's maps at the original 3640 x 4240: the PC original when present, else the repo copy scaled up (nearest, so the flat colours stay exact)"""
+    if os.path.exists(MAPS + name): return Image.open(MAPS + name)
+    return Image.open(os.path.join(ROOT, 'tools', 'kenora-maps', REPO_MAPS[name])).convert('RGB').resize((3640, 4240), Image.NEAREST)
 S, T, CH = 3.5, 32, 32
 CW, CHN = 33, 38
 WP, HP = CW * CH, CHN * CH
@@ -105,7 +110,7 @@ def P(name):
     return e
 
 # ---------------------------------------------------------------- 1. biomes
-terr = np.array(Image.open(MAPS + 'TERRAIN ONLY.png').convert('RGB'))
+terr = np.array(mapimg('TERRAIN ONLY.png').convert('RGB'))
 h0, w0 = terr.shape[:2]
 ys = np.minimum(((np.arange(HP) + .5) * S).astype(int), h0 - 1); xs = np.minimum(((np.arange(WP) + .5) * S).astype(int), w0 - 1)
 tt = terr[ys][:, xs].astype(np.int32)
@@ -157,7 +162,7 @@ assert ford.sum() > 30, 'ford centre is not on the river'
 water |= riv & ~ford; inl |= riv; land = ~water; beachc &= land
 
 # ---------------------------------------------------------------- 3. markers and roads
-loc = np.array(Image.open(MAPS + 'LOCATIONS.png').convert('RGB')).astype(np.int16)
+loc = np.array(mapimg('LOCATIONS.png').convert('RGB')).astype(np.int16)
 terr16 = terr.astype(np.int16)
 nearc = lambda c, tol: np.abs(loc - np.array(c, np.int16)).sum(2) <= tol
 iconc = nearc((56, 167, 250), 30) | nearc((255, 255, 255), 6) | nearc((122, 122, 122), 10) | nearc((204, 204, 204), 10) | nearc((171, 171, 171), 10)
