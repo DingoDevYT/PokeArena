@@ -56,6 +56,7 @@ function searchBox(x, y, w, h, q, placeholder) {
   rrect(x, y, w, h, 8 * s, '#00000055', q ? '#ffde3b' : '#ffffff44', 2);
   const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
   text(q ? q + caret : placeholder, x + 12 * s, y + h / 2 + 1, 15 * s, q ? '#fff' : '#889', 'left', null);
+  hot(x, y, w, h, { field: true });   // touch.js: a tap here opens the phone keyboard
 }
 
 // ---------- live attack preview ----------

@@ -143,8 +143,8 @@ function drawMenu(items, state, x, y, w, rowH = 54) {
     hot(x - w / 2, yy, w, (rowH - 8) * s, { hover: () => state.sel = i, click: fx => { state.sel = i; uiBlip(880, 0.05); if (it.act) it.act(); else if (it.cycle) it.cycle(fx < 0.75 ? -1 : 1); }, wheel: d => it.cycle && it.cycle(d) });
     rrect(x - w / 2, yy, w, (rowH - 8) * s, 12 * s, on ? '#ffde3bee' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
     if (it.value !== undefined) {
-      text(it.label, x - w / 2 + 20 * s, yy + (rowH - 8) * s / 2, 18 * s, on ? '#1a1a2a' : '#fff', 'left', null);
-      text(`${it.cycle ? '< ' : ''}${it.value}${it.cycle ? ' >' : ''}`, x + w / 2 - 20 * s, yy + (rowH - 8) * s / 2, 18 * s, on ? '#1a1a2a' : '#ffde3b', 'right', null);
+      text(it.label, x - w / 2 + 26 * s, yy + (rowH - 8) * s / 2, 18 * s, on ? '#1a1a2a' : '#fff', 'left', null);
+      text(`${it.cycle ? '< ' : ''}${it.value}${it.cycle ? ' >' : ''}`, x + w / 2 - 26 * s, yy + (rowH - 8) * s / 2, 18 * s, on ? '#1a1a2a' : '#ffde3b', 'right', null);
     } else text(it.label, x, yy + (rowH - 8) * s / 2, 22 * s, on ? '#1a1a2a' : '#fff', 'center', null);
   });
 }
@@ -155,16 +155,29 @@ const MenuScene = {
   items() {
     return [
       { label: 'Battle', act: () => setScene(SetupScene) },
+      { label: 'Adventure', act: () => setScene(AdventureScene) },
       { label: 'Online', act: () => setScene(OnlineScene) },
       { label: 'Profile', value: profileName(), act: () => { ProfileScene.back = null; setScene(ProfileScene); } },
       { label: 'Team Builder', act: () => setScene(TeamsScene) },
-      { label: 'Controls', act: () => { ControlsScene.back = null; setScene(ControlsScene); } },
-      { label: 'Music Volume', value: Math.round(AUDIO.vol.music * 10), cycle: d => { AUDIO.vol.music = clamp(AUDIO.vol.music + d * 0.1, 0, 1); if (AUDIO.music) AUDIO.music.volume = AUDIO.vol.music; STORE.set('vol', AUDIO.vol); } },
-      { label: 'SFX Volume', value: Math.round(AUDIO.vol.sfx * 10), cycle: d => { AUDIO.vol.sfx = clamp(AUDIO.vol.sfx + d * 0.1, 0, 1); STORE.set('vol', AUDIO.vol); uiBlip(700); } },
+      { label: 'Settings', act: () => { SettingsScene.back = null; setScene(SettingsScene); } },
     ];
   },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(TitleScene); },
   draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(INPUT.usingPad ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(TitleScene)); },
+};
+
+// ---------- settings: the rows shared by the main menu's Settings screen and the Adventure pause menu ----------
+const settingsItems = () => [
+  { label: 'Camera zoom', value: ADVR.NAMES[ADVR.zm - 1], cycle: d => ADVR.zoomBy(d) },
+  { label: 'Music Volume', value: Math.round(AUDIO.vol.music * 10), cycle: d => { AUDIO.vol.music = clamp(AUDIO.vol.music + d * 0.1, 0, 1); if (AUDIO.music) AUDIO.music.volume = AUDIO.vol.music; STORE.set('vol', AUDIO.vol); } },
+  { label: 'SFX Volume', value: Math.round(AUDIO.vol.sfx * 10), cycle: d => { AUDIO.vol.sfx = clamp(AUDIO.vol.sfx + d * 0.1, 0, 1); STORE.set('vol', AUDIO.vol); uiBlip(700); } },
+];
+const SettingsScene = {
+  back: null, st: { sel: 0 },   // back = scene to return to; null = main menu
+  enter() { AUDIO.playMusic(MUSIC.menu); },
+  items() { return [{ label: 'Controls', act: () => { ControlsScene.back = SettingsScene; setScene(ControlsScene); } }, ...settingsItems()]; },
+  update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(this.back || MenuScene); },
+  draw() { bgFill(); const s = S(); text('SETTINGS', VW / 2, 90 * s, 48 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(INPUT.usingPad ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(this.back || MenuScene)); },
 };
 
 // ---------- profile: trainer name + avatar (shown in battle, the online lobby and the team cards) ----------
@@ -222,7 +235,7 @@ const ProfileScene = {
     avatarTile(this.cur, X(100), Y(150), L(240), '#ffde3b');
     text((avatarById(this.cur)?.name || '').toUpperCase(), X(220), Y(412), L(18), '#aab4c8', 'center', null);
     text('NAME', X(30), Y(470), L(14), '#ffde3b', 'left', null);
-    rrect(X(30), Y(486), L(380), L(60), L(12), '#00000066', '#ffde3b', 2);
+    rrect(X(30), Y(486), L(380), L(60), L(12), '#00000066', '#ffde3b', 2); hot(X(30), Y(486), L(380), L(60), { field: true });
     const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
     text(this.name ? this.name + caret : 'You' + caret, X(46), Y(517), L(26), this.name ? '#fff' : '#ffffff66', 'left', null);
     text(`${this.name.length} / 12`, X(410), Y(564), L(12), '#9aa6c0', 'right', null, 'Silkscreen');

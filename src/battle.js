@@ -169,7 +169,7 @@ function startBattle(cfg) {
     field: { weather: cfg.weather || '', weatherT: cfg.weather ? 1e9 : 0, terrain: '', terrainT: 0 },
     sides: [makeSide(0, cfg.player), makeSide(1, cfg.cpu)],
     proj: [], gusts: [], areas: [], beams: [], marks: [], hazards: [], traps: [], waves: [], sweeps: [], soakT: 0, timers: [], fx: [], decals: [], floats: [], callouts: [],
-    rocks: ar.obstacles.filter(o => o.kind === 'rock').map(o => ({ ...o, hp: 3 })),
+    rocks: ar.obstacles.filter(o => o.kind === 'rock').map(o => ({ ...o, hp: o.hp ?? 3 })), // world rocks come in with hp Infinity
     puddles: ar.obstacles.filter(o => o.kind === 'puddle').map(o => ({ ...o })),
     grass: ar.obstacles.filter(o => o.kind === 'grass').map(o => ({ ...o })),
     cam: { x: ar.w / 2, y: ar.h / 2, z: 2, shake: 0, punch: 0 },
@@ -469,6 +469,7 @@ function sendOut(side, idx, first) {
   const m = activeMon(side), e = side.ent, foe = foeOf(side);
   Object.assign(e, { act: null, dash: null, dodge: null, lock: 0.35, stun: 0, hidden: 0, protect: 0, hurtT: 0, iframes: first ? TUNE.ENTRY_IFRAMES : TUNE.SWAP_IFRAMES, enterT: 0.35, anim: 'Idle', animT: 0, kx: 0, ky: 0 });
   side.choice = -1; m.tickT = 0;
+  if (m.at) { e.x = m.at.x; e.y = m.at.y; e.px = e.x; e.py = e.y; m.at = null; } // adventure: a queued wild mon enters from where it stands
   AUDIO.cry(m.sp.isMega ? m.sp.baseSpecies : m.sp.id, 0.55, e.x);
   ring(e.x, e.y, 26, '#fff', 0.4, 2); burst(e.x, e.y - 10 * SS, '#fff', 14, 140, 0.35, 2);
   if (!first) callout(side, `Go! ${m.sp.name}!`);
@@ -888,12 +889,13 @@ function fireMove(side) {
   if (move.id === 'mindblown' || move.mindBlownRecoil) chip(side, m, m.maxHp / 2 * TUNE.FIGHT_SCALE * 3, 'self');
 }
 const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
-function clampToArena(x, y, pad = 0) { const ar = B.arena, w = ar.wall + pad; return [clamp(x, w, ar.w - w), clamp(y, w, ar.h - w)]; }
+function clampToArena(x, y, pad = 0, e) { const ar = B.arena, w = ar.wall + pad; if (ar.world) return ADVB.clamp(ar, x, y, pad, e); return [clamp(x, w, ar.w - w), clamp(y, w, ar.h - w)]; }
+// does a shot or ray at (x, y) hit the edge of the fight (world mode: also terrain above the fight level; water and lower ground are flown over)
+function shotWall(x, y) { const ar = B.arena; if (ar.world) return ADVB.shotHit(ar, x, y); const [cx, cy] = clampToArena(x, y); return cx !== x || cy !== y; }
 function rayLen(x, y, dx, dy, max) {
   for (let d = 0; d < max; d += 6) {
     const px = x + dx * d, py = y + dy * d;
-    const [cx, cy] = clampToArena(px, py);
-    if (cx !== px || cy !== py) return d;
+    if (shotWall(px, py)) return d;
     for (const r of B.rocks) if (Math.hypot(px - r.x, py - r.y) < r.r) return d + 4;
   }
   return max;
@@ -1173,10 +1175,14 @@ function updateFxOnly(dt) {
 }
 function playerIntent(side, dt) {
   const e = side.ent, I = side.intent;
+  if (side.itemWheel) { Object.assign(I, { mx: 0, my: 0, use: -1, hold: -1, dodge: false, mega: false }); side.buffer = null; return; } // adventure: the item wheel is open
   I.mx = INPUT.mx; I.my = INPUT.my;
   if (INPUT.usingPad) {
     if (INPUT.aimActive) { e.aimX = INPUT.ax; e.aimY = INPUT.ay; e.aimIdle = 0; }
     else { e.aimIdle += dt; if (e.aimIdle > 1 && Math.hypot(I.mx, I.my) > 0.3) { const l = Math.hypot(I.mx, I.my); e.aimX = I.mx / l; e.aimY = I.my / l; } }
+  } else if (window.TOUCH?.on) {   // touch: no aim input, so face the foe
+    const fe = foeOf(side)?.ent;
+    if (fe) { const dx = fe.x - e.x, dy = fe.y - e.y, l = Math.hypot(dx, dy); if (l > 4) { e.aimX = dx / l; e.aimY = dy / l; } } e.aimIdle = 0;
   } else {
     // PC: the cursor is always the aim
     const w = screenToWorld(MOUSE.x, MOUSE.y), dx = w.x - e.x, dy = w.y - (e.y - 12 * SS), l = Math.hypot(dx, dy);
@@ -1314,13 +1320,14 @@ function updateSide(side, dt) {
     vx = mx * sp; vy = my * sp;
   }
   e.vx = vx; e.vy = vy;
+  e.px = e.x; e.py = e.y;
   e.x += (vx + e.kx) * dt; e.y += (vy + e.ky) * dt;
   const f = Math.pow(0.0008, dt); e.kx *= f; e.ky *= f;
   if (e.stun > 0) e.stun -= dt;
   // collide with arena edges and rocks
   const r = bodyRadius(spriteKey(m));
   const px0 = e.x, py0 = e.y;
-  [e.x, e.y] = clampToArena(e.x, e.y, r * 0.6);
+  [e.x, e.y] = clampToArena(e.x, e.y, r * 0.6, e);
   if (e.dash?.wall && (Math.abs(px0 - e.x) > 0.5 || Math.abs(py0 - e.y) > 0.5)) e.dash.left = 0; // Jarona stops at walls
   if (e.hidden <= 0 || m.vol.lastMove !== 'dig') for (const rk of B.rocks) {
     const dx = e.x - rk.x, dy = e.y - rk.y, d = Math.hypot(dx, dy), min = rk.r + r * 0.7;
@@ -1393,8 +1400,7 @@ function updateProjectiles(dt) {
     // sure-hit moves (Swift, Magical Leaf, Shock Wave) bend gently toward the foe
     if (p.home) { const sp = Math.hypot(p.vx, p.vy), a = Math.atan2(p.vy, p.vx), want = Math.atan2(fe.y - 10 * SS - p.y, fe.x - p.x), na = a + clamp(angDiff(want, a), -p.home * dt, p.home * dt); p.vx = Math.cos(na) * sp; p.vy = Math.sin(na) * sp; }
     p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
-    const [cx, cy] = clampToArena(p.x, p.y);
-    let done = p.t >= p.life || cx !== p.x || cy !== p.y;
+    let done = p.t >= p.life || shotWall(p.x, p.y);
     for (const rk of B.rocks) if (!done && Math.hypot(p.x - rk.x, p.y - rk.y) < rk.r + p.r * 0.5) { hitRock(rk, p.move); done = true; }
     burnGrass(p.move, p.x, p.y, p.r);
     if (!done && Math.hypot(p.x - fe.x, p.y - (fe.y - 10 * SS - fe.z)) < p.r + hurtRadius(foe) && canHit(foe)) {
@@ -1812,6 +1818,7 @@ function effRange(move) {
 }
 function cpuPickSwap(side, forced) {
   const foe = foeOf(side), fm = activeMon(foe);
+  if (side.queue) return forced ? side.team.findIndex((m, i) => !m.fainted && i !== side.cur) : -1; // adventure: a wild pile-on queue goes in order and never swaps by choice
   // default to any healthy bench mon so a NaN score can never leave a forced swap with nobody
   let best = side.team.findIndex((m, i) => !m.fainted && i !== side.cur), bs = -1e9;
   side.team.forEach((m, i) => {
@@ -1930,6 +1937,38 @@ function cpuThink(side, dt) {
     for (let i = 0; i < m.moves.length; i++) if (canUse(side, i) && m.moves[i].category !== 'Status' && d < effRange(m.moves[i]) && Math.random() < T.iq * 0.25) { I.use = i; break; }
   }
   if (!side.megaUsed && megaTarget(m) && Math.random() < 0.02) I.mega = true;
+}
+
+// The Adventure trainer stands in the world, not in the sim, so no attack can hurt it, but it still sidesteps: which enemy attack is about to cover local point (x, y)?
+// Returns the unit vector to step along (clear of that attack's line or area) or null. Projectiles, marks, areas, beams, lasers, waves, trap clouds and arena sweeps; melee never reaches that far.
+function sidestepFrom(x, y, pad = 30) {
+  const unit = (ax, ay) => { const l = Math.hypot(ax, ay) || 1; return { x: ax / l, y: ay / l }; };
+  const off = (dx, dy, rx, ry) => { const s = dx * ry - dy * rx >= 0 ? 1 : -1; return { x: -dy * s, y: dx * s }; };   // the side of a line (dx, dy) that (rx, ry), measured from the line, lies on
+  for (const p of B.proj) {
+    const sp = Math.hypot(p.vx, p.vy) || 1, rx = x - p.x, ry = y - p.y;
+    if (p.side !== 0 && rx * p.vx + ry * p.vy > 0 && Math.hypot(rx, ry) / sp < 0.55 && segDist(x, y, p.x, p.y, Math.atan2(p.vy, p.vx), 260) < p.r + pad) return off(p.vx / sp, p.vy / sp, rx, ry);
+  }
+  for (const k of B.marks) if (k.side !== 0 && Math.hypot(x - k.x, y - k.y) < k.r + pad && k.delay - k.t < 0.9) return unit(x - k.x || 1, y - k.y);
+  for (const a of B.areas) if (a.side !== 0 && a.t < a.dur && Math.hypot(x - a.x, y - a.y) < a.r + pad) return unit(x - a.x || 1, y - a.y);
+  for (const b of B.beams) {
+    if (b.side === 0 || b.dead || segDist(x, y, b.x, b.y, b.ang, b.len + 40) > b.w / 2 + pad) continue;
+    return off(Math.cos(b.ang), Math.sin(b.ang), x - b.x, y - b.y);
+  }
+  for (const w of B.waves) {
+    const c = Math.cos(w.ang), s = Math.sin(w.ang), rx = x - w.x, ry = y - w.y, gap = rx * c + ry * s - w.spd * w.t;
+    if (w.side !== 0 && !w.hit && gap > -34 && gap < 140 && w.spd * w.t < w.len + 40 && Math.abs(-rx * s + ry * c) < w.w / 2 + pad) return off(c, s, rx, ry);
+  }
+  for (const t of B.traps) if (t.side !== 0 && inTrap({ x: t.x, y: t.y, r: t.r + pad }, { x, y })) return unit(x - t.x || 1, y - t.y);
+  const ar = B.arena;
+  if (x > 0 && y > 0 && x < ar.w && y < ar.h) for (const w of B.sweeps) {   // a sweep crosses the whole box: head for a gap, else roll into the front (nothing outside the box is touched)
+    if (w.side === 0 || w.hit || w.dead) continue;
+    const pos = w.horiz ? y : x, dist = ((w.horiz ? x : y) - w.u) * w.dir, tta = dist / w.spd + Math.max(0, w.warn - w.t);
+    if (dist < -w.thick || tta > 0.7 || inSweepGap(w, pos)) continue;
+    const g = w.gaps.map(([a, b]) => (a + b) / 2).sort((a, b) => Math.abs(a - pos) - Math.abs(b - pos))[0];
+    if (g !== undefined) return w.horiz ? { x: 0, y: Math.sign(g - pos) || 1 } : { x: Math.sign(g - pos) || 1, y: 0 };
+    return w.horiz ? { x: -w.dir, y: 0 } : { x: 0, y: -w.dir };
+  }
+  return null;
 }
 
 // Old synth blips now play real game SFX, picked by the pitch the caller asked for (no generated sounds).

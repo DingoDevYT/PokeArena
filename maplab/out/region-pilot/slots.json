@@ -1,0 +1,524 @@
+{
+ "palette_base": 22,
+ "baked_tiles": 709,
+ "windows": [
+  {
+   "window": {
+    "x": 840,
+    "y": 464,
+    "w": 48,
+    "h": 48
+   },
+   "zone": "route22",
+   "void": 0,
+   "stairs": [],
+   "probes": {},
+   "start": null,
+   "slots": {
+    "npc": [
+     {
+      "who": "npc3-apron-woman",
+      "d": "up",
+      "cell": [
+       871,
+       492
+      ]
+     },
+     {
+      "who": "npc2-old-man",
+      "d": "right",
+      "cell": [
+       869,
+       497
+      ]
+     },
+     {
+      "who": "npc1-explorer",
+      "d": "left",
+      "cell": [
+       845,
+       476
+      ]
+     },
+     {
+      "who": "npc4-vest-boy",
+      "d": "down",
+      "cell": [
+       853,
+       479
+      ]
+     },
+     {
+      "who": "npc1-red-cap-man",
+      "d": "down",
+      "cell": [
+       874,
+       497
+      ]
+     },
+     {
+      "who": "npc4-ponytail-girl",
+      "d": "down",
+      "cell": [
+       856,
+       472
+      ]
+     }
+    ],
+    "mon": [
+     {
+      "who": 415,
+      "d": "down",
+      "cell": [
+       866,
+       474
+      ]
+     },
+     {
+      "who": 414,
+      "d": "left",
+      "cell": [
+       866,
+       478
+      ]
+     },
+     {
+      "who": 313,
+      "d": "right",
+      "cell": [
+       850,
+       485
+      ]
+     },
+     {
+      "who": 314,
+      "d": "left",
+      "cell": [
+       854,
+       489
+      ]
+     },
+     {
+      "who": 195,
+      "d": "down",
+      "cell": [
+       874,
+       499
+      ]
+     },
+     {
+      "who": 420,
+      "d": "down",
+      "cell": [
+       877,
+       478
+      ]
+     },
+     {
+      "who": 415,
+      "d": "left",
+      "cell": [
+       879,
+       479
+      ]
+     },
+     {
+      "who": 16,
+      "d": "left",
+      "cell": [
+       852,
+       468
+      ]
+     }
+    ],
+    "doors": []
+   }
+  },
+  {
+   "window": {
+    "x": 240,
+    "y": 928,
+    "w": 64,
+    "h": 48
+   },
+   "zone": "route7",
+   "void": 57,
+   "stairs": [
+    [
+     291,
+     951
+    ],
+    [
+     292,
+     951
+    ],
+    [
+     272,
+     955
+    ],
+    [
+     273,
+     955
+    ],
+    [
+     264,
+     959
+    ],
+    [
+     265,
+     959
+    ]
+   ],
+   "probes": {
+    "north gateway": [
+     293,
+     928
+    ],
+    "hut door front": [
+     271,
+     953
+    ],
+    "knoll top": [
+     268,
+     949
+    ],
+    "terrace interior": [
+     258,
+     951
+    ],
+    "ridge top": [
+     291,
+     947
+    ],
+    "ridge stair foot": [
+     291,
+     951
+    ],
+    "terrace stair foot": [
+     264,
+     960
+    ],
+    "pond shore": [
+     254,
+     952
+    ],
+    "south lane": [
+     270,
+     962
+    ],
+    "east shelf": [
+     284,
+     951
+    ],
+    "outside west": [
+     239,
+     934
+    ]
+   },
+   "start": [
+    240,
+    934
+   ],
+   "slots": {
+    "npc": [
+     {
+      "who": "npc2-old-man",
+      "d": "down",
+      "cell": [
+       272,
+       951
+      ]
+     },
+     {
+      "who": "npc1-explorer",
+      "d": "left",
+      "cell": [
+       278,
+       948
+      ]
+     },
+     {
+      "who": "npc4-vest-boy",
+      "d": "right",
+      "cell": [
+       251,
+       938
+      ]
+     },
+     {
+      "who": "npc4-blonde-girl",
+      "d": "down",
+      "cell": [
+       266,
+       939
+      ]
+     },
+     {
+      "who": "npc3-apron-woman",
+      "d": "right",
+      "cell": [
+       290,
+       962
+      ]
+     }
+    ],
+    "mon": [
+     {
+      "who": 161,
+      "d": "left",
+      "cell": [
+       273,
+       952
+      ]
+     },
+     {
+      "who": 162,
+      "d": "right",
+      "cell": [
+       275,
+       952
+      ]
+     },
+     {
+      "who": 399,
+      "d": "down",
+      "cell": [
+       250,
+       940
+      ]
+     },
+     {
+      "who": 400,
+      "d": "left",
+      "cell": [
+       261,
+       951
+      ]
+     },
+     {
+      "who": 399,
+      "d": "left",
+      "cell": [
+       290,
+       943
+      ]
+     },
+     {
+      "who": 19,
+      "d": "up",
+      "cell": [
+       288,
+       964
+      ]
+     },
+     {
+      "who": 161,
+      "d": "down",
+      "cell": [
+       270,
+       964
+      ]
+     }
+    ],
+    "doors": []
+   }
+  },
+  {
+   "window": {
+    "x": 808,
+    "y": 416,
+    "w": 64,
+    "h": 48
+   },
+   "zone": "route21",
+   "void": 96,
+   "stairs": [
+    [
+     854,
+     431
+    ],
+    [
+     855,
+     431
+    ],
+    [
+     814,
+     435
+    ],
+    [
+     815,
+     435
+    ],
+    [
+     860,
+     435
+    ],
+    [
+     861,
+     435
+    ],
+    [
+     844,
+     436
+    ],
+    [
+     845,
+     436
+    ],
+    [
+     819,
+     445
+    ],
+    [
+     820,
+     445
+    ]
+   ],
+   "probes": {
+    "outside west": [
+     807,
+     449
+    ],
+    "south gate": [
+     829,
+     463
+    ],
+    "pass north": [
+     835,
+     425
+    ],
+    "hut front": [
+     840,
+     424
+    ],
+    "M2 foot top": [
+     844,
+     435
+    ],
+    "shelf": [
+     856,
+     438
+    ],
+    "mouth front": [
+     853,
+     437
+    ],
+    "M2 top": [
+     856,
+     434
+    ],
+    "summit": [
+     854,
+     428
+    ],
+    "M1 shelf": [
+     817,
+     440
+    ],
+    "M1 summit": [
+     815,
+     432
+    ],
+    "pond side": [
+     852,
+     452
+    ],
+    "M2 shelf stair foot": [
+     860,
+     435
+    ]
+   },
+   "start": [
+    808,
+    449
+   ],
+   "slots": {
+    "npc": [
+     {
+      "who": "npc5-camo-man",
+      "d": "down",
+      "cell": [
+       839,
+       425
+      ]
+     },
+     {
+      "who": "npc1-explorer",
+      "d": "left",
+      "cell": [
+       822,
+       429
+      ]
+     },
+     {
+      "who": "north-headband-brawler",
+      "d": "down",
+      "cell": [
+       855,
+       431
+      ]
+     }
+    ],
+    "mon": [
+     {
+      "who": 41,
+      "d": "right",
+      "cell": [
+       813,
+       422
+      ]
+     },
+     {
+      "who": 66,
+      "d": "left",
+      "cell": [
+       853,
+       437
+      ]
+     },
+     {
+      "who": 74,
+      "d": "right",
+      "cell": [
+       826,
+       442
+      ]
+     },
+     {
+      "who": 111,
+      "d": "down",
+      "cell": [
+       858,
+       443
+      ]
+     },
+     {
+      "who": 246,
+      "d": "down",
+      "cell": [
+       856,
+       427
+      ]
+     },
+     {
+      "who": 304,
+      "d": "left",
+      "cell": [
+       820,
+       449
+      ]
+     },
+     {
+      "who": 27,
+      "d": "left",
+      "cell": [
+       835,
+       451
+      ]
+     }
+    ],
+    "doors": []
+   }
+  }
+ ]
+}

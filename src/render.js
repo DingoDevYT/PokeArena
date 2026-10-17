@@ -14,7 +14,7 @@ function updateCamera(dt) {
   // zoom limits come from the fighting area plus a 48px rim, not the decorated border around it
   const zMin = Math.max(VW / (ar.w - ar.wall * 2 + 96), VH / (ar.h - ar.wall * 2 + 96)), zMax = zMin * 1.7;
   let z = Math.min(VW / (Math.abs(a.x - b.x) + 420), VH / (Math.abs(a.y - b.y) + 360));
-  z = clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
+  z = ar.world ? ADVR.zoomFor() : clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
   c.punch = Math.max(0, c.punch - dt * 0.8);
   c.z = lerp(c.z, z, 1 - Math.pow(0.02, dt));
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
@@ -67,7 +67,7 @@ const OUTLINE = new Map();
 function outlined(im, fw = im.naturalWidth, fh = im.naturalHeight, ring = false) {
   const key = im.src + '|' + fw + 'x' + fh + (ring ? '|ring' : '');
   let c = OUTLINE.get(key); if (c) return c;
-  c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+  c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height;   // outfit sheets are canvases (src = their key)
   const g = c.getContext('2d');
   for (let cy = 0; cy < c.height; cy += fh) for (let cx = 0; cx < c.width; cx += fw) {
     g.save(); g.beginPath(); g.rect(cx, cy, fw, fh); g.clip();
@@ -94,7 +94,7 @@ function drawMonShadow(key, animName, t, face, x, y, opts = {}) {
   const rows = Math.round(im.naturalHeight / a.fh), f = animFrame(a, t, opts.loop ?? true), row = rows >= 8 ? face : 0;
   const k = 0.3, dh = Math.max(2, Math.round(a.fh * sc * k)), lift = Math.min(1, (opts.z || 0) / (40 * SS));
   ctx.globalAlpha = (opts.alpha ?? 1) * 0.42 * (1 - lift * 0.5);
-  ctx.drawImage(silhouette(im), f * a.fw, row * a.fh, a.fw, a.fh, Math.round(x - a.fw * sc / 2), Math.round(y - a.footY * sc * k), a.fw * sc, dh);
+  ctx.drawImage(silhouette(im), f * a.fw, row * a.fh, a.fw, a.fh, ADVR.fq(x) - Math.round(a.fw * sc / 2), ADVR.fq(y) - Math.round(a.footY * sc * k), a.fw * sc, dh);
   ctx.globalAlpha = 1;
   return true;
 }
@@ -108,16 +108,22 @@ function dimmed(src) {
 }
 const tintCv = document.createElement('canvas'), tintCtx = tintCv.getContext('2d');
 function drawFrame(im, sx, sy, sw, sh, dx, dy, tint, alpha = 1, scale = 1, scaleX = 1, scaleY = 1) {
-  ctx.globalAlpha = alpha;
   const dw = sw * scale * scaleX, dh = sh * scale * scaleY; // scaleX/Y = squash and stretch about the feet (dx/dy are for the unstretched frame)
   dx += (sw * scale - dw) / 2; dy += (sh * scale - dh) * 0.7;
-  ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh);
-  if (tint) {
-    tintCv.width = sw; tintCv.height = sh;
-    tintCtx.globalCompositeOperation = 'source-over'; tintCtx.drawImage(im, sx, sy, sw, sh, 0, 0, sw, sh);
-    tintCtx.globalCompositeOperation = 'source-atop'; tintCtx.fillStyle = tint; tintCtx.fillRect(0, 0, sw, sh);
-    ctx.drawImage(tintCv, dx, dy, dw, dh);
-  }
+  const wl = ADVWA.on && (ctx === ADVR.g || ADVR.rec) ? ADVWA.line(im, sx, sy, sw, sh, dx, dy, dw, dh) : 0;   // an Adventure person or mon in open water: its waterline
+  if (ADVR.rec) { if (ADVR.rf && !ADVR.rf.ring) ADVR.rec.push([im, sx, sy, sw, sh, dx, dy, dw, dh, ADVR.rf[0], ADVR.rf[1], wl]); return; }   // the pre-pass only records Adventure sprites (adv-render.js: sun shadows, water reflections)
+  ctx.globalAlpha = alpha;
+  const draw = () => {
+    ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh);
+    if (ADVR.shadeE && !tint && ADVR.rf) ADVR.shadeSprite(im, sx, sy, sw, sh, dx, dy, dw, dh);   // an Adventure person or mon standing in a sun shadow
+    if (tint) {
+      tintCv.width = sw; tintCv.height = sh;
+      tintCtx.globalCompositeOperation = 'source-over'; tintCtx.drawImage(im, sx, sy, sw, sh, 0, 0, sw, sh);
+      tintCtx.globalCompositeOperation = 'source-atop'; tintCtx.fillStyle = tint; tintCtx.fillRect(0, 0, sw, sh);
+      ctx.drawImage(tintCv, dx, dy, dw, dh);
+    }
+  };
+  if (wl) ADVWA.sub(ctx, im, sx, sy, sw, sh, dx, dy, dw, dh, wl, draw); else draw();   // half submerged: cut at the waterline, the rest faint under the water
   ctx.globalAlpha = 1;
 }
 function drawMonSprite(key, animName, t, face, x, y, opts = {}) {
@@ -126,8 +132,8 @@ function drawMonSprite(key, animName, t, face, x, y, opts = {}) {
   const im = img(a.file); if (!im) return;
   const rows = Math.round(im.naturalHeight / a.fh);
   const loop = opts.loop ?? ['Idle', 'Walk', 'Sleep', 'Hop', 'Charge', 'Rotate'].includes(animName);
-  const f = animFrame(a, t, loop), row = rows >= 8 ? face : 0, dx = Math.round(x - a.fw * sc / 2), dy = Math.round(y - a.footY * sc - (opts.z || 0));
-  const [kx, ky] = opts.stretch || [1, 1];
+  const f = animFrame(a, t, loop), row = rows >= 8 ? face : 0, dx = ADVR.fq(x) - Math.round(a.fw * sc / 2), dy = ADVR.fq(y) - Math.round(a.footY * sc) - ADVR.fq(opts.z || 0);   // foot rounded once (to the art px grid in the Adventure world), offsets whole: the locked camera rounds the same way
+  const [kx, ky] = opts.stretch || [1, 1]; ADVR.rf = [ADVR.fq(y), ADVR.fq(opts.z || 0)];
   if (opts.outline) drawFrame(outlined(im, a.fw, a.fh, true), f * a.fw, row * a.fh, a.fw, a.fh, dx, dy, opts.outline, 1, sc, kx, ky);
   drawFrame(opts.noOutline || opts.outline ? im : outlined(im, a.fw, a.fh), f * a.fw, row * a.fh, a.fw, a.fh, dx, dy, opts.tint, opts.alpha ?? 1, sc, kx, ky);
 }
@@ -417,10 +423,17 @@ function drawWorld(dt) {
   if (B.field.weather !== 'sun') { ctx.fillStyle = B.field.weather === 'rain' ? 'rgba(10,16,40,0.14)' : 'rgba(18,10,40,0.12)'; ctx.fillRect(view.x, view.y, view.w, view.h); }
   if (B.mega && !B.mega.done) { ctx.fillStyle = `rgba(4,0,16,${0.6 * Math.min(1, B.mega.t / 0.3)})`; ctx.fillRect(view.x, view.y, view.w, view.h); }
   if (B.field.terrain) { ctx.globalAlpha = 0.12 + 0.05 * Math.sin(B.time * 2); ctx.fillStyle = TERRAIN_TINT[B.field.terrain]; ctx.fillRect(ar.wall, ar.wall, ar.w - ar.wall * 2, ar.h - ar.wall * 2); ctx.globalAlpha = 1; }
+  drawFloor();
+  battleSortItems().sort((a, b) => a.y - b.y).forEach(o => o.f());
+  drawOver(dt);
+}
+// everything lying on the ground under the fight: decals, puddles, hazards, field fx, telegraphs, shadows
+function drawFloor() {
+  const props = B.arena.props || {};
   for (const d of B.decals) drawDecal(d);
   for (const p of B.puddles) blob(props.puddle, p.x, p.y, p.r * 1.1, p.r * 0.8, '#3d64a8', p.x);
   for (const g of B.grass) if (g.burnt) ell(g.x, g.y, g.r * 0.8, g.r * 0.45, 'rgba(40,30,20,0.4)');
-  drawRays(); // light shafts lie on the floor: everything that matters in a fight (traps, telegraphs, mons) is drawn over them
+  if (!B.arena.world) drawRays(); // light shafts lie on the floor: everything that matters in a fight (traps, telegraphs, mons) is drawn over them
   for (const h of B.hazards) hazardRing(h);
   for (const h of B.hazards) if (h.kind !== 'stealthrock') drawHazard(h);
   if (window.drawFieldFx) drawFieldFx(); // field traps + waves (src/fieldfx.js)
@@ -451,23 +464,32 @@ function drawWorld(dt) {
   // projectile and sideline trainer shadows are floor decals, so they live here and never paint over a mon standing behind them
   for (const p of B.proj) ell(p.x, p.y + 10 * SS, p.r * 0.8, p.r * 0.35, 'rgba(0,0,0,0.25)');
   for (const s of B.sides) { const ca = s.ent.act; if (ca?.pow && !ca.noOrb && !ca.fired && (ca.pow < 1 || Math.floor(B.time * 16) % 2)) ell(s.ent.x + s.ent.aimX * (26 + 26 * ca.pow), s.ent.y + s.ent.aimY * 14, (6 + 17 * ca.pow) * 0.8, (6 + 17 * ca.pow) * 0.35, 'rgba(0,0,0,0.25)'); }
-  const trainerOw = B.sides.map((s, i) => {
+  for (const t of sideTrainers()) ell(t.x, t.y, 7 * SS, 3 * SS, 'rgba(0,0,0,0.42)');
+}
+// the sideline trainers of an arena (none in the world: the player's trainer is a world item there)
+function sideTrainers() {
+  const ar = B.arena; if (ar.world) return [];
+  return B.sides.map((s, i) => {
     const id = (s.trainerSprite || '').split('/').pop().replace(/^player-|\.png$/g, '');
     const ow = window.TRAINER_OW && (TRAINER_OW[id] || TRAINER_OW[{ chase: 'ethan', elaine: 'lyra' }[id]]);
     return ow && { ow, i, x: i ? ar.w - ar.wall - 18 : ar.wall + 18, y: ar.h / 2 };
   }).filter(Boolean);
-  for (const t of trainerOw) ell(t.x, t.y, 7 * SS, 3 * SS, 'rgba(0,0,0,0.42)');
-  // depth-sorted things
-  const list = [];
-  for (const s of B.sides) list.push({ y: s.ent.y, f: () => drawSideMon(s) });
-  for (const r of B.rocks) list.push({ y: r.y + r.r * 0.5, f: () => { const im = dimmed(props.rock); if (im) drawFrame(im, 0, 0, im.width, im.height, Math.round((r.x - im.width / 2) / 2) * 2, Math.round((r.y - im.height + r.r * 0.5) / 2) * 2, r.flash > 0 ? '#fff' : null); else ell(r.x, r.y, r.r, r.r * 0.6, '#7d7266', '#3e352c'); } });
-  for (const h of B.hazards) if (h.kind === 'stealthrock') list.push({ y: h.y, f: () => drawHazard(h) });
-  for (const p of B.proj) list.push({ y: p.y + 10 * SS, f: () => drawProjectile(p) }); // same ground anchor as its shadow, so a shot never slips behind the mon that fired it
+}
+// depth-sorted things of the fight: { y, x?, f } in battle coordinates (world rocks are drawn by the world)
+function battleSortItems() {
+  const props = B.arena.props || {}, list = [];
+  for (const s of B.sides) list.push({ y: s.ent.y, x: s.ent.x, f: () => drawSideMon(s) });
+  for (const r of B.rocks) if (!r.world) list.push({ y: r.y + r.r * 0.5, x: r.x, f: () => { const im = dimmed(props.rock); if (im) drawFrame(im, 0, 0, im.width, im.height, Math.round((r.x - im.width / 2) / 2) * 2, Math.round((r.y - im.height + r.r * 0.5) / 2) * 2, r.flash > 0 ? '#fff' : null); else ell(r.x, r.y, r.r, r.r * 0.6, '#7d7266', '#3e352c'); } });
+  for (const h of B.hazards) if (h.kind === 'stealthrock') list.push({ y: h.y, x: h.x, f: () => drawHazard(h) });
+  for (const p of B.proj) list.push({ y: p.y + 10 * SS, x: p.x, f: () => drawProjectile(p) }); // same ground anchor as its shadow, so a shot never slips behind the mon that fired it
   // tall grass sorts by the near edge of its footprint: mons inside it are covered, mons in front of it stand over it
   for (const g of B.grass) if (!g.burnt) list.push({ y: g.y + g.r * 0.7, f: () => { ctx.globalAlpha = 0.92; blob(props.grass, g.x, g.y - 4, g.r * 1.1, g.r * 0.85, '#3f8a37', g.y, true); ctx.globalAlpha = 1; } });
   // HGSS overworld trainers on the sidelines, facing the arena (data/trainer-ow.js; id taken from the battle sprite file name)
-  for (const { ow, i, x, y } of trainerOw) list.push({ y, f: () => { const raw = img(ow.file); if (!raw) return; drawFrame(outlined(raw, ow.fw, ow.fh), 0, ow.rows.indexOf(i ? 'left' : 'right') * ow.fh, ow.fw, ow.fh, Math.round(x - ow.fw * SS / 2), Math.round(y - ow.footY * SS), null, 1, SS); } });
-  list.sort((a, b) => a.y - b.y).forEach(o => o.f());
+  for (const { ow, i, x, y } of sideTrainers()) list.push({ y, f: () => { const raw = img(ow.file); if (!raw) return; drawFrame(outlined(raw, ow.fw, ow.fh), 0, ow.rows.indexOf(i ? 'left' : 'right') * ow.fh, ow.fw, ow.fh, Math.round(x - ow.fw * SS / 2), Math.round(y - ow.footY * SS), null, 1, SS); } });
+  return list;
+}
+function drawOver(dt) {
+  const ar = B.arena;
   // beams, particles
   for (const b of B.beams) {
     if (b.laser) { drawLaser(b); continue; }
@@ -483,8 +505,7 @@ function drawWorld(dt) {
     else if (f.spark) pline(f.x - f.vx * 0.025, f.y - f.vy * 0.025, f.x, f.y, f.col, 2);
     else if (f.column) { const q = f.t / f.life; ctx.globalAlpha = 1 - q * q; drawBeam(f.column, f.x, f.y - 200, Math.PI / 2, 200, f.t); ctx.globalAlpha = 1; }
   }
-  drawLighting();
-  drawVignette();
+  if (!ar.world) { drawLighting(); drawVignette(); }
   if (B.impact) {
     // impact frame: black void, white speed lines bursting from the hit, both mons as white silhouettes
     const k = B.impact, rr = seeded(Math.floor(k.seed));
@@ -597,6 +618,10 @@ function drawBattle(dt) {
   // anyone fielding Flowery takes over the music for the rest of the fight (runs on host, guest and offline alike)
   if (!B.demo && AUDIO.musicSrc !== FLOWERY_MUSIC && B.sides.some(s => activeMon(s)?.sp.id === 'flowery')) AUDIO.playMusic(FLOWERY_MUSIC);
   updateCamera(dt);
+  if (B.arena.world) drawBattleWorld(dt); else drawBattleArena(dt);
+  drawBattleOverlay();
+}
+function drawBattleArena(dt) {
   const c = B.cam;
   // world canvas covers the view in world pixels; the camera's fractional offset is applied when scaling up
   const vw = Math.ceil(VW / c.z) + 3, vh = Math.ceil(VH / c.z) + 3;
@@ -615,6 +640,21 @@ function drawBattle(dt) {
   if (B.impact && Math.floor(B.impact.t * 30) % 2) ctx.filter = 'invert(1)';
   ctx.drawImage(worldCv, -(left - ox) * c.z, -(top - oy) * c.z, vw * c.z, vh * c.z);
   ctx.filter = 'none';
+}
+// World mode: the adventure renderer draws the fight. Battle (x, y) sits at world (x + ox, y + oy) on a floor lv levels up, so it draws at screen y - lv * ar.T (the map's tile).
+function drawBattleWorld(dt) {
+  const ar = B.arena, c = B.cam, lift = ar.lv * ar.T, k = c.shake / c.z * 2, sh = () => Math.round((Math.random() - 0.5) * k);
+  const at = f => () => {
+    const v = ADVR.view; view = { x: v.ox - ar.ox, y: v.oy - ar.oy + lift, w: v.vw, h: v.vh };
+    ctx.save(); ctx.translate(ar.ox, ar.oy - lift); f(); ctx.restore();
+  };
+  const items = battleSortItems().map(o => ({ x: ar.ox + (o.x ?? ar.w / 2), y: ar.oy + o.y, z: lift, f: at(o.f) }));
+  ar.t += dt;
+  ADVR.draw({ x: ar.ox + c.x + sh(), y: ar.oy + c.y - lift + sh() }, [...(ar.extra ? ar.extra() : []), ...items], ar.t, { lv: ar.lv, floor: at(drawFloor), over: at(() => drawOver(dt)) });
+}
+// flash, floating numbers and HUD, in screen space
+function drawBattleOverlay() {
+  const c = B.cam;
   if (B.flashT > 0) { ctx.globalAlpha = Math.min(0.85, B.flashT * 3); ctx.fillStyle = B.flashCol || '#fff'; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
   // Damage numbers are big and pop in; "Super effective!" / "Critical!" are loud too; other labels stay smaller.
   const placed = [];

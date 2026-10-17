@@ -1,0 +1,38 @@
+{
+  "door": [13, 3],
+  "paving": [
+    [10, -13, 26, -12],
+    [10, 3, 26, 4],
+    [10, 14, 26, 15]
+  ],
+  "boards": [
+    [7, -44, 9, 17],
+    [-17, -6, 6, -5], [-12, 7, 6, 8],
+    [-22, -38, 6, -36]
+  ],
+  "buildings": [
+    ["hotelBlue", 12, -13, "t7-h1", {"w": 4, "d": 4, "ex": 1}], ["chaletRedBig", 19, -13, "t7-h2", {"w": 4, "d": 4, "ex": 1}],
+    ["pokeCenterGrand", 13, 3, "t7-center", {"w": 5, "d": 3, "ex": 2}], ["warehouse", 21, 3, "t7-mart", {"w": 6, "d": 3, "ex": 2}],
+    ["chaletRedChimney", 12, 14, "t7-h3", {"w": 4, "d": 4, "ex": 1}], ["tavern", 18, 14, "t7-h4", {"w": 4, "d": 4, "ex": 1}], ["hall", 23, 14, "t7-h5", {"w": 4, "d": 4, "ex": 1}]
+  ],
+  "props": [
+    ["signGreenWide", 25, 1], ["streetSign", 28, 1],
+    ["marketAwning", 14, -5], ["marketAwning", 19, -5], ["marketAwning", 24, -5],
+    ["crateBox", 16, -4], ["barrelOrange", 21, -4], ["crateWide", 22, -4], ["crateBox", 12, -4], ["vendingRed", 11, -9], ["benchYellow", 21, -9], ["noticeBoard", 24, -9],
+    ["lampPost", 10, -19], ["lampPost", 10, -9], ["lampPost", 10, -1], ["lampPost", 10, 9], ["lampPost", 10, 18],
+    ["palmTree", 10, -2], ["palmTreeBig", 25, -2], ["palmTree", 26, 6], ["palmTree", 11, 12], ["flowerBedBlue", 14, 6], ["flowerBedPink", 20, 6], ["flowerBedBlue", 15, -10], ["flowerBedPink", 22, -10],
+    ["palmTree", 5, -22], ["palmTreeBig", 5, -16], ["palmTree", 5, -10], ["palmTreeBig", 5, 5], ["palmTree", 5, 10], ["palmTreeBig", 5, 15],
+    ["benchTeal", 6, -8], ["benchTeal", 6, -2], ["benchTeal", 6, 11],
+    ["maUmbrellaPink", -3, -20], ["maLounger", -4, -19], ["maLounger", -2, -19], ["maLounger", -3, -18],
+    ["maUmbrellaBlue", 1, -20], ["maLounger", 0, -19], ["maLounger", 2, -19], ["maLounger", 1, -18],
+    ["maUmbrellaPink", -3, -13], ["maLounger", -4, -12], ["maLounger", -2, -12], ["maLounger", -3, -11],
+    ["maUmbrellaBlue", 1, -13], ["maLounger", 0, -12], ["maLounger", 2, -12], ["maLounger", 1, -11],
+    ["maUmbrellaPink", -1, -9], ["maLounger", -2, -8], ["maLounger", 0, -8], ["maUmbrellaBlue", -2, -24], ["maLounger", -3, -23], ["maLounger", -1, -23], ["maUmbrellaPink", 2, -24], ["maLounger", 1, -23], ["maLounger", 3, -23], ["pxStallBlue", 4, 2],
+    ["maUmbrellaPink", 1, 11], ["maLounger", 0, 12], ["maLounger", 2, 12], ["maUmbrellaBlue", 4, 12], ["maLounger", 3, 13], ["maLounger", 5, 13],
+    ["maRowboat", -3, 6], ["speedboat", -10, 12],
+    ["signGreen", -5, -17], ["signGreen", -5, -4], ["signGreen", -3, 9], ["signGreen", -4, -34], ["signGreen", 6, -45],
+    ["marketAwning", 4, -28], ["pxStallBlue", 4, -32], ["benchTeal", 6, -30],
+    ["lampPost", 10, -28], ["lampPost", 10, -38],
+    ["shell", -2, -48], ["pebbles", 3, -52], ["shell", 1, -56], ["coralPink", -3, -50], ["shell", 6, -49], ["pebbles", -1, -55], ["shell", -4, -14], ["pebbles", 3, -2], ["shell", -5, 12]
+  ]
+}

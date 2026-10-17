@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><title>Ranger sprites</title>
+<style>body{background:#7a9;font:11px monospace;margin:8px}h4{margin:10px 0 2px}span{display:inline-block;margin:2px;text-align:center;vertical-align:top;background:#8b9a}canvas{image-rendering:pixelated;display:block}</style>
+<body>
+<script src="data/trainer-ow-ranger.js"></script>
+<script>
+// every packed Ranger character, every animation playing at its own fps. ?s=4 for scale, ?only=walk to filter anim names
+const q = new URLSearchParams(location.search), S = +(q.get('s') || 3), only = q.get('only'), list = [];
+for (const [slug, m] of Object.entries(window.TRAINER_OW_RANGER || {})) {
+  const h = document.createElement('h4'); h.textContent = slug + '  ' + m.name + (m.note ? '  (' + m.note + ')' : ''); document.body.append(h);
+  const im = new Image(); im.src = m.file + '?' + Date.now();
+  for (const [name, a] of Object.entries(m.anims)) {
+    if (only && !name.startsWith(only)) continue;
+    const sp = document.createElement('span'), c = document.createElement('canvas'); c.width = m.fw * S; c.height = m.fh * S; sp.append(c, name); document.body.append(sp); list.push({ c, im, m, a });
+  }
+}
+const t0 = performance.now();
+setInterval(() => { const t = (performance.now() - t0) / 1000; for (const { c, im, m, a } of list) { if (!im.complete) continue; const g = c.getContext('2d'), f = Math.floor(t * a.fps) % a.n; g.imageSmoothingEnabled = false; g.clearRect(0, 0, c.width, c.height); g.drawImage(im, f * m.fw, a.row * m.fh, m.fw, m.fh, 0, 0, c.width, c.height); } }, 40);
+</script>

@@ -1,0 +1,26 @@
+[  0.4s] props: 0 errors
+[  1.3s] cut-off and bleed: 0 errors
+[  0.1s] detached pieces: 0 errors
+[  0.2s] mats and seams: 0 errors
+[  0.0s] rooms: 0 errors
+[  0.0s] gyms: 0 errors
+[  2.7s] world placement: 1 errors
+
+ERROR placement (1)
+  rockGreyB@19523,35722: solid rect stands on stairs, a ledge or a bridge
+
+WARN density (1)
+  ext:pavingGrey (unused): tile C: art pixel is 2 sheet px but the sheet draws 1
+
+WARN seam (23)
+  ext:caveWater (unused): iSE.b | E.t: mean colour differs by 25.9
+  ext:caveWater (unused): iSW.b | W.t: mean colour differs by 25.5
+  ext:caveWaterB (unused): NW.r | N.l: mean colour differs by 23.2
+  ext:caveWaterB (unused): W.r | C.l: mean colour differs by 29.7
+  ext:caveWaterB (unused): SW.r | S.l: mean colour differs by 28.2
+  ext:caveWaterB (unused): iNE.r | N.l: mean colour differs by 20.7
+  ext:caveWaterB (unused): C.r | iNE.l: mean colour differs by 27.0
+  ext:caveWaterB (unused): iNW.r | C.l: mean colour differs by 27.0
+
+checked {'props': 649, 'density': 649, 'cutoff': 766, 'fragments': 649, 'mats': 108, 'seams': 1694, 'rooms': 2, 'gyms': 3, 'placement': 59083, 'doors': 68}
+1 errors, 24 warnings in 4.9s

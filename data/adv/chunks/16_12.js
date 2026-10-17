@@ -1,0 +1,1 @@
+ADV.chunk(16,12,{h:"6x1024",mat:"10x18,13x14,10x18,13x14,10x19,13x13,10x19,13x13,10x896",over:"0x1024",kind:"0x1024",props:[["lampPost",17360,12444],["flowerBedBlue",17264,12444],["bigRockGrey",16784,12638],["rockBrownB",16733,12658],["stoneGrey",16789,12688],["stoneGrey",16826,12592],["rockBrownB",16745,12673],["flowersOrange",16691,12627],["dryTuft",16853,12704]]});

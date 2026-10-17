@@ -1,0 +1,39 @@
+{
+  "door": [-8, 6],
+  "lim": 31,
+  "paving": [
+    [-2, 6, 0, 30, "path"],
+    [-27, 6, 8, 7, "path"],
+    [-26, 15, 8, 16, "path"],
+    [-14, 26, 8, 27, "path"]
+  ],
+  "boards": [
+    [9, 7, 11, 26],
+    [12, 10, 27, 11],
+    [12, 14, 34, 16],
+    [12, 19, 25, 20]
+  ],
+  "buildings": [
+    ["hall", -25, 6, "t6-h1", {"w": 4, "d": 4, "ex": 1}], ["hotelBlue", -18, 6, "t6-h2", {"w": 4, "d": 4, "ex": 1}], ["pokeCenterGrand", -8, 6, "t6-center", {"w": 5, "d": 3, "ex": 2}], ["warehouse", 5, 6, "t6-mart", {"w": 6, "d": 3, "ex": 2}],
+    ["chaletRedBig", -24, 15, "t6-h3", {"w": 4, "d": 4, "ex": 1}], ["chaletRedChimney", -16, 15, "t6-h4", {"w": 4, "d": 4, "ex": 1}], ["tavern", -8, 15, "t6-h5", {"w": 4, "d": 4, "ex": 1}]
+  ],
+  "props": [
+    ["signGreenWide", -6, 29], ["streetSign", -12, 29],
+    ["wBollard", 14, 11], ["wBollard", 18, 11], ["wBollard", 22, 11], ["wBollard", 26, 11],
+    ["wBollard", 14, 14], ["wBollard", 18, 14], ["wBollard", 24, 14], ["wBollard", 30, 14], ["wBollard", 33, 14],
+    ["wBollard", 14, 16], ["wBollard", 17, 16], ["wBollard", 25, 16], ["wBollard", 29, 16], ["wBollard", 33, 16],
+    ["wBollard", 14, 20], ["wBollard", 18, 20], ["wBollard", 22, 20], ["wBollard", 25, 20],
+    ["crateWide", 14, 10], ["crateWideB", 19, 10], ["crateWide", 24, 10], ["crateWide", 16, 14], ["crateWideB", 27, 14], ["crateBox", 20, 14], ["barrelOrange", 22, 14],
+    ["crateWide", 17, 19], ["crateBox", 13, 19], ["barrelOrange", 21, 19], ["crateWide", 24, 19],
+    ["lampPost", 9, 8], ["lampPost", 9, 13], ["lampPost", 9, 18], ["lampPost", 9, 23], ["lampPost", 20, 11], ["lampPost", 28, 16], ["lampPost", 16, 20],
+    ["crateWide", 11, 7], ["barrelOrange", 11, 12], ["crateBox", 11, 17], ["barrelDark", 11, 22],
+    ["maRowboat", 16, 13], ["maRowboat", 24, 13], ["speedboat", 20, 18], ["maRowboat", 29, 18], ["boatWhite", 32, 13],
+    ["fallenLog", 4, 10], ["fallenLog", 7, 10], ["fallenLog", 3, 13], ["logShort", 7, 13], ["logShort", 1, 11],
+    ["vanGrey", 5, 21], ["fallenLog", 3, 24], ["logShort", 7, 24], ["bulldozer", 5, 27], ["logShort", 1, 18], ["logShort", 7, 18],
+    ["lampPost", -22, 8], ["lampPost", -14, 8], ["lampPost", -6, 8], ["lampPost", 3, 8], ["lampPost", -22, 17], ["lampPost", -14, 17], ["lampPost", -6, 17], ["lampPost", 3, 17],
+    ["noticeBoard", -4, 5], ["benchYellow", -13, 8], ["mailbox", -22, 6], ["mailbox", -14, 6], ["mailbox", -21, 15], ["mailbox", -13, 15], ["mailbox", -5, 15],
+    ["flowerBedBlue", -19, 8], ["flowerBedPink", -10, 8], ["flowerBedBlue", -18, 17], ["flowerBedPink", -10, 17],
+    ["fallenLog", -24, 21], ["logShort", -18, 22], ["fallenLog", -12, 21], ["stumpLarge", -26, 25], ["fallenLog", -9, 24], ["logShort", -21, 19],
+    ["shell", 13, 22], ["pebbles", 30, 24], ["shell", 33, 22], ["coralPink", 21, 24], ["pebbles", 12, 8], ["shell", 28, 8]
+  ]
+}

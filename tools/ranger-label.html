@@ -1,0 +1,132 @@
+<!doctype html><meta charset="utf-8"><title>Ranger labeller</title>
+<style>
+body{margin:0;font:12px monospace;background:#223;color:#dde;display:flex;height:100vh}
+#side{width:470px;overflow:auto;padding:6px;border-right:1px solid #556;flex:none}
+#main{flex:1;overflow:auto;background:#7a9}
+canvas{image-rendering:pixelated}
+button,select,input{font:12px monospace}
+.ch{padding:2px 4px;cursor:pointer}.ch.sel{background:#446}
+.an{border:1px solid #445;margin:3px 0;padding:3px}.an.sel{border-color:#fd4;background:#334}
+.an canvas{background:#8b9;vertical-align:middle;float:right}
+.ok{color:#6e6}small{color:#99a}
+</style>
+<div id="side">
+  <div>sheet <select id="sheet"></select> zoom <select id="zoom"><option>2</option><option selected>3</option><option>4</option></select></div>
+  <div style="margin:4px 0"><button id="dl">download this sheet</button> <button id="dlall">download all edited</button> <button id="reset">reset sheet to prefill</button></div>
+  <small>Click a box on the sheet to add it to the selected animation. Backspace removes the last frame. Directions are from the viewer: left = sprite faces screen-left. Mark flip when the frames face the other way from the direction you picked.</small>
+  <h3>characters <button id="addch">+ character</button></h3>
+  <div id="chars"></div>
+  <div id="charEd"></div>
+  <h3>walk preview (8 dirs, mirrored where missing)</h3>
+  <canvas id="walk8"></canvas>
+</div>
+<div id="main"><canvas id="cv"></canvas></div>
+<script>
+const $ = id => document.getElementById(id), DIRS = ['down', 'downRight', 'right', 'upRight', 'up', 'upLeft', 'left', 'downLeft'], MIR = { downRight: 'downLeft', right: 'left', upRight: 'upLeft', downLeft: 'downRight', left: 'right', upLeft: 'upRight' };
+const NAMES = ['walk', 'idle', 'run', 'jump', 'talk', 'wave', 'point', 'cheer', 'hurt', 'throw', 'capture', 'sit', 'action'];
+let idx = [], cur = null, sheetImg = null, boxes = [], keyed = [], data = null, selCh = 0, selAn = 0, Z = 3, tick = 0;
+const store = { get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+fetch('.cache/ranger/boxes/index.json?' + Date.now()).then(r => r.json()).then(j => { idx = j; $('sheet').innerHTML = idx.map((s, i) => `<option value="${i}">${s.prefix}  (${s.short}, ${s.n} boxes)${store.get('rl:' + s.prefix) ? ' *' : ''}</option>`).join(''); const last = store.get('rl:last') | 0; $('sheet').value = last; load(last); });
+$('sheet').onchange = () => load(+$('sheet').value);
+$('zoom').onchange = () => { Z = +$('zoom').value; drawSheet(); };
+async function load(i) {
+  cur = idx[i]; store.set('rl:last', i); selCh = 0; selAn = 0;
+  boxes = await (await fetch('.cache/ranger/' + cur.boxes.split('/').map(encodeURIComponent).join('/') + '?' + Date.now())).json();
+  sheetImg = await new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = '.cache/ranger/' + encodeURIComponent(cur.sheet); });
+  keyed = boxes.map(keyBox);
+  data = store.get('rl:' + cur.prefix) || await prefill();
+  render();
+}
+async function prefill() {
+  try { const l = await fetch('.cache/ranger/labels/' + cur.prefix + '.json?' + Date.now()); if (l.ok) return await l.json(); } catch {}
+  try {
+    const m = await (await fetch('.cache/ranger/maps/' + cur.prefix + '.json?' + Date.now())).json();
+    return { sheet: cur.sheet, chars: m.chars.map(c => ({ slug: c.slug, name: c.name || c.slug, note: '', anims: Object.entries(c.dirs).map(([d, f]) => ({ name: 'walk', dir: d, frames: f.slice(), fps: 6, flip: false, ok: false })) })) };
+  } catch { return { sheet: cur.sheet, chars: [] }; }
+}
+// a box cut out with its key colour (commonest border colour) made transparent, plus its opaque bbox
+function keyBox([x, y, w, h]) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(sheetImg, x, y, w, h, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h), p = d.data, cnt = {}, at = (i, j) => (j * w + i) * 4, k = i => p[i] + ',' + p[i + 1] + ',' + p[i + 2];
+  for (let i = 0; i < w; i++) for (const j of [0, h - 1]) cnt[k(at(i, j))] = (cnt[k(at(i, j))] || 0) + 1;
+  for (let j = 0; j < h; j++) for (const i of [0, w - 1]) cnt[k(at(i, j))] = (cnt[k(at(i, j))] || 0) + 1;
+  const bg = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0]; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const q = at(i, j); if (k(q) === bg) p[q + 3] = 0; else if (p[q + 3]) { x0 = Math.min(x0, i); x1 = Math.max(x1, i); y0 = Math.min(y0, j); y1 = Math.max(y1, j); } }
+  g.putImageData(d, 0, 0); return { c, x0, y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+function save() { store.set('rl:' + cur.prefix, data); const o = $('sheet').options[$('sheet').value]; if (o && !o.text.endsWith('*')) o.text += ' *'; }
+function ch() { return data.chars[selCh]; }
+function an() { return ch()?.anims[selAn]; }
+function render() { drawSheet(); drawChars(); drawCharEd(); }
+function drawSheet() {
+  const cv = $('cv'); cv.width = sheetImg.width * Z; cv.height = sheetImg.height * Z; const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(sheetImg, 0, 0, cv.width, cv.height);
+  const used = new Set((ch()?.anims || []).flatMap(a => a.frames)), sel = an()?.frames || [];
+  g.font = '10px monospace';
+  boxes.forEach(([x, y, w, h], i) => {
+    if (used.has(i)) { g.fillStyle = '#0f04'; g.fillRect(x * Z, y * Z, w * Z, h * Z); }
+    const si = sel.indexOf(i); g.strokeStyle = si >= 0 ? '#fd0' : '#f00'; g.lineWidth = si >= 0 ? 3 : 1; g.strokeRect(x * Z + .5, y * Z + .5, w * Z - 1, h * Z - 1);
+    g.fillStyle = '#000'; g.fillRect(x * Z, y * Z, 20, 11); g.fillStyle = '#ff0'; g.fillText(i, x * Z + 1, y * Z + 9);
+    if (si >= 0) { g.fillStyle = '#fd0'; g.fillRect(x * Z, (y + h) * Z - 12, 22, 12); g.fillStyle = '#000'; g.fillText('#' + sel.map((v, n) => v === i ? n + 1 : 0).filter(Boolean).join(','), x * Z + 1, (y + h) * Z - 2); }
+  });
+}
+$('cv').onclick = e => {
+  const r = $('cv').getBoundingClientRect(), x = (e.clientX - r.left) / Z, y = (e.clientY - r.top) / Z, i = boxes.findIndex(([bx, by, w, h]) => x >= bx && x < bx + w && y >= by && y < by + h);
+  if (i < 0 || !an()) return; an().frames.push(i); save(); drawSheet(); drawCharEd();
+};
+addEventListener('keydown', e => { if (e.key === 'Backspace' && !/INPUT|SELECT/.test(document.activeElement.tagName) && an()) { e.preventDefault(); an().frames.pop(); save(); drawSheet(); drawCharEd(); } });
+function drawChars() {
+  $('chars').innerHTML = data.chars.map((c, i) => `<div class="ch ${i === selCh ? 'sel' : ''}" data-i="${i}">${c.name} <small>${c.slug} | ${c.anims.length} anims, ${c.anims.filter(a => a.ok).length} ok</small></div>`).join('') || '<small>none yet</small>';
+  for (const d of $('chars').children) d.onclick = () => { selCh = +d.dataset.i; selAn = 0; render(); };
+}
+$('addch').onclick = () => { const n = data.chars.length + 1; data.chars.push({ slug: cur.prefix + '-char' + n, name: 'Character ' + n, note: '', anims: [] }); selCh = data.chars.length - 1; selAn = 0; save(); render(); };
+function drawCharEd() {
+  const c = ch(), el = $('charEd'); if (!c) { el.innerHTML = ''; return; }
+  el.innerHTML = `<h3>${c.name}</h3>
+  name <input id="cn" value="${c.name}" size="18"> slug <input id="cs" value="${c.slug}" size="22"><br>
+  note <input id="cnote" value="${c.note || ''}" size="50"><br>
+  <button id="adda">+ animation</button> <button id="addw">+ walk set (5 dirs)</button> <button id="delc">delete character</button>
+  <datalist id="names">${NAMES.map(n => `<option>${n}`).join('')}</datalist>
+  <div id="anims">${c.anims.map((a, i) => `<div class="an ${i === selAn ? 'sel' : ''}" data-i="${i}"><canvas data-p="${i}" width="72" height="96"></canvas>
+    <input list="names" data-f="name" value="${a.name}" size="8"> <select data-f="dir"><option value="">none</option>${DIRS.map(d => `<option ${a.dir === d ? 'selected' : ''}>${d}</option>`).join('')}</select>
+    fps <input data-f="fps" type="number" value="${a.fps}" style="width:36px"> <label><input type="checkbox" data-f="flip" ${a.flip ? 'checked' : ''}>flip</label>
+    <label class="${a.ok ? 'ok' : ''}"><input type="checkbox" data-f="ok" ${a.ok ? 'checked' : ''}>ok</label><br>
+    frames <input data-f="frames" value="${a.frames.join(',')}" size="28"> <button data-del="${i}">x</button></div>`).join('')}</div>`;
+  $('cn').oninput = e => { c.name = e.target.value; save(); drawChars(); };
+  $('cs').oninput = e => { c.slug = e.target.value.replace(/[^a-z0-9-]/g, ''); save(); drawChars(); };
+  $('cnote').oninput = e => { c.note = e.target.value; save(); };
+  $('adda').onclick = () => { c.anims.push({ name: 'walk', dir: '', frames: [], fps: 6, flip: false, ok: false }); selAn = c.anims.length - 1; save(); render(); };
+  $('addw').onclick = () => { for (const d of ['down', 'downLeft', 'left', 'upLeft', 'up']) c.anims.push({ name: 'walk', dir: d, frames: [], fps: 6, flip: false, ok: false }); selAn = c.anims.length - 5; save(); render(); };
+  $('delc').onclick = () => { if (confirm('delete ' + c.name + '?')) { data.chars.splice(selCh, 1); selCh = 0; selAn = 0; save(); render(); } };
+  for (const d of $('anims').children) {
+    const i = +d.dataset.i, a = c.anims[i];
+    d.onmousedown = e => { if (selAn !== i) { selAn = i; for (const x of $('anims').children) x.classList.toggle('sel', +x.dataset.i === i); drawSheet(); } };
+    for (const inp of d.querySelectorAll('[data-f]')) inp.onchange = inp.oninput = () => {
+      const f = inp.dataset.f; a[f] = f === 'flip' || f === 'ok' ? inp.checked : f === 'fps' ? +inp.value || 6 : f === 'frames' ? inp.value.split(/[ ,]+/).filter(Boolean).map(Number).filter(n => n >= 0 && n < boxes.length) : inp.value;
+      save(); if (f === 'frames') drawSheet(); if (f === 'ok') { inp.parentElement.className = a.ok ? 'ok' : ''; drawChars(); }
+    };
+    d.querySelector('[data-del]').onclick = () => { c.anims.splice(i, 1); selAn = Math.max(0, selAn - 1); save(); render(); };
+  }
+}
+// draw keyed box i into g, feet on (cx, foot), scale s, optional mirror
+function blit(g, i, cx, foot, s, flip) {
+  const k = keyed[i]; if (!k) return; g.save(); g.imageSmoothingEnabled = false;
+  const dx = Math.round(cx - k.w * s / 2), dy = Math.round(foot - k.h * s);
+  if (flip) { g.translate(dx + k.w * s, dy); g.scale(-1, 1); g.drawImage(k.c, k.x0, k.y0, k.w, k.h, 0, 0, k.w * s, k.h * s); }
+  else g.drawImage(k.c, k.x0, k.y0, k.w, k.h, dx, dy, k.w * s, k.h * s);
+  g.restore();
+}
+function walkFor(c, d) {
+  const a = c.anims.find(a => a.name === 'walk' && a.dir === d && a.frames.length); if (a) return { f: a.frames, flip: a.flip, fps: a.fps };
+  const m = c.anims.find(a => a.name === 'walk' && a.dir === MIR[d] && a.frames.length); return m ? { f: m.frames, flip: !m.flip, fps: m.fps } : null;
+}
+setInterval(() => {
+  tick++; const c = ch(); if (!c) return;
+  for (const cv of document.querySelectorAll('canvas[data-p]')) { const a = c.anims[+cv.dataset.p], g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); if (a?.frames.length) blit(g, a.frames[Math.floor(tick * a.fps / 20) % a.frames.length], 36, 92, 2, a.flip); }
+  const w = $('walk8'), g = w.getContext('2d'); w.width = 8 * 52; w.height = 110; g.font = '9px monospace';
+  DIRS.forEach((d, n) => { const s = walkFor(c, d); g.fillStyle = '#8b9'; g.fillRect(n * 52, 0, 50, 110); g.fillStyle = '#000'; g.fillText(d, n * 52 + 1, 9); if (s) blit(g, s.f[Math.floor(tick * s.fps / 20) % s.f.length], n * 52 + 25, 106, 2, s.flip); });
+}, 50);
+function download(prefix, obj) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 1)], { type: 'application/json' })); a.download = 'ranger-labels-' + prefix + '.json'; a.click(); }
+$('dl').onclick = () => download(cur.prefix, data);
+$('dlall').onclick = () => { const all = {}; for (const s of idx) { const d = store.get('rl:' + s.prefix); if (d) all[s.prefix] = d; } download('ALL', all); };
+$('reset').onclick = async () => { if (confirm('throw away your edits for ' + cur.prefix + '?')) { localStorage.removeItem('rl:' + cur.prefix); data = await prefill(); selCh = 0; selAn = 0; render(); } };
+</script>

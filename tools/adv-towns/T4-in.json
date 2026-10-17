@@ -1,0 +1,468 @@
+{
+ "t4-center": {
+  "floor": "i_center_floor",
+  "walls": "i_center",
+  "C": 8,
+  "R": 5,
+  "props": [
+   [
+    "winWide",
+    1.5,
+    -0.2562
+   ],
+   [
+    "winWide",
+    3.5,
+    -0.2562
+   ],
+   [
+    "paintingSea",
+    2.5,
+    -0.3312
+   ],
+   [
+    "pcBlue",
+    1,
+    0.8187
+   ],
+   [
+    "counterRed",
+    2.45,
+    1.4688
+   ],
+   [
+    "healMachine",
+    3.825,
+    1.2688
+   ],
+   [
+    "sofaBlue",
+    1.25,
+    2.4188
+   ],
+   [
+    "plantC",
+    4.2,
+    2.4688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-nurse",
+    "sprite": "nurse",
+    "face": 0,
+    "move": "still",
+    "name": "Nurse",
+    "script": "nurse",
+    "reach": 66,
+    "dx": 2.25,
+    "dy": 0.75
+   },
+   {
+    "id": "t4-pc",
+    "sprite": null,
+    "face": 0,
+    "move": "still",
+    "script": "pc",
+    "reach": 56,
+    "dx": 1.25,
+    "dy": 1.25
+   },
+   {
+    "id": "t4-c-trader",
+    "sprite": "gsmiddleman",
+    "face": 6,
+    "move": "wander",
+    "r": 2,
+    "lines": [
+     "Cherimart owns every Mart in Kenora, but not this town. I like it that way."
+    ],
+    "dx": 3.75,
+    "dy": 1.75
+   },
+   {
+    "id": "t4-c-boy",
+    "sprite": "gsboy2",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+    ],
+    "dx": 1.75,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t4-market": {
+  "floor": "i_barn_floor",
+  "walls": "i_barn",
+  "C": 10,
+  "R": 7,
+  "props": [
+   [
+    "winArch",
+    1.5,
+    -0.2313
+   ],
+   [
+    "winArch",
+    4.5,
+    -0.2313
+   ],
+   [
+    "boardGreen",
+    3,
+    -0.3312
+   ],
+   [
+    "counterRed",
+    1.8,
+    1.4688
+   ],
+   [
+    "counterRed",
+    4.2,
+    1.4688
+   ],
+   [
+    "crateWide2x",
+    0.95,
+    3.3687
+   ],
+   [
+    "barrelOrange2x",
+    5.15,
+    3.4188
+   ],
+   [
+    "plantA",
+    0.75,
+    2.2687
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-clerk",
+    "sprite": "shopm",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Cherimart owns every Mart in Kenora. It does not own this counter.",
+     "What I have today is not what I will have next week. Take it or leave it."
+    ],
+    "name": "Trader",
+    "script": "clerk",
+    "market": true,
+    "reach": 66,
+    "dx": 1.75,
+    "dy": 0.75
+   },
+   {
+    "id": "t4-barter",
+    "sprite": "gsman2",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Many of us deal goods for goods. Show me something I want and we can talk."
+    ],
+    "name": "Barterer",
+    "script": "barter",
+    "reach": 66,
+    "dx": 4.25,
+    "dy": 0.75
+   },
+   {
+    "id": "t4-m-buyer",
+    "sprite": "gswoman1",
+    "face": 2,
+    "move": "wander",
+    "r": 2,
+    "lines": [
+     "The best prices in the region are here. The stock is a gamble, though."
+    ],
+    "dx": 3.25,
+    "dy": 2.25
+   },
+   {
+    "id": "t4-m-grower",
+    "sprite": "farmer",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "I carry my own crates in. Tradeway pays cash and asks nothing."
+    ],
+    "dx": 4.75,
+    "dy": 2.75
+   },
+   {
+    "id": "t4-m-nick",
+    "sprite": "boy3",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "Nickit and Purrloin work the stalls. Every trader here complains about them constantly."
+    ],
+    "dx": 1.25,
+    "dy": 2.75
+   }
+  ]
+ },
+ "t4-h1": {
+  "floor": "i_home1_floor",
+  "walls": "i_home1",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "bedPlain",
+    1,
+    1.3687
+   ],
+   [
+    "shelfBooks",
+    2.75,
+    1.1187
+   ],
+   [
+    "plantB",
+    3.2,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-h1-woman",
+    "sprite": "woman3",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "Dead centre of Kenora. Every road meets here, so everyone comes through."
+    ],
+    "dx": 3.25,
+    "dy": 2.25
+   },
+   {
+    "id": "t4-h1-kid",
+    "sprite": "boy1",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "I sold my first box of Poke Balls at the cave mouth. Mum made me give half back."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t4-h2": {
+  "floor": "i_home2_floor",
+  "walls": "i_home2",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.5,
+    -0.2813
+   ],
+   [
+    "shelfGreen",
+    1.9,
+    1.1187
+   ],
+   [
+    "bedBlue",
+    3,
+    1.3687
+   ],
+   [
+    "plantC",
+    3.2,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-h2-old",
+    "sprite": "gsoldman",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "The market started in the cave mouth, in the shade. Now the stalls go a long way in."
+    ],
+    "dx": 3.25,
+    "dy": 2.25
+   },
+   {
+    "id": "t4-h2-man",
+    "sprite": "gsman1",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Hallowmead growers use the orchard cut to reach us. They keep an independent price that way."
+    ],
+    "dx": 0.75,
+    "dy": 2.75
+   }
+  ]
+ },
+ "t4-h3": {
+  "floor": "i_home3_floor",
+  "walls": "i_home3",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.5,
+    -0.2813
+   ],
+   [
+    "shelfGreen",
+    2.9,
+    1.1187
+   ],
+   [
+    "tableBrownSmall",
+    2.7,
+    2.4688
+   ],
+   [
+    "plantC",
+    0.8,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-h3-van",
+    "sprite": "delivery",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Goldacre sends its crates up the market road. We pay cash and ask nothing."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t4-h4": {
+  "floor": "i_home1_floor",
+  "walls": "i_home1",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.3,
+    -0.2813
+   ],
+   [
+    "shelfBooks",
+    1.95,
+    1.1187
+   ],
+   [
+    "bedPink",
+    2.95,
+    1.3188
+   ],
+   [
+    "tableBrownSmall",
+    2.7,
+    2.4688
+   ],
+   [
+    "plantB",
+    0.8,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-h4-nan",
+    "sprite": "oldwoman",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "Timber comes up from Pinegrove, and tools and supplies go back down."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   },
+   {
+    "id": "t4-h4-man",
+    "sprite": "workman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Claystone's finds come down the spoil road. Claystone's fortunes went with them."
+    ],
+    "dx": 0.75,
+    "dy": 2.75
+   }
+  ]
+ },
+ "t4-h5": {
+  "floor": "i_home2_floor",
+  "walls": "i_home2",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "bedPlain",
+    1,
+    1.3687
+   ],
+   [
+    "sofaBlue",
+    1.25,
+    2.6187
+   ],
+   [
+    "plantA",
+    3.2,
+    1.2688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t4-h5-driver",
+    "sprite": "workman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Everything on a Cherimart shelf has been down the freight run from here to Aldermere."
+    ],
+    "dx": 3.25,
+    "dy": 2.75
+   },
+   {
+    "id": "t4-h5-woman",
+    "sprite": "gswoman1",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "Past the last stall the road gets dark. I never ask what is further in."
+    ],
+    "dx": 1.75,
+    "dy": 1.75
+   }
+  ]
+ }
+}

@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>PokeArena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  canvas { display: block; image-rendering: pixelated; cursor: crosshair; }
+  canvas { display: block; image-rendering: pixelated; cursor: crosshair; touch-action: none; }
 </style>
 </head>
 <body>
@@ -25,8 +25,11 @@
 <script src="data/ui-icons.js"></script>
 <script src="data/item-icons.js"></script>
 <script src="data/trainer-ow.js"></script>
+<script src="data/trainer-ow8.js"></script>
+<script src="data/trainer-ow-ranger.js"></script>
 <script src="data/trainer-avatars.js"></script>
 <script src="src/core.js"></script>
+<script src="src/touch.js"></script>
 <script src="src/battle.js"></script>
 <script src="src/netsync.js"></script>
 <script src="src/render.js"></script>
@@ -35,5 +38,45 @@
 <script src="src/teambuilder.js"></script>
 <script src="src/ui.js"></script>
 <script src="src/online.js"></script>
+<script src="data/adv/tileset-placeholder.js"></script>
+<script src="data/adv/tileset.js"></script>
+<script src="data/adv/tileset-derived.js"></script>
+<script src="data/adv/tileset-int.js"></script>
+<script src="data/adv/credits.js"></script>
+<script src="data/adv/world.js"></script>
+<script src="data/adv/zones.js"></script>
+<script src="data/adv/music.js"></script>
+<script src="data/adv/encounters.js"></script>
+<script src="data/adv/temperament.js"></script>
+<script src="data/adv/pokedata.js"></script>
+<script src="data/adv/npcs.js"></script>
+<script src="data/adv/rosters.js"></script>
+<script src="data/adv/outfits.js"></script>
+<script src="data/adv/item-sprites.js"></script>
+<script src="src/adv-world.js"></script>
+<script src="data/adv/tileset-region.js"></script>
+<script src="data/adv/rooms/t4-cave.js"></script>
+<script src="data/adv/rooms/ridge-cave.js"></script>
+<script src="src/adv-battle.js"></script>
+<script src="src/adv-wild.js"></script>
+<script src="src/adv-npc.js"></script>
+<script src="src/adv-render.js"></script>
+<script src="src/adv-weather.js"></script>
+<script src="src/adv-water.js"></script>
+<script src="src/adv-mount.js"></script>
+<script src="src/adv-mount-sfx.js"></script>
+<script src="src/adv-party.js"></script>
+<script src="src/adv-outfit.js"></script>
+<script src="data/adv/follower-moods.js"></script>
+<script src="data/adv/fly-anims.js"></script>
+<script src="src/adv-save.js"></script>
+<script src="src/adv-follower.js"></script>
+<script src="src/adv-net.js"></script>
+<script src="src/adv-peer.js"></script>
+<script src="src/adv-ui.js"></script>
+<script src="src/adv-online-ui.js"></script>
+<script src="src/adv-debug.js"></script>
+<script src="src/adv-map.js"></script>
+<script src="src/adv-scene.js"></script>
 </body>
 </html>

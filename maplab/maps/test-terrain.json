@@ -1,0 +1,24 @@
+{
+ "name": "terrain test",
+ "size": [26, 16],
+ "base": "grass",
+ "ground": [
+  "..........................",
+  "..ssss............tttt....",
+  "..ssss...........tttttt...",
+  "....ss....wwww...ttt.tt...",
+  "....ss...wwwwww...........",
+  "....ssss.wwwwwww....dddd..",
+  ".......s..wwwww.....dddd..",
+  ".......s...www......dd....",
+  "..pppppppp..........dd....",
+  "..pppppppp...s.s..........",
+  "..pp....pp....s...tt..t...",
+  "..pp....pp...s.s..tt......",
+  "..pppppppp........ttttt...",
+  "..........................",
+  "ss........................",
+  "ss........................"
+ ],
+ "actors": [["npc", "npc1-ponytail-girl", 20, 12, "down"], ["mon", 25, 19, 11, "down"], ["npc", "npc1-blue-cap-boy", 6, 10, "right"], ["mon", 133, 7, 10, "left"]]
+}

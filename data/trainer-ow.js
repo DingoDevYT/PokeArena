@@ -246,5 +246,902 @@ window.TRAINER_OW = {
    "right"
   ],
   "footY": 29
+ },
+ "babyboy": {
+  "file": "assets/trainer-ow/babyboy.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "babygirl": {
+  "file": "assets/trainer-ow/babygirl.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "boy1": {
+  "file": "assets/trainer-ow/boy1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "boy2": {
+  "file": "assets/trainer-ow/boy2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "boy3": {
+  "file": "assets/trainer-ow/boy3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "girl1": {
+  "file": "assets/trainer-ow/girl1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "girl2": {
+  "file": "assets/trainer-ow/girl2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "girl3": {
+  "file": "assets/trainer-ow/girl3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "man1": {
+  "file": "assets/trainer-ow/man1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "man2": {
+  "file": "assets/trainer-ow/man2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "man3": {
+  "file": "assets/trainer-ow/man3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "man5": {
+  "file": "assets/trainer-ow/man5.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "woman1": {
+  "file": "assets/trainer-ow/woman1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "woman2": {
+  "file": "assets/trainer-ow/woman2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "woman3": {
+  "file": "assets/trainer-ow/woman3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "woman5": {
+  "file": "assets/trainer-ow/woman5.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "middleman": {
+  "file": "assets/trainer-ow/middleman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "middlewoman": {
+  "file": "assets/trainer-ow/middlewoman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "oldman": {
+  "file": "assets/trainer-ow/oldman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "oldwoman": {
+  "file": "assets/trainer-ow/oldwoman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "shopm": {
+  "file": "assets/trainer-ow/shopm.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "shopw": {
+  "file": "assets/trainer-ow/shopw.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "assistantm": {
+  "file": "assets/trainer-ow/assistantm.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "assistantw": {
+  "file": "assets/trainer-ow/assistantw.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "bigman": {
+  "file": "assets/trainer-ow/bigman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "mount": {
+  "file": "assets/trainer-ow/mount.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "badman": {
+  "file": "assets/trainer-ow/badman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "policeman": {
+  "file": "assets/trainer-ow/policeman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gentleman": {
+  "file": "assets/trainer-ow/gentleman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "lady": {
+  "file": "assets/trainer-ow/lady.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "workman": {
+  "file": "assets/trainer-ow/workman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "farmer": {
+  "file": "assets/trainer-ow/farmer.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "cowgirl": {
+  "file": "assets/trainer-ow/cowgirl.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "artist": {
+  "file": "assets/trainer-ow/artist.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "sportsman": {
+  "file": "assets/trainer-ow/sportsman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "explore": {
+  "file": "assets/trainer-ow/explore.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "fighter": {
+  "file": "assets/trainer-ow/fighter.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "campboy": {
+  "file": "assets/trainer-ow/campboy.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "picnicgirl": {
+  "file": "assets/trainer-ow/picnicgirl.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "fishing": {
+  "file": "assets/trainer-ow/fishing.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "seaman": {
+  "file": "assets/trainer-ow/seaman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "doctor": {
+  "file": "assets/trainer-ow/doctor.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "maid": {
+  "file": "assets/trainer-ow/maid.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "delivery": {
+  "file": "assets/trainer-ow/delivery.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsboy1": {
+  "file": "assets/trainer-ow/gsboy1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsboy2": {
+  "file": "assets/trainer-ow/gsboy2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsboy3": {
+  "file": "assets/trainer-ow/gsboy3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsgirl1": {
+  "file": "assets/trainer-ow/gsgirl1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsgirl2": {
+  "file": "assets/trainer-ow/gsgirl2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsgirl3": {
+  "file": "assets/trainer-ow/gsgirl3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsman1": {
+  "file": "assets/trainer-ow/gsman1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsman2": {
+  "file": "assets/trainer-ow/gsman2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsman3": {
+  "file": "assets/trainer-ow/gsman3.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gswoman1": {
+  "file": "assets/trainer-ow/gswoman1.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsmiddleman": {
+  "file": "assets/trainer-ow/gsmiddleman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsoldman": {
+  "file": "assets/trainer-ow/gsoldman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsoldwoman": {
+  "file": "assets/trainer-ow/gsoldwoman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsbigman": {
+  "file": "assets/trainer-ow/gsbigman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "mount2": {
+  "file": "assets/trainer-ow/mount2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "shopm2": {
+  "file": "assets/trainer-ow/shopm2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "nurse": {
+  "file": "assets/trainer-ow/nurse.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsgentleman": {
+  "file": "assets/trainer-ow/gsgentleman.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsfighter": {
+  "file": "assets/trainer-ow/gsfighter.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "campboy2": {
+  "file": "assets/trainer-ow/campboy2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "picnicgirl2": {
+  "file": "assets/trainer-ow/picnicgirl2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "fishing2": {
+  "file": "assets/trainer-ow/fishing2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "seaman2": {
+  "file": "assets/trainer-ow/seaman2.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "whitney": {
+  "file": "assets/trainer-ow/whitney.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
+ },
+ "gsmama": {
+  "file": "assets/trainer-ow/gsmama.png",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": [
+   "down",
+   "up",
+   "left",
+   "right"
+  ],
+  "footY": 29
  }
 };

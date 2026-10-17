@@ -1,0 +1,468 @@
+{
+ "t5-center": {
+  "floor": "i_center_floor",
+  "walls": "i_center",
+  "C": 8,
+  "R": 5,
+  "props": [
+   [
+    "winWide",
+    1.5,
+    -0.2562
+   ],
+   [
+    "winWide",
+    3.5,
+    -0.2562
+   ],
+   [
+    "paintingSea",
+    2.5,
+    -0.3312
+   ],
+   [
+    "pcBlue",
+    1,
+    0.8187
+   ],
+   [
+    "counterRed",
+    2.45,
+    1.4688
+   ],
+   [
+    "healMachine",
+    3.825,
+    1.2688
+   ],
+   [
+    "sofaBlue",
+    1.25,
+    2.4188
+   ],
+   [
+    "plantC",
+    4.2,
+    2.4688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-nurse",
+    "sprite": "nurse",
+    "face": 0,
+    "move": "still",
+    "name": "Nurse",
+    "script": "nurse",
+    "reach": 66,
+    "dx": 2.25,
+    "dy": 0.75
+   },
+   {
+    "id": "t5-pc",
+    "sprite": null,
+    "face": 0,
+    "move": "still",
+    "script": "pc",
+    "reach": 56,
+    "dx": 1.25,
+    "dy": 1.25
+   },
+   {
+    "id": "t5-c-fisher",
+    "sprite": "fishing",
+    "face": 6,
+    "move": "wander",
+    "r": 2,
+    "lines": [
+     "We do not get many visitors. The road ends at the water, so you came on purpose."
+    ],
+    "dx": 3.75,
+    "dy": 1.75
+   },
+   {
+    "id": "t5-c-boy",
+    "sprite": "gsboy2",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+    ],
+    "dx": 1.75,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t5-mart": {
+  "floor": "i_mart_floor",
+  "walls": "i_mart",
+  "C": 10,
+  "R": 5,
+  "props": [
+   [
+    "winSmall",
+    1.5,
+    -0.2813
+   ],
+   [
+    "winSmall",
+    4.25,
+    -0.2813
+   ],
+   [
+    "shelfPotion",
+    1,
+    1.1187
+   ],
+   [
+    "shelfGreen",
+    1.95,
+    1.1187
+   ],
+   [
+    "counterRed",
+    4.3,
+    1.4688
+   ],
+   [
+    "tableBrownSmall",
+    1.3,
+    2.4188
+   ],
+   [
+    "plantA",
+    5.2,
+    2.4688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-clerk",
+    "sprite": "shopm",
+    "face": 0,
+    "move": "still",
+    "name": "Clerk",
+    "script": "clerk",
+    "reach": 66,
+    "dx": 4.25,
+    "dy": 0.75
+   },
+   {
+    "id": "t5-m-mama",
+    "sprite": "gsmama",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "The shop has been in the family a long time. Cherimart never thought the trip worth it."
+    ],
+    "dx": 3.25,
+    "dy": 1.75
+   },
+   {
+    "id": "t5-m-fisher",
+    "sprite": "fishing2",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Deep cold water holds little. That is why the catch is so thin out here."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t5-h1": {
+  "floor": "i_home1_floor",
+  "walls": "i_home1",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.3,
+    -0.2813
+   ],
+   [
+    "shelfBooks",
+    1.95,
+    1.1187
+   ],
+   [
+    "bedPink",
+    2.95,
+    1.3188
+   ],
+   [
+    "tableBrownSmall",
+    2.7,
+    2.4688
+   ],
+   [
+    "plantB",
+    0.8,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h1-old",
+    "sprite": "gsoldman",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "Four generations of my family have done nothing but fish. We teach anyone who asks nicely."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   },
+   {
+    "id": "t5-h1-girl",
+    "sprite": "gsgirl2",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Someone tried to measure the bay once. Everyone tells the story, and nobody tells it the same."
+    ],
+    "dx": 0.75,
+    "dy": 2.75
+   }
+  ]
+ },
+ "t5-h2": {
+  "floor": "i_home2_floor",
+  "walls": "i_home2",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "bedPlain",
+    1,
+    1.3687
+   ],
+   [
+    "sofaBlue",
+    1.25,
+    2.6187
+   ],
+   [
+    "plantA",
+    3.2,
+    1.2688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h2-woman",
+    "sprite": "woman3",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "Twenty metres from shore the ground is just gone. Nets come up from depths that make no sense."
+    ],
+    "dx": 3.25,
+    "dy": 2.75
+   }
+  ]
+ },
+ "t5-h3": {
+  "floor": "i_home3_floor",
+  "walls": "i_home3",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "shelfBooks",
+    1.05,
+    1.1187
+   ],
+   [
+    "bedBlue",
+    3,
+    1.3687
+   ],
+   [
+    "plantB",
+    3.2,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h3-boy",
+    "sprite": "boy1",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Lapras are bred at Sailsport, not here. The bay is too deep, Grandad says."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t5-h4": {
+  "floor": "i_home1_floor",
+  "walls": "i_home1",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.75,
+    -0.2813
+   ],
+   [
+    "stoveRed",
+    1,
+    1.1187
+   ],
+   [
+    "bedPink",
+    3,
+    1.3687
+   ],
+   [
+    "tableBrownSmall",
+    2.7,
+    2.4688
+   ],
+   [
+    "plantA",
+    0.75,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h4-nan",
+    "sprite": "oldwoman",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "Feebas is our white whale. Every fisherman here has an opinion about where it bites."
+    ],
+    "dx": 3.25,
+    "dy": 3.25
+   },
+   {
+    "id": "t5-h4-man",
+    "sprite": "gsman1",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Some of us have been after a Feebas for most of our lives."
+    ],
+    "dx": 2.25,
+    "dy": 1.75
+   }
+  ]
+ },
+ "t5-h5": {
+  "floor": "i_home2_floor",
+  "walls": "i_home2",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "bedPlain",
+    1,
+    1.3687
+   ],
+   [
+    "shelfBooks",
+    2.75,
+    1.1187
+   ],
+   [
+    "plantB",
+    3.2,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h5-man",
+    "sprite": "gsmiddleman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "We are not struggling and we are not hiding anything. We just like it quiet."
+    ],
+    "dx": 3.25,
+    "dy": 2.25
+   }
+  ]
+ },
+ "t5-h6": {
+  "floor": "i_home3_floor",
+  "walls": "i_home3",
+  "C": 6,
+  "R": 7,
+  "props": [
+   [
+    "winSmall",
+    1.5,
+    -0.2813
+   ],
+   [
+    "shelfGreen",
+    1.9,
+    1.1187
+   ],
+   [
+    "bedBlue",
+    3,
+    1.3687
+   ],
+   [
+    "plantC",
+    3.2,
+    3.4188
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "t5-h6-sailor",
+    "sprite": "seaman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "You do not learn to surf casually on water like this. Learn properly, or do not go out."
+    ],
+    "dx": 3.25,
+    "dy": 2.25
+   },
+   {
+    "id": "t5-h6-woman",
+    "sprite": "gswoman1",
+    "face": 0,
+    "move": "wander",
+    "r": 1,
+    "lines": [
+     "The Longshore lot surf for fun, in rented gear. Mostly shouting. We are not impressed."
+    ],
+    "dx": 0.75,
+    "dy": 2.75
+   }
+  ]
+ }
+}

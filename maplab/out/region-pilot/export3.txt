@@ -1,0 +1,20 @@
+chunk 26_14: 186 new props, 36 old removed
+chunk 26_15: 381 new props, 66 old removed
+chunk 27_14: 225 new props, 29 old removed
+chunk 27_15: 374 new props, 72 old removed
+zone cells of other zones inside the window are kept as they are: []
+chunk 7_29: 103 new props, 27 old removed
+chunk 7_30: 153 new props, 5 old removed
+chunk 8_29: 120 new props, 56 old removed
+chunk 8_30: 156 new props, 12 old removed
+chunk 9_29: 174 new props, 7 old removed
+chunk 9_30: 172 new props, 20 old removed
+zone cells of other zones inside the window are kept as they are: ['goldacre']
+chunk 25_13: 110 new props, 12 old removed
+chunk 25_14: 135 new props, 1 old removed
+chunk 26_13: 88 new props, 32 old removed
+chunk 26_14: 206 new props, 50 old removed
+chunk 27_13: 130 new props, 19 old removed
+chunk 27_14: 100 new props, 10 old removed
+zone cells of other zones inside the window are kept as they are: []
+709 baked tiles, 2959 props, sheet (640, 1633), palette +['rgGrass', 'rgPath', 'rgWater'] from index 22

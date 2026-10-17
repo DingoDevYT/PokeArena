@@ -9,7 +9,7 @@ function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   VW = window.innerWidth; VH = window.innerHeight;
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
-  cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  cv.style.width = VW + 'px'; cv.style.height = VH + 'px'; cv.style.imageRendering = 'pixelated';   // never let the browser bilinear-resample the backing store
 }
 window.addEventListener('resize', resize); resize();
 
@@ -141,6 +141,7 @@ const INPUT = {
     for (const k in PAD_BTN) b[k] = pb(PAD_BTN[k]);
     const padActive = Object.values(b).some(Boolean) || [0, 1, 2, 3].some(i => Math.abs(axis(i)) > 0.5);
     if (padActive) { this.usingPad = true; unlockAudio(); }
+    if (window.TOUCH?.on) for (const k in TOUCH.h) if (TOUCH.h[k]) b[k] = true;   // touch.js: on-screen buttons use the pad names
     // battle actions: pad, or PC layout (LMB / RMB / Q / E, Space dodge, 1-6 swap, F mega)
     b.M1 = b.A || MOUSE.down; b.M2 = b.B || MOUSE.downR; b.M3 = b.X || KEYS.KeyQ; b.M4 = b.Y || KEYS.KeyE;
     b.DODGE = b.LB || KEYS.Space || KEYS.ShiftLeft;
@@ -158,6 +159,7 @@ const INPUT = {
     const dz = v => Math.abs(v) < 0.22 ? 0 : v;
     let mx = dz(axis(0)), my = dz(axis(1));
     if (KEYS.KeyA) mx -= 1; if (KEYS.KeyD) mx += 1; if (KEYS.KeyW) my -= 1; if (KEYS.KeyS) my += 1;
+    if (window.TOUCH?.on) { mx += TOUCH.sx; my += TOUCH.sy; }   // touch.js left stick
     const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
     this.mx = mx; this.my = my;
     const ax = dz(axis(2)), ay = dz(axis(3));
@@ -200,9 +202,10 @@ function resolveHot() {
 // ---------- loop ----------
 let SCENE = null;
 function setScene(s) { if (SCENE && SCENE.exit) SCENE.exit(); SCENE = s; if (s.enter) s.enter(); }
-let lastT = performance.now();
+let lastT = performance.now(), dtS = 1 / 60;
 function frame(t) {
-  const dt = clamp((t - lastT) / 1000, 0, 0.05); lastT = t;
+  const raw = clamp((t - lastT) / 1000, 0, 0.05); lastT = t;
+  dtS = Math.abs(raw - dtS) > 0.006 ? raw : dtS + (raw - dtS) * 0.15; const dt = dtS;   // rAF stamps wobble by a ms or two: smooth that out, but let a real hitch or a 30 fps display through
   INPUT.poll(dt);
   resolveHot();
   ctx = screenCtx;
@@ -220,7 +223,9 @@ const STORE = {
 };
 
 // ---------- text ----------
+let TEXT_MIN = 0;   // a floor in px for text(); Adventure screens raise it while they draw so small windows stay readable
 function text(s, x, y, size = 16, color = '#fff', align = 'left', stroke = '#000', font = 'Bungee') {
+  if (size < TEXT_MIN) size = TEXT_MIN;
   ctx.font = `${size}px ${font}, "Arial Black", sans-serif`;
   ctx.textAlign = align; ctx.textBaseline = 'middle';
   if (stroke) { ctx.lineWidth = Math.max(2, size / 5); ctx.strokeStyle = stroke; ctx.lineJoin = 'round'; ctx.strokeText(s, x, y); }

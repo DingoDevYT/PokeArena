@@ -1,0 +1,16 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: r7-gus: sees the road -1 tiles ahead
+    at ok (file:///C:/Users/lando/Desktop/PokeArena/tools/adv-check.mjs:22:36)
+    at file:///C:/Users/lando/Desktop/PokeArena/tools/adv-check.mjs:532:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.11.1
