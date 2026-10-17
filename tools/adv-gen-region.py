@@ -140,7 +140,8 @@ def layout_reach(code):
     pts += [(e[1], e[2]) for e in j.get('buildings', []) + j.get('props', [])]
     for d in j.get('deco', []): pts += [(d[2], d[3])] + ([(d[4], d[5])] if d[0] == 'row' else [])
     return max(np.hypot(x, y) for x, y in pts) + 3 if pts else 0
-WARP = Warp([(c, OLDC[c][0] / S, OLDC[c][1] / S, max(RADIUS[c[0]], layout_reach(c))) for c, *_ in PLACES], W0, H0, K=K)
+RIGID = {'G6': 48.0, 'G7': 49.69, 'G8': 44.19, 'T4': 50.01, 'T5': 56.85, 'T6': 42.66, 'T7': 59.01, 'T8': 32.07, 'L4': 28.24}   # frozen at the 0.8 build (layout_reach then): a town redesign must not move the island round it
+WARP = Warp([(c, OLDC[c][0] / S, OLDC[c][1] / S, RIGID.get(c, RADIUS[c[0]]) if K != 1 else max(RADIUS[c[0]], layout_reach(c))) for c, *_ in PLACES], W0, H0, K=K)
 CW, CHN = -(-WARP.W1 // CH), -(-WARP.H1 // CH); WP, HP = CW * CH, CHN * CH
 YY, XX = np.mgrid[0:HP, 0:WP]
 OXX, OYY = WARP.grids(WP, HP)
