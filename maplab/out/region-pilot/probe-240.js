@@ -1,4 +1,4 @@
-const CFG = {"x0": 240, "y0": 928, "gw": 64, "gh": 48, "start": [240, 934], "stairs": [[291, 951], [292, 951], [272, 955], [273, 955], [264, 959], [265, 959]], "probes": {"north gateway": [293, 928], "hut door front": [271, 953], "knoll top": [268, 949], "terrace interior": [258, 951], "ridge top": [291, 947], "ridge stair foot": [291, 951], "terrace stair foot": [264, 960], "pond shore": [254, 952], "south lane": [270, 962], "east shelf": [284, 951], "outside west": [239, 934]}};
+const CFG = {"x0": 240, "y0": 928, "gw": 64, "gh": 48, "start": [240, 934], "stairs": [[291, 951], [271, 955], [264, 960]], "probes": {"north gateway": [293, 928], "hut door front": [271, 953], "knoll top": [273, 949], "terrace interior": [258, 951], "ridge top": [291, 947], "ridge stair foot": [291, 951], "terrace stair foot": [264, 960], "pond shore": [254, 952], "south lane": [270, 962], "east shelf": [284, 951], "outside west": [239, 934]}};
 const T = ADV.Tp(0), cfg = CFG, X0 = cfg.x0, Y0 = cfg.y0, GW = cfg.gw, GH = cfg.gh, start = cfg.start;
 const stairs = new Set(cfg.stairs.map(s => s.join()));
 const ent = ADV.entity(0, 0, 0);
