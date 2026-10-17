@@ -8,7 +8,8 @@ from PIL import Image, ImageDraw
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); D = os.path.join(ROOT, 'data', 'adv'); CACHE = os.path.join(ROOT, 'tools', '.cache')
 T, CH = 32, 32
 W = json.loads(re.search(r'ADV_WORLD = (\{.*\});', open(os.path.join(D, 'world.js'), encoding='utf8').read(), re.S).group(1))
-PAL = W['palette']; CW, CHN = W['chunksW'], W['chunksH']; WP, HP = CW * CH, CHN * CH
+PAL = W['palette'] + [n for n in ('rgGrass', 'rgPath', 'rgWater') if n not in W['palette']];   # data/adv/tileset-region.js appends the map-lab mats at load, in this order
+CW, CHN = W['chunksW'], W['chunksH']; WP, HP = CW * CH, CHN * CH
 tsrc = open(os.path.join(D, 'tileset.js'), encoding='utf8').read(); TS = json.loads(tsrc[tsrc.index('{'):tsrc.rindex('}') + 1])
 
 def unrle(s):
@@ -25,7 +26,7 @@ for f in os.listdir(os.path.join(D, 'chunks')):
 h, mat, over, kind, deck = A['h'], A['mat'], A['over'], A['kind'], A['deck']
 
 # ---------------------------------------------------------------- overview
-COL = {'grass': (136, 207, 141), 'path': (150, 120, 85), 'sand': (240, 220, 140), 'duneSand': (225, 190, 90), 'water': (120, 190, 235), 'waterDeep': (60, 120, 190), 'sandWater': (140, 205, 235), 'sandWaterDeep': (80, 150, 205),
+COL = {'rgGrass': (136, 207, 141), 'rgPath': (150, 120, 85), 'rgWater': (120, 190, 235), 'grass': (136, 207, 141), 'path': (150, 120, 85), 'sand': (240, 220, 140), 'duneSand': (225, 190, 90), 'water': (120, 190, 235), 'waterDeep': (60, 120, 190), 'sandWater': (140, 205, 235), 'sandWaterDeep': (80, 150, 205),
   'tallgrass': (60, 150, 70), 'ashGround': (115, 120, 125), 'snow': (235, 242, 248), 'swamp': (150, 110, 140), 'pavingStone': (190, 185, 175), 'dryGrass': (200, 190, 90), 'ford': (170, 215, 235), 'soilTilled': (120, 85, 55), 'hayField': (215, 190, 90), 'wetGrass': (110, 190, 130), 'boardwalk': (176, 126, 74), 'pavingTan': (205, 180, 140), 'soilCobble': (150, 140, 130), 'void': (0, 0, 0)}
 lut = np.array([COL[n] for n in PAL], np.float32)
 img = lut[mat]
@@ -39,7 +40,7 @@ def pcol(n):
     if re.search(r'rock|Rock|boulder|Boulder|stone|Stone|crystal', n): return (70, 70, 75)
     if P := TS['props'].get(n): return (230, 40, 40) if P['sw'] >= 60 else (250, 230, 60)
     return (255, 0, 255)
-for n, x, y in props:
+for n, x, y, *_ in props:   # props may carry z (map-lab plateaus)
     c, r = int(x // T), int(y // T)
     if 0 <= r < HP and 0 <= c < WP: img[r, c] = pcol(n)
 big = Image.fromarray(img); d = ImageDraw.Draw(big)
@@ -147,7 +148,7 @@ for r in range(r0, r0 + NR + PADR):
                 x, y = (c - c0) * T, (r - r0) * T - dv * T; dr.rectangle((x, y, x + T - 1, y + T - 1), fill=(162, 113, 63, 255))
                 for k in range(0, T, 8): dr.line((x + k, y, x + k, y + T), fill=(124, 82, 40, 255))
         items.append((r, 2, r * T, dfn))
-for n, x, y in props:
+for n, x, y, *_ in props:   # props may carry z (map-lab plateaus)
     d_ = TS['props'].get(n)
     if not d_ or not (c0 * T - 120 < x < (c0 + NC) * T + 120 and r0 * T - 40 < y < (r0 + NR + PADR) * T + 220): continue
     r = int(y // T); z = hh(int(x // T), r) * T
