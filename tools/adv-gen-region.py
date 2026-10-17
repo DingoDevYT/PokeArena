@@ -76,7 +76,7 @@ def rrect_mask(h_, w_, r):
 PAL =['void', 'grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'dryGrass', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble']
 M_ = {n: i for i, n in enumerate(PAL)}
 GRASS, PATH, SAND, DUNE, WAT, WATD, SWAT, SWATD, TALL, ASH, SNOW, SWAMP, PAVE, FORD, SOIL, HAYF, WETG, BW, TAN, COBB = (M_[n] for n in ['grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble'])
-MATN = {'path': PATH, 'tan': TAN, 'cobble': COBB}
+MATN = {'path': PATH, 'tan': TAN, 'cobble': COBB, 'soil': SOIL, 'hay': HAYF, 'grass': GRASS, 'sand': SAND}     # soil / hay: a hand plan's tilled beds and hay fields
 WATER_NAMES = ['water', 'waterDeep', 'sandWater', 'sandWaterDeep']
 GROUPS = [WATER_NAMES + ['ford'], ['sand', 'duneSand', 'path', 'pavingStone'], ['ashGround', 'snow']]
 isw = lambda m: (m >= WAT) & (m <= SWATD)
@@ -638,7 +638,7 @@ def pave(y0, y1, x0, x1, t, lim=-1, m=PAVE, r=None):
     ok = np.zeros((HP, WP), bool); hh_, ww_ = y1 - y0 + 1, x1 - x0 + 1
     ok[y0:y1 + 1, x0:x1 + 1] = rrect_mask(hh_, ww_, 4 if r is None else r) if (r or (r is None and min(hh_, ww_) >= 8)) else True
     ok &= land & (np.hypot(XX - t['tx'], YY - t['ty']) < (t['R'] - 1 if lim < 0 else lim)) & (kind == 0)
-    paved[ok] = True; mat[ok] = m; h[ok] = t['lv']
+    paved[ok] = m not in (GRASS, SAND); mat[ok] = m; h[ok] = t['lv']      # a hand plan's grass and sand are ground, not paving
 def board(y0, y1, x0, x1):
     """boardwalk (a walkable woven-plank mat) over land or water: piers and docks"""
     global land
@@ -1341,15 +1341,18 @@ for code_, cx_, cy_, dl_ in DECO:
                     KOCC[y, max(0, x - r):x + r + 1] = True; put(nm, (x0 + dx + .5) * T, (y0 + dy + ydy) * T)
         elif d_[0] == 'plot':                   # ["plot", x, y, w, h, 0 cabbage | 1 wheat]: a small tilled garden with a rounded outline, crops and a fence on its long sides
             _, px_, py_, w_, hh_, kd2 = d_; x0, y0 = cx_ + px_, cy_ + py_; ok2 = np.zeros((HP, WP), bool); ok2[y0:y0 + hh_, x0:x0 + w_] = rrect_mask(hh_, w_, 3)
-            ok2 &= land & (mat == GRASS) & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
-            if ok2.sum() > .8 * hh_ * w_:
+            ok2 &= land & ((mat == GRASS) | (mat == WETG)) & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
+            if ok2.sum() < .8 * hh_ * w_:
+                r_ = (slice(y0, y0 + hh_), slice(x0, x0 + w_)); print(f'  {code_} plot at {px_},{py_} refused: land {int((~land[r_]).sum())} not grass {int((mat[r_] != GRASS).sum())} road {int(roadm[r_].sum())} occ {int(occ[r_].sum())} kind {int((kind[r_] != 0).sum())} level {int((h[r_] != h[cy_, cx_]).sum())}')
+            if ok2.sum() >= .8 * hh_ * w_:
                 mat[ok2] = SOIL if kd2 == 0 else HAYF; occ[y0 - 1:y0 + hh_ + 1, x0 - 1:x0 + w_ + 1] = True; plot_crops(x0, y0, w_, hh_, kd2, False)
                 for k_ in range(0, w_, 2): props.append(['fenceRail', int((x0 + k_ + 1) * T), int(y0 * T)]); props.append(['fenceRail', int((x0 + k_ + 1) * T), int((y0 + hh_) * T)])
         elif d_[0] == 'pond':                   # [pond, x, y, rx, ry]: shallow water (ford) with reeds, a log and rocks on its bank
-            _, px_, py_, rx_, ry_ = d_; x0, y0 = cx_ + px_, cy_ + py_; pm = (((XX - x0) / rx_) ** 2 + ((YY - y0) / ry_) ** 2 <= 1) & land & (mat == GRASS) & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
-            pm = blocky(pm, 2, .5) & land & (mat == GRASS) & ~roadm & ~occ
-            mat[pm] = FORD; ford[pm] = True; occ[y0 - int(ry_) - 2:y0 + int(ry_) + 3, x0 - int(rx_) - 2:x0 + int(rx_) + 3] = True
-            rg = np.random.default_rng((15, x0, y0))
+            _, px_, py_, rx_, ry_ = d_; x0, y0 = cx_ + px_, cy_ + py_; xi0, yi0 = int(round(x0)), int(round(y0)); gr_ = np.isin(mat, [GRASS, WETG, SAND, DUNE])      # an oasis pool cuts into sand too
+            pm = (((XX - x0) / rx_) ** 2 + ((YY - y0) / ry_) ** 2 <= 1) & land & gr_ & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
+            pm = blocky(pm, 2, .5) & land & gr_ & ~roadm & ~occ
+            mat[pm] = FORD; ford[pm] = True; occ[yi0 - int(ry_) - 2:yi0 + int(ry_) + 3, xi0 - int(rx_) - 2:xi0 + int(rx_) + 3] = True
+            rg = np.random.default_rng((15, xi0, yi0))
             for nm, dx, dy, ydy in (('reedsPair', -rx_ - .6, -ry_ * .4, .8), ('reeds', rx_ + .4, -ry_ * .3, .8), ('reedsOlive', -rx_ * .4, ry_ + 1.0, .8), ('reeds', rx_ * .5, ry_ + 1.1, .8), ('fallenLog', -rx_ - 1.4, ry_ * .5, .8), ('rockGrey', rx_ + 1.2, ry_ * .7, .9), ('flowersWhite', 0, -ry_ - 1.2, .8), ('stoneGrey', -rx_ * .6, -ry_ - 1.2, .9)):
                 xx_, yy_ = int(np.floor(x0 + dx)), int(np.floor(y0 + dy))
                 if land[yy_, xx_] and mat[yy_, xx_] != FORD and not roadm[yy_, xx_]: put(nm, (x0 + dx + .5) * T, (y0 + dy + ydy) * T)
