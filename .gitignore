@@ -2,3 +2,4 @@ node_modules/
 tools/.cache/
 PokeArena/
 tools/flowery-src/
+__pycache__/
