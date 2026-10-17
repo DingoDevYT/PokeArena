@@ -76,7 +76,7 @@ def pilot():
                             (4.5, 18, 2, 4.5), (21, 13, 1.6, 5), (57.5, 17, 1.6, 4), (47, 5, 3, 1.2), (5, 26, 2.5, 1.2), (55, 27, 3, 1.3)]): bedblob(*b_, seed=i)   # foothill shelves
     # ---- a pond in the east lowland and a patchy nature trail (single dabs with gaps) to it
     m.shape('ground', 94, 66, ["....vvvv....", "..vvvvvvvv..", ".vvvvvvvvvv.", ".vvvvvvvvvv.", "..vvvvvvvv..", "....vvvv...."], 'v')
-    m.shape('ground', 97, 69, [".VVVV.", "VVVVVV"], 'V')
+    m.shape('ground', 97, 68, [".VVVV.", "VVVVVV"], 'V')   # deep water one row clear of the pond's lower rows
     for i, (x, y) in enumerate([(78, 68), (80, 67), (81, 65), (83, 66), (85, 64), (87, 65), (89, 63), (90, 61), (92, 62)]): m.set('ground', x, y, 'd'); m.set('ground', x + 1 - i % 2, y, 'd')
     # ---- ranger hut in the north meadow, its door on the pass road
     m.building('house_wood_c', 62, 4, to=17, wide=1)

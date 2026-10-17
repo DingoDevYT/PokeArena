@@ -68,7 +68,7 @@ def pilot():
     for i, b_ in enumerate([(18, 11.5, 7, 1.6), (50.5, 28, 3.5, 3.5), (20, 40, 9, 2.5), (19, 18, 3.5, 2.5), (41, 21, 3.5, 2.5), (15, 28, 2.5, 1.3), (36, 30, 3, 1.3)]): bedblob(*b_, seed=i)
     # ---- a pond on the first terrace
     m.shape('ground', 26, 40, ["....vvvv....", "..vvvvvvvv..", ".vvvvvvvvvv.", ".vvvvvvvvvv.", "..vvvvvvvv..", "....vvvv...."], 'v')
-    m.shape('ground', 29, 43, [".VVVV.", "VVVVVV"], 'V')
+    m.shape('ground', 29, 42, [".VVVV.", "VVVVVV"], 'V')   # deep water one row clear of the pond's lower rows (touching them draws a straight edge)
     # ---- the shepherd's hut on the knoll, its door path one cell wide down to the knoll stairs
     m.building('house_wood_c', 60, 36, to=48)   # door path straight down to the knoll stairs top (game cell 31, 24)
     P(31, 24, 31, 24)
