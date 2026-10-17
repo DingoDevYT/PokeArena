@@ -4404,24 +4404,139 @@
    6
   ],
   [
-   "rock_grey_small",
-   103,
-   37
+   "bare_olive1",
+   101,
+   30
   ],
   [
-   "tiny_white",
-   39,
-   18
+   "bare_olive0",
+   92,
+   27
   ],
   [
-   "clump_green3",
-   27,
+   "bare_olive1",
+   77,
+   28
+  ],
+  [
+   "bare_olive0",
+   26,
    16
   ],
   [
-   "sprout",
-   32,
+   "rock2",
+   81,
+   32
+  ],
+  [
+   "rock_grassy",
+   21,
+   30
+  ],
+  [
+   "rock_grassy",
+   31,
+   35
+  ],
+  [
+   "spire_grey",
+   77,
    36
+  ],
+  [
+   "boulder_grey",
+   101,
+   39
+  ],
+  [
+   "rock2",
+   94,
+   22
+  ],
+  [
+   "spire_grey",
+   22,
+   33
+  ],
+  [
+   "boulder2",
+   86,
+   28
+  ],
+  [
+   "rock2",
+   25,
+   44
+  ],
+  [
+   "spire_grey",
+   96,
+   38
+  ],
+  [
+   "rock_tall",
+   37,
+   18
+  ],
+  [
+   "rock2",
+   91,
+   38
+  ],
+  [
+   "rock_grassy",
+   31,
+   29
+  ],
+  [
+   "spire_grey",
+   33,
+   31
+  ],
+  [
+   "rock_grassy",
+   21,
+   41
+  ],
+  [
+   "boulder_grey",
+   93,
+   48
+  ],
+  [
+   "spire",
+   90,
+   30
+  ],
+  [
+   "boulder3",
+   75,
+   43
+  ],
+  [
+   "rock_tall",
+   98,
+   51
+  ],
+  [
+   "boulder_grey",
+   87,
+   30
+  ],
+  [
+   "boulder_grey",
+   82,
+   38
+  ],
+  [
+   "boulder_grey",
+   30,
+   25
+  ],
+  [
+   "rock_grey_small",
+   103,
+   37
   ],
   [
    "rock_grey_small",
@@ -4432,16 +4547,6 @@
    "clump_green2",
    79,
    43
-  ],
-  [
-   "clump",
-   78,
-   32
-  ],
-  [
-   "clump2",
-   82,
-   40
   ],
   [
    "sprout",
@@ -4459,29 +4564,14 @@
    36
   ],
   [
-   "clump2",
-   94,
-   49
-  ],
-  [
    "tiny_white",
    37,
    24
   ],
   [
-   "tiny_white2",
-   91,
-   32
-  ],
-  [
-   "rock_small",
-   102,
-   33
-  ],
-  [
-   "tiny_white2",
-   37,
-   19
+   "sprout",
+   82,
+   41
   ],
   [
    "sprout",
@@ -4524,19 +4614,9 @@
    15
   ],
   [
-   "clump2",
-   75,
-   43
-  ],
-  [
    "sprout",
    34,
    13
-  ],
-  [
-   "clump2",
-   32,
-   29
   ],
   [
    "rock_small",
@@ -4554,24 +4634,9 @@
    46
   ],
   [
-   "rock_small",
-   91,
-   27
-  ],
-  [
-   "clump_green",
-   26,
-   46
-  ],
-  [
-   "clump_green2",
-   96,
-   24
-  ],
-  [
-   "tiny_white",
-   93,
-   30
+   "tiny_white2",
+   38,
+   17
   ],
   [
    "clump_green2",
@@ -4585,28 +4650,13 @@
   ],
   [
    "tiny_white2",
-   90,
-   38
-  ],
-  [
-   "tiny_white2",
    101,
    46
   ],
   [
-   "clump_green",
-   39,
-   20
-  ],
-  [
-   "clump_green3",
-   77,
-   38
-  ],
-  [
-   "clump_green",
-   103,
-   31
+   "tiny_white2",
+   95,
+   25
   ],
   [
    "sprout",
@@ -4617,16 +4667,6 @@
    "rock_small",
    101,
    25
-  ],
-  [
-   "rock_grey_small",
-   92,
-   40
-  ],
-  [
-   "clump_green",
-   94,
-   27
   ],
   [
    "rock_small",
@@ -4649,29 +4689,9 @@
    25
   ],
   [
-   "rock_grey_small",
-   92,
-   50
-  ],
-  [
-   "clump2",
-   92,
-   37
-  ],
-  [
-   "clump_green",
-   97,
-   40
-  ],
-  [
    "sprout",
    95,
    17
-  ],
-  [
-   "clump_green",
-   20,
-   41
   ],
   [
    "clump",
@@ -4679,23 +4699,18 @@
    40
   ],
   [
-   "tiny_white",
-   79,
-   34
-  ],
-  [
    "clump_green",
    86,
    26
   ],
   [
-   "sprout",
-   37,
-   29
+   "rock_small",
+   91,
+   26
   ],
   [
-   "rock_grey_small",
-   89,
+   "sprout",
+   37,
    29
   ],
   [
@@ -4707,11 +4722,6 @@
    "rock_grey_small",
    38,
    39
-  ],
-  [
-   "tiny_white",
-   30,
-   29
   ],
   [
    "rock_grey_small",
@@ -4727,11 +4737,6 @@
    "sprout",
    33,
    23
-  ],
-  [
-   "clump_green",
-   22,
-   43
   ],
   [
    "sprout",
@@ -4752,6 +4757,121 @@
    "tiny_white2",
    20,
    27
+  ],
+  [
+   "rock_small",
+   97,
+   45
+  ],
+  [
+   "rock_small",
+   101,
+   23
+  ],
+  [
+   "tiny_white2",
+   90,
+   22
+  ],
+  [
+   "tiny_white",
+   105,
+   32
+  ],
+  [
+   "clump_green3",
+   90,
+   49
+  ],
+  [
+   "rock_grey_small",
+   105,
+   36
+  ],
+  [
+   "rock_grey_small",
+   75,
+   41
+  ],
+  [
+   "sprout",
+   20,
+   21
+  ],
+  [
+   "clump_green2",
+   88,
+   38
+  ],
+  [
+   "clump2",
+   105,
+   38
+  ],
+  [
+   "clump2",
+   96,
+   34
+  ],
+  [
+   "clump2",
+   29,
+   29
+  ],
+  [
+   "clump_green3",
+   87,
+   45
+  ],
+  [
+   "tiny_white",
+   92,
+   19
+  ],
+  [
+   "tiny_white",
+   90,
+   36
+  ],
+  [
+   "rock_grey_small",
+   92,
+   21
+  ],
+  [
+   "clump_green2",
+   21,
+   19
+  ],
+  [
+   "clump_green2",
+   87,
+   36
+  ],
+  [
+   "sprout",
+   84,
+   42
+  ],
+  [
+   "rock_small",
+   21,
+   25
+  ],
+  [
+   "clump",
+   88,
+   24
+  ],
+  [
+   "clump_green3",
+   75,
+   38
+  ],
+  [
+   "clump_green",
+   86,
+   33
   ]
  ],
  "actors": [

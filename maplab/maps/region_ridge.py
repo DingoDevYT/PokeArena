@@ -126,6 +126,19 @@ def pilot():
         m.act(k, who, x, y, f)
     for i, (cx, cy) in enumerate([(14, 62), (40, 60), (54, 46), (110, 62), (74, 74), (18, 80), (8, 34), (42, 30), (112, 30), (100, 10), (70, 52), (60, 40)]): m.cluster(FLOWERS, cx, cy, 3, 400 + i, r=2)
     m.scatter(ROCKS, 40, (0, 0, 2 * W - 1, 2 * H - 1), 18)
+    # bigger rock-tier dressing, like the highland mockup: boulder clusters, spires and a few dead trees (bare sprites carry no grass base)
+    BIG = ['boulder', 'boulder2', 'boulder3', 'rock_grassy', 'spire', 'spire_grey', 'rock2', 'rock_tall', 'boulder_grey']
+    rng = __import__('random').Random(77); k = 0; dead = []
+    for _ in range(2000):
+        if k >= 4: break
+        bx, by = rng.randrange(2 * W), rng.randrange(2 * H)
+        if any(abs(bx - a) < 6 and abs(by - b) < 10 for a, b in dead): continue   # a tall sprite: keep them apart so one never stands in another
+        if lvl(bx, by) >= 2 and (bx, by) not in ring and not near_prop(bx, by) and m.tree(rng.choice(['bare_olive0', 'bare_olive1']), bx, by, quiet=True): k += 1; dead.append((bx, by))
+    k = 0
+    for _ in range(3000):
+        if k >= 22: break
+        x, y, o = rng.randrange(2 * W), rng.randrange(2 * H), rng.choice(BIG)
+        if lvl(x, y) >= 2 and m.free(o, x, y, 1): m.obj(o, x, y); k += 1
     TOPS = ['clump_green', 'clump_green2', 'clump_green3', 'rock_small', 'rock_grey_small', 'tiny_white', 'clump', 'clump2', 'tiny_white2', 'sprout']
     rng = __import__('random').Random(61); k = 0                 # tufts, pebbles and flowers on the rock tiers only, like the highland mockup
     for _ in range(4000):
