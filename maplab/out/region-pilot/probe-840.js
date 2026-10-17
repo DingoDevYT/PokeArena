@@ -1,4 +1,4 @@
-const CFG = {"x0": 840, "y0": 464, "gw": 48, "gh": 48, "start": null, "stairs": [], "probes": {}};
+const CFG = {"x0": 840, "y0": 464, "gw": 48, "gh": 48, "start": [840, 466], "stairs": [], "probes": {"outside west": [839, 466], "south gate": [865, 511]}};
 const T = ADV.Tp(0), cfg = CFG, X0 = cfg.x0, Y0 = cfg.y0, GW = cfg.gw, GH = cfg.gh, start = cfg.start;
 const stairs = new Set(cfg.stairs.map(s => s.join()));
 const ent = ADV.entity(0, 0, 0);

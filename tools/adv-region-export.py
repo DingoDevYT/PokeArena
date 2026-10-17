@@ -251,31 +251,27 @@ def main():
     zp = os.path.join(ROOT, 'data/adv/zones.js'); backup(zp); zs = open(os.path.join(BK, 'zones.js'), encoding='utf-8').read()
     Z = json.loads(zs[zs.index('{'):zs.rindex('}') + 1]); rows = [rle(r) for r in Z['cells']]
     bw = json.loads(re.search(r'"buildings":(\[.*?\]),"supply"', world, re.S)[1]) if '"buildings"' in world else []
-    summary = []
+    summary = []; CHS = {}
     for S in SL:
         win, gw, gh = S['win'], S['gw'], S['gh']; wx, wy = win['wx'], win['wy']
         x0, y0, x1, y1 = wx, wy, wx + gw, wy + gh; heal = set(win['heal'])
         chunks = {(cx, cy) for cx in range(x0 // 32, (x1 - 1) // 32 + 1) for cy in range(y0 // 32, (y1 - 1) // 32 + 1)} | {(x // 32, y // 32) for x, y in heal}
         for cx, cy in sorted(chunks):
-            path = os.path.join(ROOT, f'data/adv/chunks/{cx}_{cy}.js'); backup(path)
-            d = parse_chunk(os.path.join(BK, f'{cx}_{cy}.js'))   # always rebuild from the original
-            h, m, o, k = rle(d['h']), rle(d['mat']), rle(d['over']), rle(d['kind']); dk = rle(d['deck']) if 'deck' in d else [-1] * 1024
-            bk = rle(d['bake']) if 'bake' in d else [-1] * 1024; fb = [-1] * 1024; sm = [-1] * 1024
+            if (cx, cy) not in CHS:   # a chunk two windows share is loaded from the original once and patched by both, then written once (writing per window let the last one wipe the other's rows)
+                path = os.path.join(ROOT, f'data/adv/chunks/{cx}_{cy}.js'); backup(path)
+                d = parse_chunk(os.path.join(BK, f'{cx}_{cy}.js'))   # always rebuild from the original
+                CHS[cx, cy] = dict(path=path, d=d, h=rle(d['h']), m=rle(d['mat']), o=rle(d['over']), k=rle(d['kind']), dk=rle(d['deck']) if 'deck' in d else [-1] * 1024,
+                                   bk=rle(d['bake']) if 'bake' in d else [-1] * 1024, fb=[-1] * 1024, sm=[-1] * 1024,
+                                   props=[p for p in d.get('props', []) if not p[0].startswith('rg')], n0=len(d.get('props', [])), new=0)   # rg* props are this tool's own: never carried over, so a backup taken after a run cannot double them
+            C = CHS[cx, cy]; d, h, m, o, k, dk, bk, fb, sm = C['d'], C['h'], C['m'], C['o'], C['k'], C['dk'], C['bk'], C['fb'], C['sm']
             for i in range(1024):
                 wxc, wyc = cx * 32 + (i & 31), cy * 32 + (i >> 5)
                 if (wxc, wyc) in heal: m[i] = pal.index('grass')
                 if x0 <= wxc < x1 and y0 <= wyc < y1:
                     g = (wyc - y0) * gw + (wxc - x0)
                     h[i], k[i], dk[i], m[i], o[i], bk[i], fb[i], sm[i] = S['hh'][g], S['kind'][g], -1, S['mat'][g], S['over'][g], S['bake'][g], S['fbake'][g], S['smask'][g]
-            keep = [p for p in d.get('props', []) if not (x0 * 32 <= p[1] < x1 * 32 and y0 * 32 <= p[2] < y1 * 32) and not p[0].startswith('rg')]   # rg* props are this tool's own: never carried over, so a backup taken after a run cannot double them
             new = [p for p in S['props'] if p[1] // 1024 == cx and p[2] // 1024 == cy]
-            out = dict(h=unrle(h), mat=unrle(m), over=unrle(o), kind=unrle(k))
-            if 'deck' in d or any(v >= 0 for v in dk): out['deck'] = unrle(dk)
-            out['bake'] = unrle(bk)
-            if any(v >= 0 for v in fb): out['fbake'] = unrle(fb)
-            if any(v >= 0 for v in sm): out['smask'] = unrle(sm)
-            out['props'] = keep + new
-            write_chunk(path, cx, cy, out); print(f'chunk {cx}_{cy}: {len(new)} new props, {len(d.get("props", [])) - len(keep)} old removed')
+            C['props'] = [p for p in C['props'] if not (x0 * 32 <= p[1] < x1 * 32 and y0 * 32 <= p[2] < y1 * 32)] + new; C['new'] += len(new)
         zid = Z['ids'].index(win['zone'])
         was = {Z['ids'][rows[by][bx]] for by in range(wy // 8, (wy + gh) // 8) for bx in range(wx // 8, (wx + gw) // 8)}
         print('zone cells of other zones inside the window are kept as they are:', sorted(i for i in was if not (i == 'wild' or i.startswith('route'))))   # a town's zone label is its own; only wild/route cells are relabelled
@@ -284,6 +280,14 @@ def main():
             for bx in range(wx // 8, (wx + gw) // 8):
                 if Z['ids'][rows[by][bx]] == 'wild' or Z['ids'][rows[by][bx]].startswith('route'): rows[by][bx] = zid
         summary.append(dict(window=dict(x=wx, y=wy, w=gw, h=gh), zone=win['zone'], void=sum(v < 0 for v in S['hh']), stairs=S['stairs'], probes=S['probes'], start=S['start'], slots=S['slots']))
+    for (cx, cy), C in sorted(CHS.items()):
+        out = dict(h=unrle(C['h']), mat=unrle(C['m']), over=unrle(C['o']), kind=unrle(C['k']))
+        if 'deck' in C['d'] or any(v >= 0 for v in C['dk']): out['deck'] = unrle(C['dk'])
+        out['bake'] = unrle(C['bk'])
+        if any(v >= 0 for v in C['fb']): out['fbake'] = unrle(C['fb'])
+        if any(v >= 0 for v in C['sm']): out['smask'] = unrle(C['sm'])
+        out['props'] = C['props']
+        write_chunk(C['path'], cx, cy, out); print(f'chunk {cx}_{cy}: {C["new"]} new props, {C["n0"] + C["new"] - len(C["props"])} old removed')
     Z['cells'] = [unrle(r) for r in rows]
     open(zp, 'w', encoding='utf-8').write(zs[:zs.index('{')] + json.dumps(Z, separators=(',', ':')) + ';\n')
 

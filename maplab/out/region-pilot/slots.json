@@ -12,8 +12,20 @@
    "zone": "route22",
    "void": 0,
    "stairs": [],
-   "probes": {},
-   "start": null,
+   "probes": {
+    "outside west": [
+     839,
+     466
+    ],
+    "south gate": [
+     865,
+     511
+    ]
+   },
+   "start": [
+    840,
+    466
+   ],
    "slots": {
     "npc": [
      {

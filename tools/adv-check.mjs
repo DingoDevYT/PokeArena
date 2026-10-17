@@ -1191,13 +1191,13 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 // overworld weather (src/adv-weather.js): deterministic per zone and 6 game hour slot, every zone gets a valid kind, snow zones never rain and the desert never snows, the eased strength stays in 0..1, the light numbers are sane
 {
   const WX = load('src/adv-weather.js', '\n;ADVWX'), zones = REAL_ZONES.ids, KS = WX.KINDS, save = { z: ADVW.zone, w: ADVW.weather, h: ADVW.hourSet };
-  const seen = id => { const s = new Set(); for (let i = 0; i < 600; i++) s.add(WX.kindFor(id, i)); return s; };
-  let same = true, valid = true; for (const z of zones) for (let i = 0; i < 200; i++) { const k = WX.kindFor(z, i); if (k !== WX.kindFor(z, i)) same = false; if (!KS.includes(k)) valid = false; }
-  ok(same && valid, 'every zone rolls a valid kind, the same one every time for a slot'); ok(WX.kindFor('wild', 5) === WX.kindFor('wild', 5) && WX.kindFor('', 7) !== undefined, 'an unknown zone falls back to the default table');
+  const seen = id => { const s = new Set(); for (let i = 0; i < 600; i++) s.add(WX.kindFor(id, i, id)); return s; };
+  let same = true, valid = true; for (const z of zones) for (let i = 0; i < 200; i++) { const k = WX.kindFor(z, i, z); if (k !== WX.kindFor(z, i, z)) same = false; if (!KS.includes(k)) valid = false; }
+  ok(same && valid, 'every zone rolls a valid kind, the same one every time for a slot'); ok(WX.kindFor('wild', 5, 'wild') === WX.kindFor('wild', 5, 'wild') && WX.kindFor('', 7, '') !== undefined, 'an unknown zone falls back to the default table');
   ok(['frostfall', 'sprucevale', 'route17', 'route19', 'pokemonleague'].every(z => { const s = seen(z); return !s.has('rain') && !s.has('storm') && !s.has('sand'); }) && seen('frostfall').has('snow'), 'snow zones snow and never rain');
   ok(['dunereach', 'route15'].every(z => { const s = seen(z); return s.has('sand') && !s.has('rain') && !s.has('storm') && !s.has('snow'); }), 'the desert has sandstorms and never rain or snow');
   ok(seen('goldacre').size >= 4 && !seen('goldacre').has('sand') && !seen('goldacre').has('snow') && seen('saltbay').has('rain') && seen('sporehaven').has('fog'), 'a town has a spread of weather, the coast rains, the fungal zones fog over');
-  const fog = z => { let a = 0, b = 0; for (let i = 0; i < 4000; i++) if (WX.kindFor(z, i) === 'fog') (i % 4 === 1 ? a++ : b++); return a / (b / 3); }; ok(fog('goldacre') > 1.8, 'mornings (6 to 12) are foggier than the rest of the day');
+  const fog = z => { let a = 0, b = 0; for (let i = 0; i < 4000; i++) if (WX.kindFor(z, i, z) === 'fog') (i % 4 === 1 ? a++ : b++); return a / (b / 3); }; ok(fog('goldacre') > 1.8, 'mornings (6 to 12) are foggier than the rest of the day');
   // easing: the strength moves smoothly in 0..1, a change fades the old kind out and the new one in over about 3 s, caves and rooms are always clear
   ADVW.zone = () => 'goldacre'; ADVW.hourSet = 12; ADVW.weather = 'rain'; let t = 0, lo = 9, hi = -9, mono = true, prev = 0;
   const run = (secs, x = 5000) => { const trace = []; for (let i = 0; i < secs * 60; i++) { t += 1 / 60; WX.update(t, x, 5000); lo = Math.min(lo, WX.cur.k); hi = Math.max(hi, WX.cur.k); trace.push(WX.cur.k); } return trace; };
@@ -1208,7 +1208,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(lo >= 0 && hi <= 1, 'the eased strength stays in 0..1');
   ADVW.weather = 'storm'; run(3); eq(WX.cur.kind, 'storm', 'storm'); run(4, 300000); eq(WX.cur.kind, '', 'in a cave or room (scale 1) the weather is clear'); ok(WX.cur.k === 0, 'with no strength');
   // automatic: null picks the player's zone and slot (6 game hours); the slot reads the running hour count
-  ADVW.weather = null; ADVW.zone = () => 'saltbay'; ADVW.hourSet = 3; const t0 = ADVW.totalHours(), want = WX.kindFor('saltbay', Math.floor(t0 / 6)); run(5); eq(WX.cur.kind, want, 'automatic weather is the zone and slot roll');
+  ADVW.weather = null; ADVW.zone = () => 'saltbay'; ADVW.hourSet = 3; const t0 = ADVW.totalHours(), W2 = ADV.world, sp2 = W2 ? ADV.Tp(5000) * ADV.CH : 1, reg2 = W2 ? 'q' + Math.floor(5000 / sp2 / (W2.chunksW / 2)) + Math.floor(5000 / sp2 / (W2.chunksH / 2)) : 'saltbay', want = WX.kindFor('saltbay', Math.floor(t0 / WX.SLOT), reg2);   // one roll per quarter of the world per slot (a front covers many zones) run(5); eq(WX.cur.kind, want, 'automatic weather is the zone and slot roll');
   ADVW.zone = () => 'frostfall'; ADVW.hourSet = 14; run(6); ok(['', 'cloudy', 'fog', 'snow'].includes(WX.cur.kind), 'Frostfall never rains');
   // the clock: a running total that agrees with hour() and keeps the real day count when pinned
   ADVW.hourSet = null; const th = ADVW.totalHours(), hr = ADVW.hour(), dd = Math.abs((th % 24) - hr); ok(Math.min(dd, 24 - dd) < 0.2, 'totalHours mod 24 is hour()'); ADVW.hourSet = 7.5; ok(ADVW.totalHours() % 24 === 7.5 && Math.abs(ADVW.totalHours() - th) < 24, 'a pinned hour keeps the real day count');

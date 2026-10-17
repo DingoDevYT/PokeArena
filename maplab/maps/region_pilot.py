@@ -84,7 +84,10 @@ def pilot():
 if __name__ == '__main__':
     m = pilot(); p = m.dump(); warn = m.lint()
     for w in warn: print('  [region_pilot]', w)
-    im = R.render(json.load(open(p)))
+    mp = json.load(open(p)); mp['start'] = [0, 2]   # probe start: the west gateway (game cell)
+    mp['probes'] = {'outside west': [-1, 2], 'south gate': [25, 47]}
+    json.dump(mp, open(p, 'w'), indent=1)
+    im = R.render(mp)
     out = os.path.join(os.path.dirname(HERE), 'out', 'region-pilot'); os.makedirs(out, exist_ok=True)
     im.save(os.path.join(out, 'maplab-1x.png')); im.resize((im.width * 2, im.height * 2), R.Image.NEAREST).save(os.path.join(out, 'maplab.png'))
     print(p, im.size, f'{len(warn)} lint warnings')
