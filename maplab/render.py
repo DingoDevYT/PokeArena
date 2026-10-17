@@ -74,7 +74,7 @@ CLIFF = {'grass': (7, 80), 'autumn': (14, 80), 'snow': (21, 76), 'rock': (0, 76)
 BASE['rock'] = ([(74, 88), (74, 89)], [(74, 90), (74, 91)])   # dirt valley floor; plateaus are bare brown rock
 BASE['highland'] = BASE['grass']; CLIFF['highland'] = CLIFF['rock']   # grass valleys, bare rock plateaus
 ROCKTOP = {'rock', 'highland'}
-STAIR2 = {'grass', 'autumn', 'ridge'}    # cliff sets whose stairs are a two tile pair (columns c0+3, c0+4)
+STAIR2 = set()    # sets whose stairs are a two tile pair (columns c0+3, c0+4); every lab set so far has a one tile stair that repeats across the opening
 HOLE = {'grass': (7, 74), 'ridge': (7, 74), 'autumn': (14, 74), 'rock': (0, 74), 'highland': (0, 74)}   # face rows of the face-with-cave-hole strip above each set
 BASE['ridge'] = BASE['grass']; CLIFF['ridge'] = CLIFF['grass']   # grass valleys and grass-topped plateaus (rock faces, the top keeps the meadow)
 VOID = set()                   # bases whose solid rock is unlit darkness (caves)
@@ -418,11 +418,17 @@ def _render(mp, W, H, base):
             for x in range(W):
                 if lv(x, y) != h: continue
                 vr = 3 if not up(x, y + 1) else 2 if not up(x, y + 2) else 0 if not up(x, y - 1) else 1
-                # a side ends where the neighbour is lower ground, and also where a face meets a top cell beside it (the plateau steps south there):
-                # the face gets its rounded end and the longer column shows its side wall, so a step reads as a real corner, not a cut-off band
+                # Inner corners (the sets have no art for them, so they are composed from the set's own tiles):
+                #  - a face runs on under the top of a plateau that reaches further south beside it; that plateau's side rim is drawn over the
+                #    face's end, so the face turns the corner into the side wall instead of stopping in a straight cut;
+                #  - where a north edge steps, the side rim coming down meets the rim going along in an L (the side tile's top quarter).
                 face = lambda a, b: up(a, b) and (not up(a, b + 1) or not up(a, b + 2))
-                end = lambda a: not up(a, y) or (face(a, y) != (vr >= 2))
-                w, e = end(x - 1), end(x + 1)
+                fvr = lambda a, b: 3 if not up(a, b + 1) else 2
+                if vr >= 2: w, e = not up(x - 1, y), not up(x + 1, y)                       # a face ends only at lower ground
+                else: w, e = not up(x - 1, y) or face(x - 1, y), not up(x + 1, y) or face(x + 1, y)
+                under = None
+                if vr < 2 and (w and face(x - 1, y) or e and face(x + 1, y)): under = tile(c0 + 1, r0 + fvr(x - 1 if w and face(x - 1, y) else x + 1, y))
+                solid = False
                 if cl(x, y) == 'S':   # sets with a two tile stair (left, right half) alternate them across the opening; the rock set's stair is one tile
                     k = 0
                     while cl(x - k - 1, y) == 'S': k += 1
@@ -430,8 +436,14 @@ def _render(mp, W, H, base):
                 elif w and e:   # one cell wide: west half of the west end, east half of the east end
                     t = tile(c0, r0 + vr).copy(); t.paste(tile(c0 + 2, r0 + vr).crop((T // 2, 0, T, T)), (T // 2, 0))
                 elif vr != 1 or w or e: t = tile(c0 + (0 if w else 2 if e else 1), r0 + vr)
+                elif vr == 1 and (up(x + 1, y) and not up(x + 1, y - 1) or up(x - 1, y) and not up(x - 1, y - 1)):   # north edge steps down beside this column
+                    t = Image.new('RGBA', (T, T)); solid = True
+                    if up(x + 1, y) and not up(x + 1, y - 1): t.alpha_composite(tile(c0 + 2, r0 + 1).crop((T // 2, 0, T, T // 2)), (T // 2, 0))
+                    if up(x - 1, y) and not up(x - 1, y - 1): t.alpha_composite(tile(c0, r0 + 1).crop((0, 0, T // 2, T // 2)), (0, 0))
                 else: continue
-                put(t, x * T, y * T); a = np.array(t); art[x, y] = (a[..., 3] >= 128, (a[..., 1] > a[..., 0]) & (a[..., 1] > a[..., 2]))
+                if under is not None: u = under.copy(); u.alpha_composite(t); t = u
+                put(t, x * T, y * T)
+                if not solid: a = np.array(t); art[x, y] = (a[..., 3] >= 128, (a[..., 1] > a[..., 0]) & (a[..., 1] > a[..., 2]))   # step overlays sit on solid top: no art entry = solid
     for hx, hy in mp.get('holes', []):   # cave mouths: the set's own face-with-a-hole strip (3 x 2) replaces the face there, so the hole is part of the cliff
         hc, hrw = HOLE[cset(lv(hx, hy))]
         for i in range(3):
