@@ -91,6 +91,7 @@ const AdventureScene = {
     const sp = spriteOf(this.key); if (sp) for (const a of ['Walk', 'Idle']) if (sp.anims[a]) files.push(sp.anims[a].file);
     files.push(...assetSrcs({ arena: {}, player: { avatar: save.avatar, team: save.party }, cpu: { team: [] } }), ...ADVN.files(), ...ADVO.files());
     if (!save.sc) { if (save.pos) save.pos = { x: Math.round(save.pos.x * ADV.OUT), y: Math.round(save.pos.y * ADV.OUT) }; save.sc = ADV.OUT; }   // a save from before the 2x outdoor scale holds its spot in the old px
+    const ws = W?.scale || 1; if ((save.ws || 1) !== ws) { const t = ADVS.town(save.last) || ADVS.town(save.home); if (t) save.pos = ADVS.front(t); save.waypoints = []; save.ws = ws; }   // plan B: the island was redrawn at another scale, so a spot (and a map waypoint) from the old one means nothing: wake at the last Center
     const at = new URLSearchParams(location.search).get('at')?.split(',').map(Number);
     const ts = ADV.ts(); if (ts && ts.file) files.push(ts.file); if (window.ADV_TILESET_INT) files.push(window.ADV_TILESET_INT.file);
     this.loaded = false; const me = this;

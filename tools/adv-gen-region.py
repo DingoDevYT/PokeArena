@@ -1,7 +1,7 @@
 """Kenora region generator: builds the whole island from Landon's three map PNGs into data/adv/ (chunks, world.js, zones.js).
 Run: py -3.12 -I tools/adv-gen-region.py [--only G7] [--nogap]   (--only writes just the chunks around that place and skips world.js / zones.js; --nogap closes the Route 5 hedge gaps, for sealing checks)
 Deterministic (fixed seeds). Random props (scatter) use one RNG per chunk and per call, seeded from (call, chunk x, chunk y), and the hand-placed Route decorators use pure hashes, so editing one place only changes that place's chunks. Needs PIL, numpy, scipy; numba is used for the flood fill when installed. See docs/REGION.md."""
-import sys, os, re, json, time, collections, zlib, hashlib
+import sys, os, re, json, time, collections, zlib, hashlib, heapq
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
@@ -19,8 +19,7 @@ def mapimg(name):
     if os.path.exists(MAPS + name): return Image.open(MAPS + name)
     return Image.open(os.path.join(ROOT, 'tools', 'kenora-maps', REPO_MAPS[name])).convert('RGB').resize((3640, 4240), Image.NEAREST)
 S, T, CH = 3.5, 32, 32
-CW, CHN = 33, 38
-WP, HP = CW * CH, CHN * CH
+W0, H0 = 33 * CH, 38 * CH                            # the old grid: the owner's maps at S map px per tile (plan B warps it, section 0)
 T0 = time.time()
 ONLY = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else None
 def log(*a): print(f'[{time.time() - T0:5.1f}s]', *a, flush=True)
@@ -30,7 +29,6 @@ def ero(m, r): return ndi.binary_erosion(m, disk(r))
 def noise(sigma, seed):
     n = ndi.gaussian_filter(np.random.default_rng(seed).standard_normal((HP, WP)).astype(np.float32), sigma)
     return n / n.std()
-YY, XX = np.mgrid[0:HP, 0:WP]
 def _blocks(m, q): h2, w2 = HP // q * q, WP // q * q; return m[:h2, :w2].reshape(h2 // q, q, w2 // q, q)
 def _up(c, q): o = np.zeros((HP, WP), c.dtype); o[:c.shape[0] * q, :c.shape[1] * q] = np.repeat(np.repeat(c, q, 0), q, 1); return o
 def blocky(m, q=3, lo=.5):
@@ -53,7 +51,7 @@ def thin(m):
             c &= ((p2 * p4 * p6) == 0) & ((p4 * p6 * p8) == 0) if st == 0 else ((p2 * p4 * p8) == 0) & ((p2 * p6 * p8) == 0)
             if c.any(): a[1:-1, 1:-1][c] = 0; ch = 1
         if not ch: break
-    full = np.zeros((HP + 2, WP + 2), np.uint8); full[y0:y1, x0:x1] = a
+    full = np.zeros((m.shape[0] + 2, m.shape[1] + 2), np.uint8); full[y0:y1, x0:x1] = a
     return full[1:-1, 1:-1] > 0
 def snap_road(ridge, q=3):
     """a thin centreline mask becomes a chain of q x q blocks (4-connected): a q wide road of long straight runs joined at corners, however it wanders on the artwork"""
@@ -109,11 +107,64 @@ def P(name):
     if d.get('door'): e['door'] = [f(v) for v in d['door']]
     return e
 
+# ---------------------------------------------------------------- 0. plan B (docs/REGION-REBUILD.md section 13): the island at K x the maps' scale with every town at its true size
+# tools/adv_warp.py: G takes each new tile to the old position it shows (the maps are sampled through it); inside a town's disc it is a whole-tile shift. OXX / OYY hold that old
+# position for every tile, so a mask drawn against the maps' layout (a box round a lake, a distance from a town that reaches past its disc) is written against them; hand-set old
+# points go through wpt / wpf. ADV_GEN_K=1 gives the identity (the old world).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from adv_warp import Warp
+K = float(os.environ.get('ADV_GEN_K', '.6'))
+loc = np.array(mapimg('LOCATIONS.png').convert('RGB')).astype(np.int16)
+nearc = lambda c, tol, a=None: np.abs((loc if a is None else a) - np.array(c, np.int16)).sum(2) <= tol
+OLDC = {}
+for code, name, px, py in PLACES:                    # the town icon's centre on the LOCATIONS map, in old tiles
+    w_ = loc[py - 70:py + 70, px - 70:px + 70]; yy, xx = np.nonzero(nearc((56, 167, 250), 30, w_) | nearc((122, 122, 122), 10, w_))
+    OLDC[code] = (px - 70 + xx.mean(), py - 70 + yy.mean()) if len(xx) else (px, py)
+terr = np.array(mapimg('TERRAIN ONLY.png').convert('RGB')); h0, w0 = terr.shape[:2]
+_o = terr[np.minimum(((np.arange(H0) + .5) * S).astype(int), h0 - 1)][:, np.minimum(((np.arange(W0) + .5) * S).astype(int), w0 - 1)].astype(np.int32)
+_w = (_o[..., 2] >= 240) & (_o[..., 0] <= 190) & (_o[..., 1] >= 205); _w[:175] = True      # the same sea / lake shores as section 2, on the old grid
+_lb, _ = ndi.label(ndi.binary_opening(_w, disk(10))); _bl = set(np.unique(np.r_[_lb[0], _lb[-1], _lb[:, 0], _lb[:, -1]])) - {0}
+_sea = dil(np.isin(_lb, list(_bl)), 12) & _w; _inl = dil(_w & ~_sea, 1)
+_land = ~((ndi.gaussian_filter(_sea.astype(np.float32), 2.0) > .5) | (ndi.gaussian_filter(_inl.astype(np.float32), 1.4) > .5)); _dl = ndi.distance_transform_edt(_land)
+for code in OLDC:                                    # a few icons sit on the shoreline: move those inland (on the old grid, before the warp pins the town there) until the centre has solid ground around it
+    ox, oy = int(OLDC[code][0] / S), int(OLDC[code][1] / S)
+    if _dl[oy, ox] < 6:
+        w_ = np.argwhere(_dl[oy - 45:oy + 45, ox - 45:ox + 45] >= 8) + (oy - 45, ox - 45); k_ = np.hypot(w_[:, 0] - oy, w_[:, 1] - ox).argmin()
+        print(f'  {code}: icon on the shore, centre moved {np.hypot(*(w_[k_] - (oy, ox))):.0f} tiles inland'); OLDC[code] = ((w_[k_][1] + .5) * S, (w_[k_][0] + .5) * S)
+del _o, _w, _lb, _sea, _inl, _land, _dl
+def layout_reach(code):
+    """how far a town's hand layout (tools/adv-towns/<code>.json) reaches from its centre, in tiles: the warp keeps all of it rigid"""
+    f = os.path.join(ROOT, 'tools', 'adv-towns', code + '.json')
+    if not os.path.exists(f): return 0
+    j = json.load(open(f)); pts = [tuple(j['mouth'])] if 'mouth' in j else []
+    for k in ('paving', 'plazas', 'boards'): pts += [(e[a], e[b]) for e in j.get(k, []) for a in (0, 2) for b in (1, 3)]
+    pts += [(e[1], e[2]) for e in j.get('buildings', []) + j.get('props', [])]
+    for d in j.get('deco', []): pts += [(d[2], d[3])] + ([(d[4], d[5])] if d[0] == 'row' else [])
+    return max(np.hypot(x, y) for x, y in pts) + 3 if pts else 0
+WARP = Warp([(c, OLDC[c][0] / S, OLDC[c][1] / S, max(RADIUS[c[0]], layout_reach(c))) for c, *_ in PLACES], W0, H0, K=K)
+CW, CHN = -(-WARP.W1 // CH), -(-WARP.H1 // CH); WP, HP = CW * CH, CHN * CH
+YY, XX = np.mgrid[0:HP, 0:WP]
+OXX, OYY = WARP.grids(WP, HP)
+SHIFT = {c: tuple(int(v) for v in np.round(WARP.t[i] - WARP.c[i])) for i, c in enumerate(WARP.codes)}
+wpt, wpf = WARP.pt, WARP.pf
+def wbox(y0, y1, x0, x1):
+    """an old (ya, yb, xa, xb) box -> the new box round its warped corners"""
+    c = [wpt(x, y) for x in (x0, x1) for y in (y0, y1)]; return min(q[1] for q in c), max(q[1] for q in c), min(q[0] for q in c), max(q[0] for q in c)
+def odist(code):
+    """distance from a town centre measured on the old layout: equal to the tile distance inside the town's disc, and it keeps the maps' proportions past it"""
+    t_ = TOWN[code]; return np.hypot(OXX - t_['ox'], OYY - t_['oy'])
+LABELS = {r: tuple(v * S for v in wpf(x / S, y / S)) for r, (x, y) in LABELS.items()}
+KA = K * K                                           # area thresholds shrink with the land
+def waxis(way):
+    """a hand-set run of old waypoints joined by horizontal and vertical legs -> new points that still meet at right angles"""
+    out = [wpt(*way[0])]
+    for (xa, ya), (xb, yb) in zip(way, way[1:]):
+        x, y = wpt(xb, yb); px, py = out[-1]; out.append((px, y) if xa == xb else (x, py) if ya == yb else (x, y))
+    return out
+log('plan B warp K', K, 'grid', WARP.W1, 'x', WARP.H1, 'tiles,', CW, 'x', CHN, 'chunks; town shifts', SHIFT, 'smallest dG', round(WARP.minsv, 3))
+
 # ---------------------------------------------------------------- 1. biomes
-terr = np.array(mapimg('TERRAIN ONLY.png').convert('RGB'))
-h0, w0 = terr.shape[:2]
-ys = np.minimum(((np.arange(HP) + .5) * S).astype(int), h0 - 1); xs = np.minimum(((np.arange(WP) + .5) * S).astype(int), w0 - 1)
-tt = terr[ys][:, xs].astype(np.int32)
+ys = np.clip(((OYY + .5) * S).astype(int), 0, h0 - 1); xs = np.clip(((OXX + .5) * S).astype(int), 0, w0 - 1)
+tt = terr[ys, xs].astype(np.int32)
 ANCH = {'grass': [(136, 207, 141), (115, 175, 119), (115, 176, 120)], 'meadow': [(166, 219, 170)], 'forest': [(84, 129, 88), (89, 125, 90), (102, 156, 106), (97, 142, 100), (103, 138, 104)],
   'rock': [(110, 123, 124), (104, 116, 117), (99, 110, 111)], 'cap': [(212, 226, 228), (225, 238, 241), (201, 214, 216)], 'snow': [(216, 234, 231)], 'beach': [(255, 226, 101)],
   'scrub': [(224, 195, 70)], 'fungal': [(197, 169, 184), (180, 178, 169)], 'shroom': [(136, 51, 105)]}
@@ -121,7 +172,7 @@ CN = ['water'] + list(ANCH); C = {n: i for i, n in enumerate(CN)}
 cols = np.array([c for n in ANCH for c in ANCH[n]]); cidx = np.array([C[n] for n in ANCH for _ in ANCH[n]])
 cls = cidx[((tt[:, :, None, :] - cols[None, None]) ** 2).sum(3).argmin(2)].astype(np.uint8)
 water0 = (tt[..., 2] >= 240) & (tt[..., 0] <= 190) & (tt[..., 1] >= 205)
-water0[:175] = True                                  # the title lettering sits in the ocean
+water0[OYY < 175] = True                                  # the title lettering sits in the ocean
 cls[water0] = 0
 print('colour -> class table (sampled from TERRAIN ONLY):')
 for n in ANCH: print(f'  {n:7s}', ' '.join('#%02x%02x%02x' % c for c in ANCH[n]))
@@ -152,50 +203,119 @@ def stroke(pts):
     return m
 RIVER = [(305, 770, 2.8), (296, 782, 3.0), (285, 795, 3.2), (276, 806, 3.4), (271, 816, 3.5), (268, 824, 3.5), (263, 836, 3.5), (256, 848, 3.3), (250, 858, 3.9), (243, 868, 4.6)]
 CHAN = [[(242, 828, 1.5), (243, 840, 1.5), (240, 853, 1.6), (238, 866, 1.9)], [(296, 809, 1.5), (297, 816, 1.5), (297, 822, 1.5)]]   # small N-S channels (Bidoof dams across them)
+RIVER = [(*wpf(x, y), r) for x, y, r in RIVER]; CHAN = [[(*wpf(x, y), r) for x, y, r in c] for c in CHAN]   # plan B: the hand-set points are old tiles; widths stay in tiles
 riv = stroke(RIVER); chan = [stroke(c) for c in CHAN]
-for (px, py, rx, ry) in ((237, 874, 11, 6), (242, 825, 4.5, 4), (296, 806, 4, 3.5), (297, 824, 3.5, 3), (228, 846, 5, 3.5)): riv |= ((XX - px) / rx) ** 2 + ((YY - py) / ry) ** 2 <= 1
+for (px, py, rx, ry) in ((237, 874, 11, 6), (242, 825, 4.5, 4), (296, 806, 4, 3.5), (297, 824, 3.5, 3), (228, 846, 5, 3.5)): px, py = wpf(px, py); riv |= ((XX - px) / rx) ** 2 + ((YY - py) / ry) ** 2 <= 1
 for c in chan: riv |= c
 riv = blocky(riv, 3, .42)                              # v2: the river bends in straight runs of 3+ with rounded corners, not a 1 tile staircase
-FORDC = (255, 848)                                    # ford: a wadeable band across the river, 30 tiles downstream of the bridge
+FORDC = wpt(255, 848)                                    # ford: a wadeable band across the river, 30 tiles downstream of the bridge
 ford = riv & ((XX - FORDC[0]) ** 2 + (YY - FORDC[1]) ** 2 <= 5.2 ** 2)
 assert ford.sum() > 30, 'ford centre is not on the river'
 water |= riv & ~ford; inl |= riv; land = ~water; beachc &= land
 
 # ---------------------------------------------------------------- 3. markers and roads
-loc = np.array(mapimg('LOCATIONS.png').convert('RGB')).astype(np.int16)
 terr16 = terr.astype(np.int16)
-nearc = lambda c, tol: np.abs(loc - np.array(c, np.int16)).sum(2) <= tol
 iconc = nearc((56, 167, 250), 30) | nearc((255, 255, 255), 6) | nearc((122, 122, 122), 10) | nearc((204, 204, 204), 10) | nearc((171, 171, 171), 10)
 blue = nearc((56, 167, 250), 30) | nearc((122, 122, 122), 10)
 road_px = (np.abs(loc - terr16).sum(2) > 30) & ~iconc
-def area(mask, th):
-    return np.array(Image.fromarray((mask * 255).astype(np.uint8)).resize((WP, HP), Image.BOX)) > th * 255
-roadt = area(road_px, .35)
+def bline(p, q):
+    n = int(max(abs(q[0] - p[0]), abs(q[1] - p[1]))) * 2 + 1
+    return [(int(round(p[0] + (q[0] - p[0]) * k / n)), int(round(p[1] + (q[1] - p[1]) * k / n))) for k in range(n + 1)]
+def trace(sk):
+    """a 1 tile skeleton as paths of (x, y) cells between its ends and junctions (crossing number: 1 = end, 3+ = junction)"""
+    a = np.pad(sk, 1); ring = [a[:-2, 1:-1], a[:-2, 2:], a[1:-1, 2:], a[2:, 2:], a[2:, 1:-1], a[2:, :-2], a[1:-1, :-2], a[:-2, :-2]]
+    cn = sum((~ring[k] & ring[(k + 1) % 8]).astype(np.int8) for k in range(8))
+    node = sk & (cn != 2); used = np.zeros_like(sk); paths = []
+    def nbrs(y, x): return [(y + dy, x + dx) for dy, dx in ((-1, 0), (0, 1), (1, 0), (0, -1), (-1, 1), (1, 1), (1, -1), (-1, -1)) if 0 <= y + dy < sk.shape[0] and 0 <= x + dx < sk.shape[1] and sk[y + dy, x + dx]]
+    for st in [tuple(p) for p in np.argwhere(node)] + [tuple(p) for p in np.argwhere(sk & ~node)]:
+        for n0 in nbrs(*st):
+            if used[n0] and not node[n0] or used[st] and not node[st]: continue
+            path = [st, n0]
+            if not node[n0]: used[n0] = True
+            while not node[path[-1]]:
+                nx_ = [q for q in nbrs(*path[-1]) if q not in path[-3:] and (node[q] or not used[q])]
+                if not nx_: break
+                q = nx_[0]; path.append(q)
+                if not node[q]: used[q] = True
+            if len(path) > 2 or node[n0]: paths.append([(x, y) for y, x in path])
+    return paths
+def reroute(sk, avoid, pull=.4, far=12):
+    """plan B: the carried centre lines bend where the warp squeezes the land beside a town (a V, a hairpin). Each stretch between two ends / junctions is
+    walked again as the cheapest path between its ends: one step costs 1, plus `pull` per tile away from the carried line (up to `far`), plus 60 on `avoid` (water)"""
+    dl = np.minimum(ndi.distance_transform_edt(~sk), far); cost = 1 + pull * dl + 60 * avoid; out = np.zeros_like(sk); n = 0; paths = trace(sk)
+    for pi, path in enumerate(paths):
+        if len(path) < 10:
+            for x, y in path: out[y, x] = True
+            continue
+        (xa, ya), (xb, yb) = path[0], path[-1]; xs_, ys_ = [p_[0] for p_ in path], [p_[1] for p_ in path]
+        x0, x1 = max(0, min(xs_) - 24), min(sk.shape[1], max(xs_) + 25); y0, y1 = max(0, min(ys_) - 24), min(sk.shape[0], max(ys_) + 25)
+        oth = np.zeros((y1 - y0, x1 - x0), bool)                     # keep off the other stretches (no second road alongside one), except where this one joins them
+        for pj, p2 in enumerate(paths):
+            if pj != pi:
+                for x, y in p2:
+                    if x0 <= x < x1 and y0 <= y < y1: oth[y - y0, x - x0] = True
+        near = ndi.distance_transform_edt(~oth) < 5; yy_, xx_ = np.mgrid[y0:y1, x0:x1]
+        near &= (np.hypot(xx_ - xa, yy_ - ya) > 6) & (np.hypot(xx_ - xb, yy_ - yb) > 6)
+        cw = cost[y0:y1, x0:x1] + 30 * near; best = np.full(cw.shape, np.inf); prev = {}; s_, e_ = (ya - y0, xa - x0), (yb - y0, xb - x0); best[s_] = 0; pq = [(0.0, s_)]
+        while pq:
+            d, (y, x) = heapq.heappop(pq)
+            if (y, x) == e_: break
+            if d > best[y, x]: continue
+            for dy, dx, k in ((0, 1, 1), (1, 0, 1), (0, -1, 1), (-1, 0, 1), (1, 1, 1.42), (1, -1, 1.42), (-1, 1, 1.42), (-1, -1, 1.42)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < cw.shape[0] and 0 <= nx < cw.shape[1]:
+                    nd = d + k * (cw[y, x] + cw[ny, nx]) / 2
+                    if nd < best[ny, nx]: best[ny, nx] = nd; prev[(ny, nx)] = (y, x); heapq.heappush(pq, (nd, (ny, nx)))
+        q = e_
+        while q != s_: out[q[0] + y0, q[1] + x0] = True; q = prev[q]
+        out[ya, xa] = True; n += 1
+    log('roads re-walked', n)
+    lb, nl = ndi.label(~out); sz = ndi.sum(~out, lb, range(1, nl + 1)); out |= np.isin(lb, [i + 1 for i, v in enumerate(sz) if v <= 30])     # small loops where stretches meet close up
+    return thin(out)
+def area_old(mask):
+    """a map px mask as the share of each OLD tile it covers"""
+    return np.array(Image.fromarray((mask * 255).astype(np.uint8)).resize((W0, H0), Image.BOX)).astype(np.float32) / 255
+def onnew(a, order=1):
+    """an old-grid array sampled at every new tile (plan B)"""
+    return ndi.map_coordinates(a, [OYY, OXX], order=order, mode='nearest')
+def area(mask, th): return onnew(area_old(mask)) > th
+roadt_o = area_old(road_px) > .35                    # the roads are traced on the OLD grid (the drawn band is ~15 tiles wide there) and their centre lines carried over
+icont_o = dil(area_old(iconc) > .3, 3)
 icont = dil(area(iconc, .3), 3)
 TOWN = {}
 for code, name, px, py in PLACES:
-    w = blue[py - 70:py + 70, px - 70:px + 70]; yy, xx = np.nonzero(w)
-    cx, cy = (px - 70 + xx.mean(), py - 70 + yy.mean()) if len(xx) else (px, py)
-    TOWN[code] = dict(code=code, name=name, id=slug(name), kind=code[0], R=RADIUS[code[0]], tx=int(cx / S), ty=int(cy / S))
+    cx, cy = OLDC[code]; ox, oy = int(cx / S), int(cy / S)
+    TOWN[code] = dict(code=code, name=name, id=slug(name), kind=code[0], R=RADIUS[code[0]], tx=ox + SHIFT[code][0], ty=oy + SHIFT[code][1], ox=ox, oy=oy)
 dland = ndi.distance_transform_edt(land)
 for t in TOWN.values():                              # a few icons sit on the shoreline: move those inland until the disc centre has solid ground around it
     if dland[t['ty'], t['tx']] < 6:
         w = np.argwhere(dland[t['ty'] - 45:t['ty'] + 45, t['tx'] - 45:t['tx'] + 45] >= 8) + (t['ty'] - 45, t['tx'] - 45)
         k = np.hypot(w[:, 0] - t['ty'], w[:, 1] - t['tx']).argmin(); print(f"  {t['name']}: icon on the shore, centre moved {np.hypot(*(w[k] - (t['ty'], t['tx']))):.0f} tiles inland"); t['ty'], t['tx'] = map(int, w[k])
 del loc, terr16, road_px, iconc, blue
-roadt &= ~icont
+roadt = roadt_o & ~icont_o
 lab, n = ndi.label(roadt, np.ones((3, 3)))
 sz = ndi.sum(roadt, lab, range(1, n + 1)); roadt = np.isin(lab, [i + 1 for i, s in enumerate(sz) if s >= 80])
-# Route 16 / 17 pass behind the left and right peaks in the artwork: bridge each hidden stretch with a straight band
-gap = np.zeros((HP, WP), np.uint8)
+# Route 16 / 17 pass behind the left and right peaks in the artwork: bridge each hidden stretch with a straight band (old grid)
+gap = np.zeros((H0, W0), np.uint8)
 for (ya, yb, xa, xb), (yc, yd, xc, xd) in (((325, 360, 380, 430), (320, 350, 480, 540)), ((325, 352, 585, 632), (318, 348, 636, 690))):
     a = np.argwhere(roadt[ya:yb, xa:xb]); a = a[a[:, 1].argmax()] + (ya, xa)
     b = np.argwhere(roadt[yc:yd, xc:xd]); b = b[b[:, 1].argmin()] + (yc, xc)
     u = (b - a) / np.hypot(*(b - a))
     for k in np.linspace(-12, np.hypot(*(b - a)) + 12, 400): gap[int(a[0] + u[0] * k), int(a[1] + u[1] * k)] = 1
 roadt |= dil(gap > 0, 7)
-dt = ndi.distance_transform_edt(roadt)
-ridge = thin(dt >= 4.5) | (gap > 0)                   # the centre line of the ~15 tile wide drawn road
+dt_o = ndi.distance_transform_edt(roadt)
+ridge_o = thin(dt_o >= 4.5) | (gap > 0)               # the centre line of the ~15 tile wide drawn road (old grid)
+ridge = np.zeros((HP, WP), bool); _y, _x = np.nonzero(ridge_o); _nx, _ny = WARP.tiles(_x, _y); ridge[_ny, _nx] = True
+if K != 1:                                           # plan B: join each pair of neighbouring centre-line cells with a line on the new grid (the warp can pull them apart), close pinholes, thin again
+    _id = -np.ones((H0, W0), np.int64); _id[_y, _x] = np.arange(len(_x))
+    for _dy, _dx in ((0, 1), (1, 0), (1, 1), (1, -1)):
+        _j = _id[np.clip(_y + _dy, 0, H0 - 1), np.clip(_x + _dx, 0, W0 - 1)]; _k = np.nonzero(_j >= 0)[0]
+        for i_, j_ in zip(_k, _j[_k]):
+            if abs(_nx[i_] - _nx[j_]) > 1 or abs(_ny[i_] - _ny[j_]) > 1:
+                for _px, _py in bline((_nx[i_], _ny[i_]), (_nx[j_], _ny[j_])): ridge[_py, _px] = True
+    _lb, _n = ndi.label(~ridge); _sz = ndi.sum(~ridge, _lb, range(1, _n + 1)); ridge |= np.isin(_lb, [i + 1 for i, v in enumerate(_sz) if v <= 12])
+    ridge = reroute(thin(ridge), sea | inl)
+dt = onnew(dt_o); roadt = onnew(roadt.astype(np.float32)) > .5
 band = snap_road(ridge, 3) & ~(dil(sea, 1))           # v2: a 3 wide road laid as blocks of 3, long straight runs and proper corners where the artwork's line wanders (no 1 tile sawtooth)
 log('road band tiles', int(band.sum()))
 
@@ -203,10 +323,10 @@ log('road band tiles', int(band.sum()))
 cave_seed = (int(LABELS[4][0] / S), int(LABELS[4][1] / S))
 mt = (cls == C['rock']) | (cls == C['cap'])
 lab, n = ndi.label(mt, np.ones((3, 3))); sz = ndi.sum(mt, lab, range(1, n + 1))
-mount = np.isin(lab, [i + 1 for i, s in enumerate(sz) if s >= 6000])
+mount = np.isin(lab, [i + 1 for i, s in enumerate(sz) if s >= 6000 * KA])
 cs = lab[cave_seed[1] - 6:cave_seed[1] + 7, cave_seed[0] - 6:cave_seed[0] + 7]; cs = cs[cs > 0]
 cave = lab == np.bincount(cs).argmax() if len(cs) else np.zeros_like(mt)
-if cave.sum() > 9000: print('WARN cave blob merged with something big'); cave = np.zeros_like(mt)
+if cave.sum() > 9000 * KA: print('WARN cave blob merged with something big'); cave = np.zeros_like(mt)
 mount &= ~cave
 mount = ndi.binary_fill_holes(mount | dil(mount, 2)) & land
 dist = ndi.distance_transform_edt(mount)
@@ -217,7 +337,6 @@ Ht[cave] = 3
 log('mountain tiles', int(mount.sum()), 'cave', int(cave.sum()))
 
 # ---------------------------------------------------------------- zones: routes from the road band, split by label (geodesic)
-import heapq
 from scipy.spatial import cKDTree
 disc = np.zeros((HP, WP), bool); tid = np.zeros((HP, WP), np.int16); TL = list(TOWN.values())
 for i, t in enumerate(TL, 1):
@@ -279,16 +398,16 @@ if '--supply' in sys.argv:
     open(wf, 'w', encoding='utf8').write(txt[:i] + json.dumps(w, separators=(',', ':')) + ';\n'); print('patched world.js with the supply path'); sys.exit(0)
 
 # T5: Route 9's tidal inlet, a salt channel that runs inland south of the road (the working shore: nets, boats and racks on its banks); Route 10's lake is left as the map has it
-INLET = [(98, 812, 4.2), (112, 812, 3.8), (124, 812, 3.6), (140, 811, 3.4), (156, 810.5, 3.1), (172, 810, 2.9), (190, 810.5, 2.7), (206, 811, 2.5), (222, 811.5, 2.3)]
+INLET = [(*wpf(x, y), r) for x, y, r in [(98, 812, 4.2), (112, 812, 3.8), (124, 812, 3.6), (140, 811, 3.4), (156, 810.5, 3.1), (172, 810, 2.9), (190, 810.5, 2.7), (206, 811, 2.5), (222, 811.5, 2.3)]]
 inlet = stroke(INLET) & ~dil(roadc, 3) & ~mount
 water |= inlet; inl |= inlet; land = ~water; beachc &= land
 log('T5 inlet', int(inlet.sum()))
 # T5 Salt Bay v2 (layout: tools/adv-towns/t5-layout.py -> T5.json): a harbour basin with rounded corners cut into the beach, so the quay has a real shore to stand on and the piers a bay to cross
-t5x, t5y = TOWN['T5']['tx'], TOWN['T5']['ty']
+t5x, t5y = TOWN['T5']['tx'], TOWN['T5']['ty']; o5x, o5y = TOWN['T5']['ox'], TOWN['T5']['oy']
 def rr_box(x0, y0, x1, y1, r):
     """a rounded-corner box of cells (tile corners, inclusive), for basins and yards: no hard rectangles"""
     m = np.zeros((HP, WP), bool); m[y0:y1 + 1, x0:x1 + 1] = rrect_mask(y1 - y0 + 1, x1 - x0 + 1, r); return m
-w5 = (np.abs(YY - (t5y - 17)) <= 23) & (XX <= t5x - 6) & ~dil(roadc, 2) & ~mount         # the sea shore beside the town runs in straight runs of 4+ tiles with rounded jogs, not a 1 tile staircase
+w5 = (np.abs(OYY - (o5y - 17)) <= 23) & (OXX <= o5x - 6) & ~dil(roadc, 2) & ~mount         # the sea shore beside the town runs in straight runs of 4+ tiles with rounded jogs, not a 1 tile staircase
 sq5 = blocky(sea, 4, .5); sea = np.where(w5, sq5, sea); water = np.where(w5, sq5 | inl, water); land = ~water; beachc &= land
 basin5 = rr_box(t5x - 26, t5y - 4, t5x - 4, t5y + 9, 4) & ~dil(roadc, 2) & ~mount
 water |= basin5; sea |= basin5; land = ~water; beachc &= land
@@ -296,7 +415,7 @@ log('T5 harbour basin', int(basin5.sum()))
 
 # T6 Spindlewood: a sheltered cove cut into the shore south-east of the town centre, open to the sea on its east side (the timber wharf and piers across it are laid out in tools/adv-towns/T6.json)
 t6x, t6y = TOWN['T6']['tx'], TOWN['T6']['ty']
-cove = (((XX - (t6x + 23)) / 11.5) ** 2 + ((YY - (t6y + 15)) / 7.5) ** 2 <= 1) & ~dil(roadc, 3) & ~mount
+cove = (((OXX - (TOWN['T6']['ox'] + 23)) / 11.5) ** 2 + ((OYY - (TOWN['T6']['oy'] + 15)) / 7.5) ** 2 <= 1) & ~dil(roadc, 3) & ~mount
 water |= cove; inl |= cove; land = ~water; beachc &= land
 log('T6 cove', int(cove.sum()))
 
@@ -304,9 +423,9 @@ log('T6 cove', int(cove.sum()))
 # hugging the line 12 tiles inland of the water, above the dark beach), ending where the coast bends away at the western bay. Its dark sand, sea cliffs and props are in the T8 blocks further down.
 T8T = TOWN['T8']; t8x, t8y = T8T['tx'], T8T['ty']
 def road103_line():
-    x0, x1, y0, y1 = 585, 752, 1040, 1140
+    y0, y1, x0, x1 = wbox(1040, 1140, 585, 752)
     okk = (land & (dland >= 3) & ~mount & ~cave & ~dil(roadc, 2))[y0:y1, x0:x1]; dd = dland[y0:y1, x0:x1]
-    sy, sx = t8y + 11 - y0, t8x - 25 - x0; ec = 602 - x0
+    sy, sx = t8y + 11 - y0, t8x - 25 - x0; ec = wpt(602, 1090)[0] - x0
     cand = np.nonzero(okk[:, ec])[0]; ey = int(cand[np.abs(dd[cand, ec] - 12).argmin()])
     best = {(sy, sx): 0.0}; prev = {}; pq = [(0.0, sy, sx)]
     while pq:
@@ -340,7 +459,8 @@ log('T8 Route 103 road', int(road103.sum()), 'tiles from', ROAD103[0][:2], 'to',
 L4T = TOWN['L4']; l4x, l4y = L4T['tx'], L4T['ty']
 r1_old = (rz == 1) & roadc
 _ys, _xs = np.nonzero(r1_old); _k = (ndi.distance_transform_edt(~((rz == 2) & roadc))[_ys, _xs]).argmin(); R1S = (int(_xs[_k]), int(_ys[_k]))
-R1WAY = [R1S, (R1S[0], 1000), (522, 1000), (522, 1022), (538, 1022), (538, 1046), (516, 1046), (516, 1064), (496, 1064), (496, 1086), (l4x, 1086), (l4x, l4y - 6)]      # v2: axis-aligned runs of 10 to 24 joined by right angles (the tile corners round them), no diagonal staircase
+_w = waxis([(522, 1000), (522, 1022), (538, 1022), (538, 1046), (516, 1046), (516, 1064), (496, 1064), (496, 1086)])
+R1WAY = [R1S, (R1S[0], _w[0][1])] + _w + [(l4x, _w[-1][1]), (l4x, l4y - 6)]      # v2: axis-aligned runs of 10 to 24 joined by right angles (the tile corners round them), no diagonal staircase
 def smooth_poly(way, k=6):
     pts_ = [way[0]]
     for (xa, ya), (xb, yb) in zip(way, way[1:]):
@@ -358,8 +478,8 @@ log('L4 Route 1 road', int(road1_new.sum()), 'tiles, length', int(R1LEN), 'from'
 
 # plateaus: scattered 1 level blocks on the Eastern Ridge, the massif foothills and Route 7 edges
 snowp = cls == C['snow']
-near_r7 = dil(rz == 7, 24)
-zone_pl = (dil(mount, 50) & ~mount & (noise(8, 2) > .6)) | (dil(snowp, 30) & (noise(8, 3) > .35)) | (near_r7 & (noise(8, 4) > .45))
+near_r7 = dil(rz == 7, int(24 * K))
+zone_pl = (dil(mount, int(50 * K)) & ~mount & (noise(8, 2) > .6)) | (dil(snowp, int(30 * K)) & (noise(8, 3) > .35)) | (near_r7 & (noise(8, 4) > .45))
 zone_pl &= land & ~beachc & ~dil(band, 3) & ~dil(disc, 3) & ~dil(water, 3) & ~mount & ~cave & ~dil(cave, 3)
 zone_pl = ndi.binary_fill_holes(ndi.binary_opening(zone_pl, disk(2)))
 lab, n = ndi.label(zone_pl); sz = ndi.sum(zone_pl, lab, range(1, n + 1)); zone_pl = np.isin(lab, [i + 1 for i, s in enumerate(sz) if s >= 60])
@@ -378,7 +498,7 @@ log('heights done')
 # ---------------------------------------------------------------- materials
 mat = np.full((HP, WP), GRASS, np.uint8)
 mat[cls == C['beach']] = SAND
-des = (ndi.distance_transform_edt(~sea) > 70) & (cls == C['beach'])
+des = (ndi.distance_transform_edt(~sea) > 70 * K) & (cls == C['beach'])
 mat[des | (cls == C['scrub'])] = DUNE
 mat[(cls == C['fungal']) | (cls == C['shroom'])] = SWAMP
 mat[cls == C['snow']] = SNOW
@@ -398,10 +518,10 @@ h[roadm] = Ht[roadm]
 mat[disc & land & ~roadm] = np.where(mat[disc & land & ~roadm] == GRASS, GRASS, mat[disc & land & ~roadm])
 lakew = water & ~sea & ~riv & ~inlet                       # T5: the Western Woods lake gets a sandy shore by the Route 10 campsite
 ring9 = dil(inlet, 2) & ~inlet & land & (mat == GRASS) & ~dil(roadm, 1)
-ringL = dil(lakew, 2) & ~lakew & land & (mat == GRASS) & ~dil(roadm, 2) & (XX >= 258) & (XX <= 296) & (YY >= 704) & (YY <= 730)
+ringL = dil(lakew, 2) & ~lakew & land & (mat == GRASS) & ~dil(roadm, 2) & (OXX >= 258) & (OXX <= 296) & (OYY >= 704) & (OYY <= 730)
 mat[ring9 | ringL] = SAND
 # T7 Longshore: a wide beach, a bay that never gets deep (shallow sand-water all the way out), and Route 6's first stretch dusted with sand carried off the resort
-T7 = TOWN['T7']; t7x, t7y = T7['tx'], T7['ty']; rt7 = np.hypot(XX - t7x, YY - t7y)
+T7 = TOWN['T7']; t7x, t7y = T7['tx'], T7['ty']; rt7 = odist('T7')
 road6 = (rz == 6) & roadc; d6 = ndi.distance_transform_edt(~road6)
 beach7 = land & (kind == 0) & (mat == GRASS) & (dland <= 13 + 3 * noise(6, 81)) & (rt7 <= 100)
 spill7 = land & (kind == 0) & (mat == GRASS) & (d6 <= 6 + 2 * noise(5, 82)) & (rt7 <= 56 + 6 * noise(7, 83))
@@ -411,11 +531,11 @@ log('T7 beach', int(beach7.sum()), 'route 6 sand', int(spill7.sum()), 'shallows'
 # T5 v2: the beach's inland edge is a long soft curve in 3 tile runs instead of a ruler line (grass reaches in towards the harbour, sand runs out along the lanes)
 e5 = 6 + 3 * np.sin((YY - t5y) / 9.0) + 1.5 * np.sin((YY - t5y) / 4.3 + 1)
 sand5 = blocky((XX - t5x) <= e5, 3, .5)
-z5 = (np.abs(XX - t5x) <= 40) & (YY >= t5y - 40) & (YY <= t5y + 11) & land & (kind == 0) & ((mat == SAND) | (mat == GRASS)) & ~dil(roadm, 1)
+z5 = (np.abs(OXX - o5x) <= 40) & (OYY >= o5y - 40) & (OYY <= o5y + 11) & land & (kind == 0) & ((mat == SAND) | (mat == GRASS)) & ~dil(roadm, 1)
 mat[z5 & sand5] = SAND; mat[z5 & ~sand5] = GRASS
 mat[basin5 & (XX >= t5x - 20)] = SWAT                  # the harbour basin is all shallow: no deep rectangle inside it
 # G8 Sporehaven: damp, dark ground (swamp) over the whole town and its wood, and Route 2 is the fungal forest the whole way (a corridor of swamp with standing water between the caps, from where the Pinegrove clearing ends to the town)
-G8T = TOWN['G8']; g8x, g8y = G8T['tx'], G8T['ty']; dg8 = np.hypot(XX - g8x, YY - g8y); dg6r = np.hypot(XX - TOWN['G6']['tx'], YY - TOWN['G6']['ty'])
+G8T = TOWN['G8']; g8x, g8y = G8T['tx'], G8T['ty']; dg8 = odist('G8'); dg6r = odist('G6')
 road2 = (rz == 2) & roadc; d2 = ndi.distance_transform_edt(~road2)
 fung2 = (d2 <= 15 + 3 * noise(5, 94)) & (dg6r > 41) & land & ~mount & ~cave & ~dil(water, 2) & (kind == 0)
 fung8 = ((dg8 <= 52) | fung2) & land & (mat == GRASS) & ~dil(roadm, 0) & (kind == 0)
@@ -514,9 +634,6 @@ def board(y0, y1, x0, x1):
     global land
     m = np.zeros((HP, WP), bool); m[y0:y1 + 1, x0:x1 + 1] = True
     water[m] = False; sea[m] = False; land = ~water; mat[m] = BW; h[m] = 0; kind[m] = 0; paved[m] = True
-def bline(p, q):
-    n = int(max(abs(q[0] - p[0]), abs(q[1] - p[1]))) * 2 + 1
-    return [(int(round(p[0] + (q[0] - p[0]) * k / n)), int(round(p[1] + (q[1] - p[1]) * k / n))) for k in range(n + 1)]
 def building(t, name, y, cc0, occ_rows=None):
     """try to put building `name` with its door column cc as near cc0 as possible on street top row y; returns door cell or None"""
     d = P(name); hw = int(np.ceil(d['sw'] / 2 / T)) + 1; rows = min(3 if t['kind'] == 'L' else 5, int(np.ceil(d['ay'] / T)))
@@ -542,7 +659,7 @@ def building_at(t, name, fx, fy, fp=None):
     props.append([name, int(round((cc + .5) * T - dx)), int(y * T - 1)])
     if fp:
         c0, r0, c1 = cc - fp['ex'], y - fp['d'], cc - fp['ex'] + fp['w']; reg = (slice(r0, y), slice(c0, c1))
-        assert not (paved[reg].any() or water[reg].any() or (h[reg] != t['lv']).any() or (kind[reg] != 0).any()), f'{name}: footprint {c0},{r0} {fp["w"]}x{fp["d"]} is not level, dry, unpaved ground'
+        assert not (paved[reg].any() or water[reg].any() or (h[reg] != t['lv']).any() or (kind[reg] != 0).any()), f'{name}: footprint {c0},{r0} {fp["w"]}x{fp["d"]} is not level, dry, unpaved ground (paved {int(paved[reg].sum())} water {int(water[reg].sum())} h {np.unique(h[reg]).tolist()} lv {t["lv"]} kind {np.unique(kind[reg]).tolist()})'
         occ[r0 - 1:y, c0 - 1:c1 + 1] = True
         px, py = props[-1][1], props[-1][2]   # the sprite must cover the footprint and its upright back wall (a tile of wall height)
         if c0 * T < px - d['ax'] - T // 2 or c1 * T > px - d['ax'] + d['sw'] + T // 2 or r0 * T - T < py - d['ay'] - 20: print(f'WARN {name}: the footprint pokes out of the sprite')
@@ -555,11 +672,17 @@ def connect(t, m=PAVE):
     for i in range(1, nb + 1):
         c = np.argwhere(lb == i); tip = c[np.hypot(c[:, 0] - cy, c[:, 1] - cx).argmin()]
         if (paved[tip[0], tip[1]]): continue
+        if K != 1 and np.hypot(tip[0] - cy, tip[1] - cx) > R + 4: continue     # plan B: a road squeezed past the town's edge is not one that ends at it
         d, k = pt.query(tip); q = pv[k]
         for (py_, px_) in bline(tip, q): pave(py_ - 2, py_ + 1, px_ - 2, px_ + 1, t, R + 16, m)
 town_out = {}
 DECO = []                                            # [code, centre x, centre y, deco list] from the hand layouts
 NPC_SRC = open(os.path.join(OUT, 'npcs.js'), encoding='utf8', newline='').read().split('\n'); NPCS = []       # (id, x, y, face, trainer?, line index)
+_ws = re.search(r'"scale":([0-9.]+)', open(os.path.join(OUT, 'world.js'), encoding='utf8').read()); NPC_WARP = K != 1 and not _ws    # plan B: npcs.js still has old-scale positions, carry them over
+if NPC_WARP:
+    for _i, _l in enumerate(NPC_SRC):
+        _m = re.match(r"(\s*\{ id: '[^']+', )x: (\d+), y: (\d+),", _l)
+        if _m: _x, _y = wpt(int(_m.group(2)), int(_m.group(3))); NPC_SRC[_i] = _m.group(1) + f'x: {_x}, y: {_y},' + _l[_m.end():]
 for _i, _l in enumerate(NPC_SRC):
     _m = re.match(r"\s*\{ id: '([^']+)', x: (\d+), y: (\d+),.*?face: (\d)", _l)
     if _m: NPCS.append((_m.group(1), int(_m.group(2)), int(_m.group(3)), int(_m.group(4)), 'trainer:' in _l or (_i + 1 < len(NPC_SRC) and NPC_SRC[_i + 1].lstrip().startswith('trainer:')), _i))
@@ -652,8 +775,8 @@ if cave.any():
 G7 = TOWN['G7']; g7x, g7y = G7['tx'], G7['ty']
 road5, road7, road8 = ((rz == k) & roadc & ~brk for k in (5, 7, 8))
 d5, d7, d8 = (ndi.distance_transform_edt(~m_) for m_ in (road5, road7, road8))
-dg = np.hypot(XX - g7x, YY - g7y); dr = ndi.distance_transform_edt(~riv)
-bare = (d5 < 34) | (d7 < 36) | (dg < 64)                  # open country: no forest here
+dg = np.hypot(XX - g7x, YY - g7y); dr = ndi.distance_transform_edt(~riv)      # tiles: the farm ring round Goldacre keeps its true width
+bare = (d5 < 34) | (d7 < 36 * K) | (dg < 64)       # Route 5 keeps its full farm belt (the farmland is the route)                  # open country: no forest here
 flat1 = ndi.maximum_filter(h, 3) == ndi.minimum_filter(h, 3)
 PLOTS = []; plotocc = np.zeros((HP, WP), bool)
 def fields(region, seed, step=(15, 11)):
@@ -677,8 +800,8 @@ n2 = fields((d5 >= 5.5) & (d5 <= 40) & (d5 < d8) & (dg > 44), 42)
 log('crop plots: Goldacre', n1, 'Route 5', n2)
 # Route 7: broken, rising ground on both sides of the road (1-2 level ridges with stairs); the turbines go on the ridge tops
 rn1, rn2, rn3 = noise(7, 21), noise(6, 22), noise(5, 23)
-xr = (XX >= 222) & (XX <= 298)
-rl = (d7 >= 11 + 2 * rn1) & (d7 <= 38 + 4 * rn2) & xr & (rn3 > -1.0)
+xr = (OXX >= 222) & (OXX <= 298)
+rl = (d7 >= 11 + 2 * rn1) & (d7 <= 38 * K + 4 * rn2) & xr & (rn3 > -1.0)
 rl &= land & ~dil(water, 3) & ~dil(roadm, 6) & (dg > 47) & (mat == GRASS) & (kind == 0) & ~dil(brk, 3) & ~dil(occ | plotocc, 3)
 rl = ndi.binary_opening(rl, disk(2)); lb_, nb_ = ndi.label(rl); sz_ = ndi.sum(rl, lb_, range(1, nb_ + 1)); rdg7 = np.isin(lb_, [i + 1 for i, v in enumerate(sz_) if v >= 90])
 rdg7 = blocky(rdg7, 3) & land & ~dil(water, 2) & ~dil(roadm, 5) & (mat == GRASS) & (kind == 0)        # v2: ridges in straight runs
@@ -709,7 +832,7 @@ swm = ndi.binary_opening(swm, disk(1))
 pud = swm & (noise(2.2, 32) > .9) & (dr > 3) & ~dil(road8, 2); pud = ndi.binary_opening(pud, disk(1))
 mat[wg] = WETG; mat[swm] = SWAMP; mat[pud] = FORD; ford |= pud
 trk = np.zeros((HP, WP), bool)
-WAY = [(281, 829), (281, 841), (264, 841), (264, 849), (249, 849), (249, 836), (252, 836), (252, 815), (254, 815), (254, 807)]      # v2: long straight runs (no 1 tile staircase)
+WAY = waxis([(281, 829), (281, 841), (264, 841), (264, 849), (249, 849), (249, 836), (252, 836), (252, 815), (254, 815), (254, 807)])      # v2: long straight runs (no 1 tile staircase)
 for a, b in zip(WAY, WAY[1:]):
     for px_, py_ in bline(a, b): trk[py_:py_ + 2, px_:px_ + 2] = True
 trk &= land & (kind == 0) & (h == 0)
@@ -717,21 +840,21 @@ mat[trk & (mat != FORD)] = PATH; roadm |= trk; paved |= trk & False
 log('Route 8 swamp', int(swm.sum()), 'puddles', int(pud.sum()), 'track', int(trk.sum()))
 
 # ---------------------------------------------------------------- T8 Duskmoss (docs/TOWNPASS.md): the treeline north-west of the town, and Route 103's black shore with its sea cliffs
-dT8 = np.hypot(XX - t8x, YY - t8y); road103 = (rz == 103) & roadc & ~brk
+dT8 = odist('T8'); o8x, o8y = T8T['ox'], T8T['oy']; road103 = (rz == 103) & roadc & ~brk
 nw8 = (XX - t8x) + (YY - t8y) < -10
 fung8t = land & nw8 & (dT8 >= 28) & (dT8 <= 62 + 3 * noise(6, 103)) & (mat == GRASS) & (kind == 0) & ~roadm & ~dil(water, 1) & ~mount
 mat[fung8t] = SWAMP                                    # swamp ground under the wood that stops at the cut line; the town itself stays plain
-shore8 = land & (kind == 0) & (h == 0) & (dT8 > 31) & (YY >= t8y + 16) & (XX >= 585) & (XX <= t8x - 12) & ~dil(brk, 1)
+shore8 = land & (kind == 0) & (h == 0) & (dT8 > 31) & (OYY >= o8y + 16) & (OXX >= 585) & (OXX <= o8x - 12) & ~dil(brk, 1)
 black = shore8 & (dland <= 9 + 1.5 * noise(5, 104)) & ~roadm & ((mat == GRASS) | (mat == SAND) | (mat == DUNE))
 mat[black] = ASH                                       # the dark sand
 lg1, lg2 = noise(7, 105), noise(6, 106)
-ledge = shore8 & (dland >= 19 + 2 * lg1) & (dland <= 33 + 3 * lg2) & (YY >= t8y + 24) & (lg2 > -.25) & ~dil(roadm, 5) & ~dil(water, 3) & (mat != FORD)
+ledge = shore8 & (dland >= 19 * K + 2 * lg1) & (dland <= 33 * K + 3 * lg2) & (OYY >= o8y + 24) & (lg2 > -.25) & ~dil(roadm, 5) & ~dil(water, 3) & (mat != FORD)
 ledge = ndi.binary_opening(ledge, disk(2)); lb_, nb_ = ndi.label(ledge); sz_ = ndi.sum(ledge, lb_, range(1, nb_ + 1)); ledge = blocky(np.isin(lb_, [i + 1 for i, v in enumerate(sz_) if v >= 90]), 3) & shore8 & ~dil(roadm, 3) & ~dil(water, 2)       # v2: straight runs
 h[ledge] = 1                                          # the sea cliffs: 1 level ledges landward of the beach, stairs round their feet
 log('T8 treeline swamp', int(fung8t.sum()), 'black sand', int(black.sum()), 'cliff ledges', int(ledge.sum()), 'tiles, stairs', stairs_pass(dil(ledge, 1), 15, 53))
 
 # ---------------------------------------------------------------- L4 Quiet Plain (docs/TOWNPASS.md): open grass round the memorial with no trees, and Route 1 as an old paved road with grass forced up through the seams (more of it nearer the memorial)
-dL4 = np.hypot(XX - l4x, YY - l4y); road1 = (rz == 1) & roadc & ~brk; d1r = ndi.distance_transform_edt(~road1)
+dL4 = odist('L4'); road1 = (rz == 1) & roadc & ~brk; d1r = ndi.distance_transform_edt(~road1)
 core4 = (dL4 < 46) & land; bare |= core4 | (d1r <= 16)                  # `bare` = open country: no forest scatter; core4 also loses the open-ground trees and bushes below
 mat[road1 & land] = PAVE
 crack = (np.random.default_rng(201).random((HP, WP)) < .09 + .12 * np.clip(1 - (dL4 - 10) / 130, 0, 1)) & road1 & ~poly_mask(R1PTS) & ~(np.roll(road1, 1, 1) & np.roll(road1, 1, 0)) & (dL4 > 8) & (np.hypot(XX - R1S[0], YY - R1S[1]) > 7)          # small holes: about a sixth of the cells at the Route 2 end, a third by the memorial; the centre line and the junction stay whole
@@ -904,7 +1027,7 @@ rw = np.random.default_rng(63); wl = []
 for y, x in np.argwhere(wc)[np.random.default_rng(64).permutation(int(wc.sum()))]:
     if rw.random() > .06 or any((y - b) ** 2 + (x - a) ** 2 < 36 for a, b in wl): continue
     wl.append((x, y)); props.append(['bigOakVines', int((x + .5) * T), int((y + 1) * T - 2)]); occ[y - 1:y + 2, x - 1:x + 2] = True; c1n['willow'] += 1
-for x, y in ((243, 840), (240, 853), (297, 816)):
+for x, y in (wpt(243, 840), wpt(240, 853), wpt(297, 816)):
     for dx, dy, nm in ((-17, -4, 'fallenLog'), (17, -4, 'fallenLog'), (0, 8, 'logShort'), (-15, 12, 'logShort'), (16, 14, 'fallenLog')):
         props.append([nm, int((x + .5) * T + dx), int((y + .5) * T + dy)]); c1n['dam'] += 1
 log('C1 props A', dict(c1n))
@@ -912,22 +1035,23 @@ log('C1 props A', dict(c1n))
 # ---------------------------------------------------------------- T5 props: Route 9's working shore (racks, nets, boats and pots along the inlet bank), the Route 10 lake campsite with its register and dock, route signs
 t5n = collections.Counter(); d_in = ndi.distance_transform_edt(~inlet)
 def t5put(nm, x, y, r=2):
-    assert land[y, x] and not roadm[y, x], f'T5 prop {nm} at {x},{y} is not on free land'
+    if not (land[y, x] and not roadm[y, x]): print(f'WARN T5 prop {nm} at {x},{y} is not on free land'); return
     props.append([nm, int((x + .5) * T), int((y + 1) * T - 4)]); occ[y - 1:y + 2, x - r:x + r + 1] = True; t5n[nm] += 1
-cand9 = land & (kind == 0) & (h == 0) & (mat != FORD) & ~occ & ~dil(roadm, 2) & ~dil(paved, 1) & (d_in >= 1.6) & (d_in <= 5.2) & (XX >= 166) & (XX <= 232)
+cand9 = land & (kind == 0) & (h == 0) & (mat != FORD) & ~occ & ~dil(roadm, 2) & ~dil(paved, 1) & (d_in >= 1.6) & (d_in <= 5.2) & (OXX >= 166) & (OXX <= 232)
 SHORE9 = [None, 'maRowboat', None, None, 'maRowboat', None, None, None]      # only the boats are real art; the racks, nets and pots are missing art (docs/TILE-QA.md)
 for k, x in enumerate(range(172, 232, 7)):
-    nm = SHORE9[k % len(SHORE9)]
+    nm = SHORE9[k % len(SHORE9)]; x = wpt(x, 811)[0]
     if nm is None: continue
     tgt = 2.2
     c = np.argwhere(cand9 & (np.abs(XX - x) <= 2))
     if not len(c): continue
     y0, x0 = c[np.abs(d_in[c[:, 0], c[:, 1]] - tgt).argmin()]
     t5put(nm, int(x0), int(y0), 2); cand9 &= ~occ
-board(717, 718, 266, 277)                             # the campsite dock into the lake
-for nm, x, y in (('tentPair', 264, 711), ('tentPair', 267, 721), ('tentPair', 262, 724), ('twigs', 265, 715), ('benchTeal', 263, 717), ('benchTeal', 267, 714), ('noticeBoard', 262, 715), ('barrelOrange', 268, 724), ('crateBox', 264, 722), ('lampPost', 263, 719)):
+CAMP = np.subtract(wpt(266, 718), (266, 718))       # plan B: the campsite moves as one piece with the lake shore it was laid against
+board(717 + CAMP[1], 718 + CAMP[1], 266 + CAMP[0], 277 + CAMP[0])   # the campsite dock into the lake
+for nm, x, y in ((nm, x + CAMP[0], y + CAMP[1]) for nm, x, y in (('tentPair', 264, 711), ('tentPair', 267, 721), ('tentPair', 262, 724), ('twigs', 265, 715), ('benchTeal', 263, 717), ('benchTeal', 267, 714), ('noticeBoard', 262, 715), ('barrelOrange', 268, 724), ('crateBox', 264, 722), ('lampPost', 263, 719))):
     t5put(nm, x, y, 1)
-for nm, x, y in (('streetSign', 249, 791), ('streetSign', 237, 792)): t5put(nm, x, y, 1)
+for nm, x, y in (('streetSign', *wpt(249, 791)), ('streetSign', *wpt(237, 792))): t5put(nm, x, y, 1)
 log('T5 props', dict(t5n))
 
 # ---------------------------------------------------------------- T7 props: Route 6 is already the holiday (stalls, hire kiosks, deckchairs on the verge, thinning out with distance from the town); the beach and the town are hand laid in tools/adv-towns/T7.json
@@ -935,8 +1059,8 @@ t7n = collections.Counter(); hr = lambda *a: (zlib.crc32(repr(a).encode()) & 0xf
 SPILL = ['marketAwning', 'maLounger', 'maUmbrellaPink', 'maLounger', 'maLounger', 'maUmbrellaBlue', 'benchTeal', 'lampPost', 'maLounger', 'marketAwning', 'maUmbrellaPink', 'maLounger', 'pxStallBlue']
 r6 = road6 & ~brk
 for side in (0, 1):
-    for x in range(t7x + 29, t7x + 110, 2):
-        if hr('t7s', x, side) > 1.2 * (1 - (x - t7x - 29) / 81): continue
+    for x in range(t7x + 29, t7x + 29 + int(81 * K), 2):
+        if hr('t7s', x, side) > 1.2 * (1 - (x - t7x - 29) / (81 * K)): continue
         col = np.nonzero(r6[:, x])[0]
         if not len(col): continue
         y = int(col.min() - 2 if side == 0 else col.max() + 2); nm = SPILL[int(hr('t7n', x, side) * len(SPILL))]
@@ -1017,7 +1141,7 @@ flat =(ndi.maximum_filter(h, 3) == ndi.minimum_filter(h, 3)) & ~dil(kind > 0, 2)
 free = land & flat & (mat != FORD) & ~dil(roadm, 1) & ~occ & ~doorc & ~dil(doorc, 1) & ~nowalk & ~dil(cave, 1)
 free_town = free & (tid > 0); free &= tid == 0
 # north / ridge side uses layered spruces, the rest green pines and oaks
-ridge = dil(mount, 70) | (XX > 640) & (YY < 560)
+ridge = dil(mount, int(70 * K)) | (OXX > 640) & (OYY < 560)
 forest = ndi.binary_closing(cls == C['forest'], disk(4)) & land & ~bare & ~(dr < 18)
 forest &= ~g6clear & ~(fung2 | (dg8 <= 62)); bare = bare | g6clear                   # G6: felled and replanted stands, the landings on Route 111 (no forest, no scatter)
 clear = noise(3, 6) > 1.45
@@ -1262,7 +1386,7 @@ scatter(wood8, .11, GLOWS, step=1, ydy=.8); scatter(wood8, .035, ['mushroomStump
 scatter(wood8, .03, ['mushroomsRed', 'mushroomsOrange', 'mushroomsPale', 'mushroomStump', 'hollowStump'], [.25, .2, .25, .22, .08], step=1, ydy=.7)
 t8 = free_town & (tid == g8id) & ~dil(paved, 1)                         # inside the town: the same, a lot sparser, and the lamps stay low
 scatter(t8, .05, GLOWS, step=1, ydy=.8); scatter(t8, .018, ['mushroomStump', 'mushroomStump'], step=2); scatter(t8, .06, DARK, step=2); scatter(t8, .03, ['mushroomsRed', 'mushroomsPale', 'mushroomStump'], step=1, ydy=.7)
-thin = np.clip(1 - arc101 / 105.0, 0, 1)                                # Route 101: full glow at the town end, nearly none by Duskmoss
+thin = np.clip(1 - arc101 / (105.0 * K), 0, 1)                                # Route 101: full glow at the town end, nearly none by Duskmoss
 f101 = free & (arc101 >= 0) & (d101 <= 17) & (d101 >= 2.5) & (dg8 > 40) & (uf8 < thin ** 1.3)
 scatter(f101, .1, GLOWS, step=1, ydy=.8); scatter(f101, .03, ['mushroomStump', 'mushroomStump'], step=2); scatter(f101 & (uf8 < thin ** 1.3 * .8), .45, DARK, step=2); scatter(f101, .02, ['frostMushroomTree', 'hollowStump'], step=3)
 cut8 = free & (arc101 >= 0) & (d101 <= 11) & (d101 >= 3) & (dg8 > 40)
@@ -1300,8 +1424,8 @@ def p103(nm, a, lo, hi, side, r=1):
     x, y = c[0]; props.append([nm, int((x + .5) * T), int((y + 1) * T - 4)]); occ[y - 1:y + 2, x - r:x + r + 1] = True; t8n[nm] += 1; return True
 for a, group in ((38, [('fallenLog', 3.5, 6), ('logShort', 3.5, 6), ('twigs', 3, 5), ('logShort', 4, 7)]), (78, [('maRowboat', 3.5, 6), ('crateWide', 3, 5), ('barrelDark', 3, 5), ('pebbles', 3, 5)]),
                  (118, [('benchTeal', 3, 4.5), ('noticeBoard', 3, 4.5), ('torchPost', 3, 4.5), ('rockGrey', 3, 6)]), (150, [('signGreenWide', 3, 4.5), ('bigRockGrey', 4, 7), ('boulderGrey', 4, 7), ('stoneGrey', 3, 6)])):
-    for k, (nm, lo, hi) in enumerate(group): p103(nm, a + k * 2, lo, hi, 1 if nm in ('maRowboat', 'fallenLog', 'logShort', 'bigRockGrey') else -1, 2 if nm == 'maRowboat' else 1)
-for a in range(20, 200, 14): p103(('shell', 'pebbles', 'twigs')[(a // 14) % 3], a, 3.5, 7, 1)     # bits of drift on the sand between the landmarks
+    for k, (nm, lo, hi) in enumerate(group): p103(nm, int(a * K) + k * 2, lo, hi, 1 if nm in ('maRowboat', 'fallenLog', 'logShort', 'bigRockGrey') else -1, 2 if nm == 'maRowboat' else 1)
+for a in range(20, 200, 14): p103(('shell', 'pebbles', 'twigs')[(a // 14) % 3], int(a * K), 3.5, 7, 1)     # bits of drift on the sand between the landmarks
 log('T8 props', dict(t8n), 'Route 103 road', int(road103.sum()))
 # L4 Quiet Plain + Route 1 props (docs/TOWNPASS.md): waymarker stones counting down to the memorial (the numerals are in the stones' lines, no art draws them), weeds forced up through the paving, a bench, the junction sign, and wind in the open grass round the markers
 # (the markers themselves, the benches by the road end and the people are hand laid in tools/adv-towns/L4.json and data/adv/npcs.js). Side +1 is east of the road when walking south.
@@ -1478,7 +1602,7 @@ for id_, x, y, face, tr, li in NPCS:
         if npc_good(x + dx, y + dy, face, tr, sight, zname, taken):
             NPC_SRC[li] = NPC_SRC[li].replace(f'x: {x}, y: {y},', f'x: {x + dx}, y: {y + dy},', 1); taken.add((x + dx, y + dy)); moved.append((id_, (x, y), (x + dx, y + dy))); break
     else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot within 7 tiles')
-if moved:
+if moved or NPC_WARP:
     open(os.path.join(OUT, 'npcs.js'), 'w', encoding='utf8', newline='').write('\n'.join(NPC_SRC))
 log('NPC fixer moved', len(moved), [m[0] for m in moved])
 
@@ -1518,6 +1642,7 @@ for k in range(6, 20):
 towns = {t['code']: dict(name=t['name'], x=int((t['tx'] + .5) * T), y=int((t['ty'] + .5) * T), center=dict(x=int((town_out[t['code']]['door'][0] + .5) * T), y=int((town_out[t['code']]['door'][1] + 1.5) * T))) for t in TL}
 if not ONLY:
     world = dict(name='Kenora', chunksW=CW, chunksH=CHN, fill='waterDeep', palette=PAL, water=WATER_NAMES, groups=GROUPS, blank=blank, spawn=spawn, wild=wild, towns=towns, doors=ROOM_DOORS, buildings=BUILDINGS, supply=SUPPLY)
+    if K != 1: world['scale'] = K                    # plan B: npcs.js and the map-lab windows are at this scale
     open(os.path.join(OUT, 'world.js'), 'w', encoding='utf8').write('// Generated by tools/adv-gen-region.py. spawn is in world px; blank = chunk indices (cy * chunksW + cx) that are plain deep sea and have no file.\nwindow.ADV_WORLD = ' + json.dumps(world, separators=(',', ':')) + ';\n')
     zc = [rle(ZC[i]) for i in range(ZC.shape[0])]
     open(os.path.join(OUT, 'zones.js'), 'w', encoding='utf8').write('// Generated by tools/adv-gen-region.py. cells: one RLE string per row of 8 x 8 tile blocks, values index ids.\nwindow.ADV_ZONES = ' + json.dumps(dict(cell=B, ids=ZID, cells=zc), separators=(',', ':')) + ';\n')

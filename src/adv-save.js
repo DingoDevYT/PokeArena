@@ -111,7 +111,7 @@ const ADVS = {
 
   fresh({ name, avatar, home, starter, outfit }) {
     const t = this.town(home), s = this.front(t);
-    return { v: 1, name, avatar, outfit: ADVO.clean(outfit), home, last: home, money: 3000, badges: 0, medals: [], skills: {}, waypoints: [], beat: {}, met: {}, f: { events: [] }, party: [starter], box: [], bag: ADVP.startBag(), pos: { x: s.x, y: s.y }, made: new Date().toISOString().slice(0, 10), sc: ADV.OUT };   // sc: the map scale the px positions are in (an older save has none and scene.go converts its pos)
+    return { v: 1, name, avatar, outfit: ADVO.clean(outfit), home, last: home, money: 3000, badges: 0, medals: [], skills: {}, waypoints: [], beat: {}, met: {}, f: { events: [] }, party: [starter], box: [], bag: ADVP.startBag(), pos: { x: s.x, y: s.y }, made: new Date().toISOString().slice(0, 10), sc: ADV.OUT, ws: window.ADV_WORLD?.scale || 1 };   // sc: the map scale the px positions are in (an older save has none and scene.go converts its pos)
   },
   // shape check after parsing a file or reading the local slot; throws a plain message
   check(o) {

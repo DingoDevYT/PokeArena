@@ -5,7 +5,8 @@ Run: py -3.12 -I tools/adv-region-preview.py [CODE]   (CODE = another place to p
 import os, re, sys, json
 import numpy as np
 from PIL import Image, ImageDraw
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); D = os.path.join(ROOT, 'data', 'adv'); CACHE = os.path.join(ROOT, 'tools', '.cache')
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); D = os.environ.get('ADV_GEN_OUT') or os.path.join(ROOT, 'data', 'adv');   # ADV_GEN_OUT: preview a trial run's copy
+CACHE = os.path.join(ROOT, 'tools', '.cache')
 T, CH = 32, 32
 W = json.loads(re.search(r'ADV_WORLD = (\{.*\});', open(os.path.join(D, 'world.js'), encoding='utf8').read(), re.S).group(1))
 PAL = W['palette'] + [n for n in ('rgGrass', 'rgPath', 'rgWater') if n not in W['palette']];   # data/adv/tileset-region.js appends the map-lab mats at load, in this order
@@ -77,7 +78,7 @@ def T_(i):
 code = sys.argv[1] if len(sys.argv) > 1 else 'G7'
 WIN = [int(a) for a in sys.argv[2:6]] if len(sys.argv) > 5 else None; OUTN = sys.argv[6] if len(sys.argv) > 6 else 'goldacre-preview.png'; SC = float(sys.argv[7]) if len(sys.argv) > 7 else 1.0
 tw = W['towns'][code]; c0 = int(tw['x'] // T) - 60; r0 = int(tw['y'] // T) - 40; NC, NR = 120, 80
-if code == 'G7': c0, r0, NC, NR = 214, 776, 226, 192      # Goldacre plus the first ~100 tiles of Routes 5, 7 and 8
+if code == 'G7': c0, r0, NC, NR = c0 + 60 - 85, r0 + 40 - 105, 226, 192      # Goldacre plus the first ~100 tiles of Routes 5, 7 and 8
 if WIN: c0, r0, NC, NR = WIN     # v2: any window, in tile coords (x y w h), written to tools/.cache/<out>, scaled by <scale>
 PADR = 10
 out = Image.new('RGBA', (NC * T, (NR + PADR) * T), (0, 0, 0, 255))
