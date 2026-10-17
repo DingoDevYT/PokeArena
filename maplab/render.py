@@ -74,6 +74,9 @@ CLIFF = {'grass': (7, 80), 'autumn': (14, 80), 'snow': (21, 76), 'rock': (0, 76)
 BASE['rock'] = ([(74, 88), (74, 89)], [(74, 90), (74, 91)])   # dirt valley floor; plateaus are bare brown rock
 BASE['highland'] = BASE['grass']; CLIFF['highland'] = CLIFF['rock']   # grass valleys, bare rock plateaus
 ROCKTOP = {'rock', 'highland'}
+STAIR2 = {'grass', 'autumn', 'ridge'}    # cliff sets whose stairs are a two tile pair (columns c0+3, c0+4)
+HOLE = {'grass': (7, 74), 'ridge': (7, 74), 'autumn': (14, 74), 'rock': (0, 74), 'highland': (0, 74)}   # face rows of the face-with-cave-hole strip above each set
+BASE['ridge'] = BASE['grass']; CLIFF['ridge'] = CLIFF['grass']   # grass valleys and grass-topped plateaus (rock faces, the top keeps the meadow)
 VOID = set()                   # bases whose solid rock is unlit darkness (caves)
 VOID_TILE = Image.new('RGBA', (T, T), (12, 10, 14, 255))
 NODIAG = {(0, 97), (21, 97)}   # 6x3 patch sets (no diagonal row)
@@ -351,14 +354,16 @@ def _render(mp, W, H, base):
         return int(c) if c.isdigit() else 0
 
     plain, deco = BASE[base]
-    top = (CLIFF[base][0] + 1, CLIFF[base][1] + 1) if base in ROCKTOP else None   # plateau tops are the set's own rock surface
+    sets = {int(k): v for k, v in mp.get('levelsets', {}).items()}   # optional per-level cliff set, e.g. {1: 'grass', 2: 'rock'}: meadow shelves under bare rock tiers
+    cset = lambda h: sets.get(h, base)
+    rtop = lambda h: (CLIFF[cset(h)][0] + 1, CLIFF[cset(h)][1] + 1) if cset(h) in ROCKTOP else None   # plateau tops are the set's own rock surface
     for y in range(-1, H + 1):
         for x in range(-1, W + 1):
             pick = deco if rnd(x, y, 1) < mp.get('decor', 0.015) else plain
             # edge and face tiles are partly transparent: their cells take the lower ground beside them
             h = lv(x, y); near = (lv(x, y + 1), lv(x, y + 2), lv(x, y - 1), lv(x - 1, y), lv(x + 1, y))
-            raised = top and h and (min(near) if min(near) < h else h) > 0
-            put((VOID_TILE if base in VOID else tile(*top)) if raised else tile(*pick[int(rnd(x, y, 2) * len(pick))]), x * T, y * T)
+            eff = min(near) if min(near) < h else h; top = rtop(eff) if eff > 0 else None
+            put((VOID_TILE if base in VOID else tile(*top)) if top else tile(*pick[int(rnd(x, y, 2) * len(pick))]), x * T, y * T)
     if base == 'snow':
         for y in range(H):
             for x in range(W):
@@ -405,19 +410,32 @@ def _render(mp, W, H, base):
             if raised(x, y) and not all(raised(x + i, y + j) for i in (-1, 0, 1) for j in (-1, 0, 1)):
                 put(quarters(raised, x, y, c0, r0, inner), x * T, y * T)
 
-    c0, r0 = CLIFF[base]
     art = {}   # cell -> (opaque, green) pixels of the cliff tile drawn there (cells with no tile are solid ground), for the terrain outline
     for h in sorted({lv(x, y) for x in range(W) for y in range(H)} - {0}):
+        c0, r0 = CLIFF[cset(h)]
         up = lambda a, b: lv(a, b) >= h
         for y in range(H):
             for x in range(W):
                 if lv(x, y) != h: continue
                 vr = 3 if not up(x, y + 1) else 2 if not up(x, y + 2) else 0 if not up(x, y - 1) else 1
-                hr = 0 if not up(x - 1, y) else 2 if not up(x + 1, y) else 1
-                if cl(x, y) == 'S': t = tile(c0 + 3, r0 + max(2, vr))
-                elif vr != 1 or hr != 1: t = tile(c0 + hr, r0 + vr)
+                # a side ends where the neighbour is lower ground, and also where a face meets a top cell beside it (the plateau steps south there):
+                # the face gets its rounded end and the longer column shows its side wall, so a step reads as a real corner, not a cut-off band
+                face = lambda a, b: up(a, b) and (not up(a, b + 1) or not up(a, b + 2))
+                end = lambda a: not up(a, y) or (face(a, y) != (vr >= 2))
+                w, e = end(x - 1), end(x + 1)
+                if cl(x, y) == 'S':   # sets with a two tile stair (left, right half) alternate them across the opening; the rock set's stair is one tile
+                    k = 0
+                    while cl(x - k - 1, y) == 'S': k += 1
+                    t = tile(c0 + 3 + (k % 2 if cset(h) in STAIR2 else 0), r0 + max(2, vr))
+                elif w and e:   # one cell wide: west half of the west end, east half of the east end
+                    t = tile(c0, r0 + vr).copy(); t.paste(tile(c0 + 2, r0 + vr).crop((T // 2, 0, T, T)), (T // 2, 0))
+                elif vr != 1 or w or e: t = tile(c0 + (0 if w else 2 if e else 1), r0 + vr)
                 else: continue
                 put(t, x * T, y * T); a = np.array(t); art[x, y] = (a[..., 3] >= 128, (a[..., 1] > a[..., 0]) & (a[..., 1] > a[..., 2]))
+    for hx, hy in mp.get('holes', []):   # cave mouths: the set's own face-with-a-hole strip (3 x 2) replaces the face there, so the hole is part of the cliff
+        hc, hrw = HOLE[cset(lv(hx, hy))]
+        for i in range(3):
+            for j in range(2): t = tile(hc + i, hrw + j); put(t, (hx + i) * T, (hy + j) * T); a = np.array(t); art[hx + i, hy + j] = (a[..., 3] >= 128, (a[..., 1] > a[..., 0]) & (a[..., 1] > a[..., 2]))
     terrain_outline(img, lv, cl, art, W, H)
 
     grass_im = {}

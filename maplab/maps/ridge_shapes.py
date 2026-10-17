@@ -75,3 +75,61 @@ def stair_row(lv, x, h, y0, y1):
     for y in range(y1, y0 - 1, -1):
         if all(g(x + i, y) == h and g(x + i, y + 1) == h - 1 and g(x + i, y + 2) >= h - 1 and g(x + i, y - 1) == h for i in (0, 1)): return y
     return None
+
+
+def lobes(w, h, parts, seed, jag=.15):
+    """union of noisy ellipses [(cx, cy, rx, ry), ...]: a massif with spurs and bays instead of one round blob"""
+    out = set()
+    for i, (cx, cy, rx, ry) in enumerate(parts): out |= blob(w, h, cx, cy, rx, ry, seed * 10 + i, jag)
+    return out
+
+
+def _segs(n, rng, lo, hi):
+    """split range(n) into consecutive runs of random length lo..hi"""
+    out, i = [], 0
+    while i < n:
+        k = min(n - i, rng.randint(lo, hi))
+        if n - i - k and n - i - k < lo: k = n - i
+        out.append((i, i + k)); i += k
+    return out
+
+
+def terrace(S, seed, hrun=(4, 8), vrun=(3, 6)):
+    """organic but blocky outlines: the north/south edge is held flat over runs of 4..8 columns and the west/east edge over runs of 3..6 rows
+    (median of the run, jittered by one), so a slope reads as a few long cliff stretches with real corners, not a one-cell staircase"""
+    if not S: return S
+    rng = random.Random(seed)
+    def flat(vals, lo, hi):
+        out = list(vals)
+        for a, b in _segs(len(vals), rng, lo, hi):
+            v = sorted(vals[a:b])[(b - a) // 2] + rng.choice((0, 0, 0, -1, 1)); out[a:b] = [v] * (b - a)
+        return out
+    xs = sorted({x for x, _ in S}); cols = {x: sorted(y for a, y in S if a == x) for x in xs}
+    x0, x1 = xs[0], xs[-1]; rngx = [x for x in range(x0, x1 + 1)]
+    top = flat([cols[x][0] if x in cols else cols[min(xs, key=lambda c: abs(c - x))][0] for x in rngx], *hrun)
+    bot = flat([cols[x][-1] if x in cols else cols[min(xs, key=lambda c: abs(c - x))][-1] for x in rngx], *hrun)
+    S2 = {(x, y) for i, x in enumerate(rngx) for y in range(top[i], bot[i] + 1)}
+    ys = sorted({y for _, y in S2}); rows = {y: sorted(x for x, b in S2 if b == y) for y in ys}
+    lo = flat([rows[y][0] for y in ys], *vrun); hi = flat([rows[y][-1] for y in ys], *vrun)
+    return {(x, y) for i, y in enumerate(ys) for x in range(max(lo[i], rows[y][0] - 1), min(hi[i], rows[y][-1] + 1) + 1) if (x, y) in S2 or x in cols and cols[x][0] <= y <= cols[x][-1]}
+
+
+def stack(inner, outer, x0, x1):
+    """drop the south edge of `inner` to the lowest row it may take inside `outer` (two rows above outer's own face) over columns x0..x1,
+    so the two faces stand one ledge apart and read as one tall stepped cliff"""
+    S = set(inner)
+    for x in range(x0, x1 + 1):
+        ys = [y for a, y in inner if a == x]; oys = [y for a, y in outer if a == x]
+        if not ys or not oys: continue
+        for y in range(max(ys) + 1, max(oys) - 1): S.add((x, y))
+    return S
+
+
+def stairs_at(lv, h, xs, y0, y1, avoid=()):
+    """first x in xs (and x+1) where a stairs pair fits on level h's face with a real landing below (two rows of level h-1, not a one-row ledge)"""
+    g = lambda a, b: lv.get((a, b), 0)
+    for x in xs:
+        if x in avoid or x + 1 in avoid: continue
+        y = stair_row(lv, x, h, y0, y1)
+        if y is not None and all(g(x + i, y + 3) >= h - 1 for i in (0, 1)) and all(g(x + i, y + 1) == g(x + i, y + 2) == h - 1 for i in (0, 1)): return x, y
+    return None
