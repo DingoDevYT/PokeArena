@@ -155,7 +155,8 @@ const AdventureScene = {
     if (!this.save) { if (ui) ui.update(dt); return; }
     ADV.stream(this.cx(), this.cy(), this.mount === 'fly' && ADVR.zmW && ADVR.zmW <= 2 ? 2 : 1);   // a high flier sees past the 3 x 3 chunks round it
     if (this.ready) { if (this.mode !== 'battle' && this.mode !== 'pvp' && AUDIO.musicSrc) AUDIO.playMusic(null); ADVM.to(this.musicName()); }
-    if (this.fadeT < 2) { this.fadeT += dt * (this.mode === 'warp' ? 2.5 : 1); if (this.mode === 'fade' && this.fadeT >= 1) this.blackout(); if (this.mode === 'warp' && this.fadeT >= 1) this.doWarp(); }
+    if (this.fadeT < 2) { this.fadeT += dt * (this.mode === 'warp' ? 2.5 : 1); if (this.mode === 'fade' && this.fadeT >= 1) this.blackout(); if (this.mode === 'warp' && this.fadeT >= 1 && this.warpTo) this.doWarp(); }
+    if (this.mode === 'warp') this.walkThrough(dt);
     if (!this.ready) {
       const sk = ADV.key(Math.floor(this.p.x / (ADV.Tp(this.p.x) * ADV.CH)), Math.floor(this.p.y / (ADV.Tp(this.p.x) * ADV.CH)));
       if (ADV.missing[sk]) this.err = 'Missing world data';
@@ -530,12 +531,24 @@ const AdventureScene = {
   },
   // ---------- doors (S1b) ----------
   // fade out, switch, fade in: to = { room, x, y } (a world door: enter it) or { x, y } (leave to that world spot)
-  warp(to) { this.warpTo = to; this.mode = 'warp'; this.fadeT = 0; this.p.moving = false; uiBlip(520, 0.04); },
+  // A cave mouth is walked through, not cut to: you keep stepping on into the dark while the world fades out round you (an iris that closes on you,
+  // drawn in draw()), and on the far side you take the last steps in while the new place fades in round you. Input waits until the step is done.
+  warp(to) { this.warpTo = to; this.mode = 'warp'; this.fadeT = 0; const walk = !!(to.room || this.room); this.iris = walk; this.thru = walk ? { d: DIR_VEC[this.p.face] || [0, -1], from: null } : null; uiBlip(520, 0.04); },
+  walkThrough(dt) {
+    const p = this.p, t = this.thru; if (!t) return;
+    const D = ADV.Tp(p.x) * 0.6, [vx, vy] = t.d;   // the walk on each side of the door: 0.6 of a tile, over the 0.4 s of each half of the fade
+    if (this.fadeT < 1) { const k = this.fadeT; p.x = (t.from ||= { x: p.x, y: p.y }).x + vx * D * k; p.y = t.from.y + vy * D * k; }
+    else { const k = Math.min(1, this.fadeT - 1); p.x = t.to.x - vx * D * (1 - k); p.y = t.to.y - vy * D * (1 - k); }
+    p.moving = true; p.walkD += ADV.Tp(p.x) * 1.5 * dt; this.follow(dt);
+    if (this.fadeT >= 2) { p.x = t.to.x; p.y = t.to.y; p.moving = false; this.thru = null; this.iris = false; this.mode = 'walk'; }
+  },
   doWarp() {
-    const w = this.warpTo; this.warpTo = null; this.mode = 'walk'; this.inDoor = '';
+    const w = this.warpTo; this.warpTo = null; this.inDoor = '';
     this.dismount();
     if (w.room) { const d = ADV.openRoom(w.room), sp = d.spawns?.[w.end] || d.spawn; this.room = { id: w.room, door: w, d }; this.put(sp.x, sp.y, w.end === 'w' ? 2 : w.end === 'e' ? 6 : 4); }   // the cave drops you at the end you came in by, facing in
     else { this.room = null; ADV.closeRoom(); this.put(w.x, w.y, 0); ADV.stream(this.cx(), this.cy()); }
+    const p = this.p; if (this.thru) { this.thru.d = DIR_VEC[p.face] || this.thru.d; this.thru.to = { x: p.x, y: p.y }; }   // the last steps, toward where put() stood you
+    else this.mode = 'walk';
     this.persist();
   },
   // ---------- travel (docs/TRAVEL.md): nothing teleports ----------
@@ -1166,7 +1179,12 @@ const AdventureScene = {
     if (typeof ADVMAP !== 'undefined') ADVMAP.hud(this);
     TEXT_MIN = 0;
     const fa = this.fadeT < 1 ? this.fadeT : this.fadeT < 2 ? 2 - this.fadeT : 0;
-    if (fa > 0 && this.save) { ctx.fillStyle = `rgba(0,0,0,${fa})`; ctx.fillRect(0, 0, VW, VH); }
+    if (fa > 0 && this.save && this.iris && this.p) {   // walking through a cave mouth: the world darkens in hard steps round a closing (then opening) circle of light on you
+      const v = this.view(), z = ADVR.zoomFor(), sx = (this.p.x - v.x0) * z, sy = (this.p.y - (this.p.z || 0) - 20 - v.y0) * z;
+      const st = Math.min(4, Math.ceil(fa * 4)) / 4, r = Math.max(0, (1 - st) * Math.hypot(VW, VH) * 0.42 + (st < 1 ? 26 * z : 0));
+      ctx.fillStyle = `rgba(0,0,0,${Math.min(1, 0.35 + 0.65 * st)})`; ctx.beginPath(); ctx.rect(0, 0, VW, VH);
+      if (r > 0) ctx.arc(sx, sy, r, 0, Math.PI * 2, true); ctx.fill('evenodd');
+    } else if (fa > 0 && this.save) { ctx.fillStyle = `rgba(0,0,0,${fa})`; ctx.fillRect(0, 0, VW, VH); }
     if (this.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(1, this.flash * 1.6)})`; ctx.fillRect(0, 0, VW, VH); }
   },
   // the cave is dim: a soft radius of light around you (around the fight while one is on), your lead, every torch and crystal near, daylight at both mouths
