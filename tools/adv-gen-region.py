@@ -76,7 +76,7 @@ def rrect_mask(h_, w_, r):
 PAL =['void', 'grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'dryGrass', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble']
 M_ = {n: i for i, n in enumerate(PAL)}
 GRASS, PATH, SAND, DUNE, WAT, WATD, SWAT, SWATD, TALL, ASH, SNOW, SWAMP, PAVE, FORD, SOIL, HAYF, WETG, BW, TAN, COBB = (M_[n] for n in ['grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble'])
-MATN = {'path': PATH, 'tan': TAN, 'cobble': COBB, 'soil': SOIL, 'hay': HAYF, 'grass': GRASS, 'sand': SAND}     # soil / hay: a hand plan's tilled beds and hay fields
+MATN = {'path': PATH, 'tan': TAN, 'cobble': COBB, 'soil': SOIL, 'hay': HAYF, 'grass': GRASS, 'sand': SAND, 'snow': SNOW}     # soil / hay: a hand plan's tilled beds and hay fields
 WATER_NAMES = ['water', 'waterDeep', 'sandWater', 'sandWaterDeep']
 GROUPS = [WATER_NAMES + ['ford'], ['sand', 'duneSand', 'path', 'pavingStone'], ['ashGround', 'snow']]
 isw = lambda m: (m >= WAT) & (m <= SWATD)
@@ -638,7 +638,8 @@ def pave(y0, y1, x0, x1, t, lim=-1, m=PAVE, r=None):
     ok = np.zeros((HP, WP), bool); hh_, ww_ = y1 - y0 + 1, x1 - x0 + 1
     ok[y0:y1 + 1, x0:x1 + 1] = rrect_mask(hh_, ww_, 4 if r is None else r) if (r or (r is None and min(hh_, ww_) >= 8)) else True
     ok &= land & (np.hypot(XX - t['tx'], YY - t['ty']) < (t['R'] - 1 if lim < 0 else lim)) & (kind == 0)
-    paved[ok] = m not in (GRASS, SAND); mat[ok] = m; h[ok] = t['lv']      # a hand plan's grass and sand are ground, not paving
+    if m in (GRASS, SAND, SNOW): ok &= h == t['lv']; mat[ok] = m; return      # a hand plan's grass, sand and snow are ground, not paving: they recolour the town's level ground and leave hills alone
+    paved[ok] = True; mat[ok] = m; h[ok] = t['lv']
 def board(y0, y1, x0, x1):
     """boardwalk (a walkable woven-plank mat) over land or water: piers and docks"""
     global land
@@ -742,7 +743,7 @@ for t in TL:
         for x0, y0, x1, y1 in j.get('boards', []): board(cy + y0, cy + y1, cx + x0, cx + x1)
         if 'mouth' in j: cave_mouth('w', cx + j['mouth'][0], cy + j['mouth'][1])    # T4: the Route 4 cave's west mouth (door-front tile, like a building)
         if not j.get('noconnect'): connect(t, PATH)      # noconnect (L4): the re-laid Route 1 reaches the landmark itself, no dirt connector
-        town_out[code] = dict(door=(cx + j['door'][0], cy + j['door'][1]) if 'door' in j else (cx, cy)); continue
+        town_out[code] = dict(door=(cx + j['door'][0], cy + j['door'][1]) if j.get('door') else (cx, cy)); continue
     nst = max(1, (2 * R - 16) // 16) if kd != 'L' else 1
     tops = [int(round(cy + 16 * (i - (nst - 1) / 2) - 2)) for i in range(nst)] if kd != 'L' else [cy + 4, cy + 9, cy + 13]
     tops.sort(key=lambda y: abs(y - cy))

@@ -236,7 +236,8 @@ def main():
     sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_lab_ground as LG   # the lab look for the generated world's grass, paths and tall grass (docs/REGION-REBUILD.md section 14)
     lg_tiles, lg_mats = LG.build(); base_i = len(tiles); tiles += lg_tiles
     off = lambda v: [base_i + i for i in v] if isinstance(v, list) else base_i + v
-    ground_mats = {m: {r: off(v) for r, v in d.items()} for m, d in lg_mats.items()}
+    def offd(d): return {r: (offd(v) if isinstance(v, dict) else v if r == 'mode' else off(v)) for r, v in d.items()}   # nested by-sets too
+    ground_mats = {m: offd(d) for m, d in lg_mats.items()}
     trows = -(-len(tiles) // COLS); W_SHEET = COLS * 32; y = trows * 32 + 8; x = 0; shelf = 0; place = {}
     for n, (sx, sy, sw, sh, d, src) in sorted(rects.items(), key=lambda kv: -kv[1][3]):
         k = d.get('k', 1); sw, sh = sw * k, sh * k

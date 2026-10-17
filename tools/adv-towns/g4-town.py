@@ -20,16 +20,16 @@ g.lane([(-24, 10), (-24, 22), (-10, 22)], 1, 'd')
 # ---- the brickworks by the west shore: a packed dirt yard with clay pits (soil)
 g.rect(-40, -2, -28, 8, 'd'); g.rect(-38, 10, -30, 15, 's'); g.rect(-44, 2, -41, 9, 's')
 # ---- buildings: door walkway tiles on the street / lane top rows
-g.bld('pokeCenterRed', -4, -10, 'center'); g.bld('martBlue', 8, -10); g.bld('gymRed', 36, -2)
+g.bld('pokeCenterRed', -4, -12, 'center'); g.bld('martBlue', 8, -12); g.bld('gymRed', 36, -2)
 g.bld('clockTower', 2, -12, 'house')
 T = ['cottageRedWide', 'houseRedGable', 'cottageRed', 'houseOrangeSmall', 'cottageRedWide', 'houseRedGable', 'cottageRed', 'houseGreenFlat']
 terr = [(-26, -6), (-22, -6), (-18, -6), (-14, -6), (-11, -6),                     # main street, north side west of the square
         (17, -3), (22, -1), (26, -1), (30, -1),                                    # east of the square
         (-22, -20), (-18, -20), (-11, -24), (-7, -24), (-3, -24), (1, -24), (14, -20), (17, -20), (21, -20),   # the shore lane
-        (-21, 10), (-17, 10), (-13, 10), (-9, 10), (-2, 12), (2, 12), (6, 12), (18, 8), (22, 8), (26, 8)]   # the south street
+        (-21, 10), (-17, 10), (-13, 10), (-2, 12), (2, 12), (6, 12), (18, 8), (22, 8), (26, 8)]   # the south street
 for k, (x, y) in enumerate(terr): g.bld(T[k % len(T)], x, y)
 # the brickworks: kiln hall and sheds (scenery)
-g.bld('maHallOrange', -34, -2, 'house'); g.bld('sSilverWarehouse', -33, 10, 'house')
+g.bld('maHallOrange', -34, -2, 'house'); pass
 
 P = {'K': 'stoneTower', 'T': 'roundTree', 'B': 'bigRoundTree', 'w': 'flowerBedBlue', 'r': 'flowerBedPink', 'e': 'hedgeLong', 'b': 'benchYellow', 'l': 'lampPost',
      'n': 'noticeBoard', 'N': 'pokeSign', 'x': 'crateWide', 'X': 'crateWideB', 'q': 'barrelOrange', 'Q': 'barrelDark', 'z': 'seedSack', 'v': 'pxStallBlue', 'S': 'pxStallPink',
@@ -43,7 +43,7 @@ g.at('l', (-8, -13), (12, -13), (-8, -6), (12, -6), (-26, -10), (-18, -10), (24,
 g.at('N', (-6, -11)); g.at('n', (5, -14)); g.at('W', (-44, -11), (44, -2))
 # terrace fronts: a bed and a mailbox, hedges at the back
 for (x, y) in terr: g.at('e', (x, y - 6))
-for (x, y) in terr[::2]: g.at('M', (x - 2, y - 1))
+for (x, y) in terr[::2]: g.at('M', (x - 3, y - 1))
 # allotments south of the south street, a few trees in the gaps, reeds on the shores
 for (x0, y0) in ((-20, 16), (-12, 16), (2, 18), (16, 14)): g.rect(x0, y0, x0 + 5, y0 + 3, 's'); g.at('i', *[(x, y0 - 1) for x in range(x0, x0 + 6)])
 g.at('m', (-17, 18), (5, 20))
@@ -51,4 +51,4 @@ g.at('T', (-30, -14), (-20, -14), (0, -18), (16, -14), (28, -12), (-30, 4), (34,
 g.at('B', (-10, -16), (20, -26), (36, -14), (-4, 20), (24, 18), (38, 14), (-28, 26), (12, 30))
 g.at('k', (-30, -28), (-36, -22), (-44, -14), (-40, 18), (-34, 24)); g.at('f', (34, -24), (40, 24), (-16, 30), (28, 30))
 
-plan.build('G4', g.text(), P, blds=g.blds, extra=dict(lim=50, deco=[]))
+plan.build('G4', g.text(), P, blds=g.blds, pp=g.pp, extra=dict(lim=50, deco=[]))

@@ -8,8 +8,8 @@ import json, os
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); T = 32
-GROUND = {'d': 'path', 'p': None, 'c': 'cobble', 't': 'tan', 's': 'soil', 'h': 'hay', 'g': 'grass', 'a': 'sand'}
-COL = {'g': (90, 190, 90), 'a': (235, 215, 150), 'd': (196, 160, 110), 'p': (170, 170, 175), 'c': (150, 140, 130), 't': (215, 190, 140), 's': (120, 90, 60), 'h': (220, 200, 90)}
+GROUND = {'d': 'path', 'p': None, 'c': 'cobble', 't': 'tan', 's': 'soil', 'h': 'hay', 'g': 'grass', 'a': 'sand', 'Z': 'snow'}
+COL = {'Z': (235, 240, 250), 'g': (90, 190, 90), 'a': (235, 215, 150), 'd': (196, 160, 110), 'p': (170, 170, 175), 'c': (150, 140, 130), 't': (215, 190, 140), 's': (120, 90, 60), 'h': (220, 200, 90)}
 
 def _props():
     out = {}
@@ -20,7 +20,7 @@ def _props():
     return out
 PROPS = _props()
 
-def build(code, plan, legend, extra=None, blds=()):
+def build(code, plan, legend, extra=None, blds=(), pp=()):
     """plan: the map as a string; legend: {char: prop name | [name, id, {w, d, ex}] | [name] (a building with no interior)}; extra: more JSON keys (deco, lim, noconnect...)"""
     rows = [r for r in plan.strip('\n').split('\n')]
     W = max(len(r) for r in rows); rows = [r.ljust(W) for r in rows]
@@ -56,6 +56,7 @@ def build(code, plan, legend, extra=None, blds=()):
         if bad: print(f'  {code}: {b[3]} footprint lies on paving at {bad[:4]}')
     # plots and ponds (deco) must sit on open ground: no paving, no prop foot, clear of a building's ground (door row up 5, door column +-4) and one cell clear of everything
     taken = {(x - cx, y - cy) for y, r in enumerate(rows) for x, ch in enumerate(r) if ch not in '. '}
+    taken |= {(x, y) for ch, x, y in pp}
     for b in buildings:
         for y in range(b[2] - 6, b[2] + 1):
             for x in range(b[1] - 5, b[1] + 6): taken.add((x, y))
@@ -67,6 +68,7 @@ def build(code, plan, legend, extra=None, blds=()):
         if hit: print(f'  {code}: {d[0]} at {d[1]},{d[2]} overlaps {len(hit)} taken cells, e.g. {hit[:3]}')
         for y in range(y0, y0 + h_):
             for x in range(x0, x0 + w_): taken.add((x, y))
+    for ch, x, y in pp: props.append([legend[ch], x, y])               # Grid.at props
     for nm, x, y, role in blds:                                      # buildings placed by Grid.bld (no character needed): role 'center', 'house' or [id, footprint]
         if isinstance(role, list): buildings.append([nm, x, y, role[0], role[1]]); door = [x, y] if role[0].endswith('-center') else door
         else:
@@ -79,9 +81,12 @@ def build(code, plan, legend, extra=None, blds=()):
     for i, a_ in enumerate(bx):
         for b_ in bx[i + 1:]:
             if a_[1] < b_[3] - .3 and b_[1] < a_[3] - .3 and a_[2] < b_[4] - .3 and b_[2] < a_[4] - .3: print(f'  {code}: buildings overlap: {a_[0]} at {a_[5:]} and {b_[0]} at {b_[5:]}')
+    for a_ in bx:                                                     # the building's base (its two bottom rows) must stand on open ground, not on a street
+        hit = [(x, y) for y in (a_[6] - 2, a_[6] - 1) for x in range(int(a_[1] + .5), int(a_[3] - .5) + 1) if 0 <= y + cy < len(rows) and 0 <= x + cx < W and rows[y + cy][x + cx] in GROUND and rows[y + cy][x + cx] not in 'gaZ']
+        if hit: print(f'  {code}: {a_[0]} at {a_[5:]} stands on paving at {hit[:3]}')
     for pr in props:
         for a_ in bx:
-            if a_[1] + .2 < pr[1] + .5 < a_[3] - .2 and a_[2] + .5 < pr[2] + 1 < a_[4]: print(f'  {code}: prop {pr[0]} at {pr[1:3]} stands inside {a_[0]}'); break
+            if a_[1] + .5 < pr[1] + .5 < a_[3] - .5 and a_[2] + .5 < pr[2] + 1 < a_[4] - 1.2: print(f'  {code}: prop {pr[0]} at {pr[1:3]} stands inside {a_[0]}'); break
     unknown = sorted({ch for r in rows for ch in r if ch not in GROUND and ch not in '. @' and ch not in legend})
     assert not unknown, f'{code}: characters with no legend entry: {unknown}'
     out = dict(door=door, paving=paving, buildings=buildings, props=props, **(extra or {}))
@@ -120,7 +125,7 @@ def build(code, plan, legend, extra=None, blds=()):
 
 class Grid:
     """a town drawn on a (2N+1)^2 character grid, coordinates from the centre: rect / lane / at / blob, then build()"""
-    def __init__(s, N): s.N = N; s.g = [['.'] * (2 * N + 1) for _ in range(2 * N + 1)]; s.blds = []
+    def __init__(s, N): s.N = N; s.g = [['.'] * (2 * N + 1) for _ in range(2 * N + 1)]; s.blds = []; s.pp = []
     def bld(s, name, x, y, role='house'):
         """a building whose door walkway tile is (x, y): role 'center' (the town's Center, no interior), 'house', or [id, {w, d, ex}] for one with an interior"""
         s.blds.append((name, x, y, role))
@@ -136,8 +141,10 @@ class Grid:
             if xa == xb: s.rect(xa, min(ya, yb), xa + w - 1, max(ya, yb) + (w - 1 if (xb, yb) == pts[-1] else 0), ch)
             else: s.rect(min(xa, xb), ya, max(xa, xb) + w - 1, ya + w - 1, ch)
     def at(s, ch, *pts):
+        """props: kept apart from the ground grid, so a prop on a street or a plaza leaves the paving under it"""
         assert ch not in GROUND, f'{ch!r} is a ground character, not a prop'
-        for x, y in pts: s.put(x, y, ch)
+        for x, y in pts:
+            if -s.N <= x <= s.N and -s.N <= y <= s.N: s.pp.append((ch, x, y))
     def blob(s, cx, cy, rows, ch):
         """a hand-drawn shape: rows of characters, '#' cells get ch, centred on (cx, cy)"""
         h, w = len(rows), max(len(r) for r in rows)

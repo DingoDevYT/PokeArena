@@ -65,6 +65,28 @@ def build():
                         if px[x, y][:3] == pb[x, y][:3]: px[x, y] = (0, 0, 0, 0)
             d[role] = add(t)
         mats[name] = d
+    # path and tall grass on the other grounds (snow, ash, swamp, sand, dune): the lab art is drawn on the meadow, so its edges carry grass. For a path the green
+    # pixels of each role tile are replaced by that ground's own centre tile (the same edit tools/adv-build-derived.py makes); a tall grass bed on those grounds takes
+    # the derived sheet's own tile for that ground (frost leaves, grey tufts...), copied pixel for pixel. adv-world.js picks them by the neighbour's ground (def.by).
+    import numpy as np, json as _j
+    ts = _j.loads(open(os.path.join(ROOT, 'data/adv/tileset.js')).read().split('=', 1)[1].strip().rstrip(';'))
+    ex = Image.open(os.path.join(ROOT, ts['file'])).convert('RGBA'); EC = ts.get('cols', 8)
+    etile = lambda i: ex.crop(((i % EC) * 32, (i // EC) * 32, (i % EC) * 32 + 32, (i // EC) * 32 + 32))
+    dsrc = open(os.path.join(ROOT, 'data/adv/tileset-derived.js')).read(); dv = _j.loads(dsrc[dsrc.index('{'):dsrc.index('};') + 1])
+    dim = Image.open(os.path.join(ROOT, dv['file'])).convert('RGBA'); DC = dv['cols']
+    dtile = lambda i: dim.crop(((i % DC) * 32, (i // DC) * 32, (i % DC) * 32 + 32, (i // DC) * 32 + 32))
+    GROUNDS = {'snow': 'snow', 'ash': 'ashGround', 'swamp': 'swamp', 'sand': 'sand', 'dune': 'duneSand'}
+    by = {}
+    for key, mname in GROUNDS.items():
+        c = ts['mats'][mname]['C']; base = np.array(etile(c[0] if isinstance(c, list) else c)); d = {}
+        for role in ROLES:
+            t = np.array(tiles[mats['path'][role]]); r_, g_, b_ = (t[..., k].astype(int) for k in range(3))
+            green = (g_ > r_ + 12) & (g_ > b_ + 6)
+            t[green] = base[green]; d[role] = add(Image.fromarray(t))
+        by[key] = d
+    mats['path']['by'] = by
+    tb = dv['mats']['tallgrass'].get('by', {})
+    mats['tallgrass'] = {**mats['tallgrass'], 'mode': 'self', 'by': {k: {'C': add(dtile(v['C'] if not isinstance(v['C'], list) else v['C'][0]))} for k, v in tb.items()}}
     return tiles, mats
 
 def main():
@@ -73,6 +95,6 @@ def main():
     for i, t in enumerate(tiles): sheet.paste(t, ((i % cols) * 32, (i // cols) * 32))
     os.makedirs(OUT, exist_ok=True); sheet.save(os.path.join(OUT, 'lab-ground.png'))
     json.dump(dict(cols=cols, mats=mats), open(os.path.join(OUT, 'lab-ground.json'), 'w'))
-    print(len(tiles), 'tiles', {k: (len(v['C']) if isinstance(v.get('C'), list) else len(v)) for k, v in mats.items()})
+    print(len(tiles), 'tiles', {k: (len(v['C']) if isinstance(v.get('C'), list) else len(v)) for k, v in mats.items()}, 'path by', list(mats['path']['by']))
 
 if __name__ == '__main__': main()

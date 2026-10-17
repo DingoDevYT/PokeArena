@@ -62,7 +62,7 @@ homes = [(-2, -12), (-5, -12),                                       # the cresc
          (9, 10), (13, 10), (17, 10), (26, 14), (30, 14), (34, 14),  # south-east road
          (-3, 16), (-8, 15), (-18, 15), (-23, 17), (-26, 17),        # south lane either side of the gym
          (-1, 27), (-7, 29), (-11, 29), (-14, 29), (9, 26), (13, 26), (17, 26),   # further south
-         (-35, 7), (-38, 10)]                                         # the beach cottages
+         (-38, 10)]                                         # the beach cottages
 for k, (x, y) in enumerate(homes): g.bld(H[k % len(H)], x, y)
 g.lane([(-38, 11), (-34, 11), (-34, 8)], 1, 'd')
 
@@ -78,7 +78,7 @@ g.at('l', (-27, -1), (1, -2), (-13, -8), (-13, 9), (-27, 9), (1, 9), (4, -30), (
 g.at('u', (-26, -4), (-26, 4), (0, -4), (0, 4)); g.at('v', (-29, -1), (2, -9)); g.at('m', (-11, -5), (-15, 5))
 g.at('N', (7, -5)); g.at('n', (12, -5)); g.at('W', (42, 13), (5, -42), (5, 42))
 for (x, y) in homes:                                                                         # each house: a bed by the door, a mailbox, a hedge at the back
-    g.at('r' if x % 2 else 'w', (x + 2, y - 1)); g.at('M', (x - 2, y - 1)); g.at('e', (x, y - 6))
+    g.at('r' if x % 2 else 'w', (x + 2, y - 1)); g.at('M', (x - 3, y - 1)); g.at('e', (x, y - 6))
 # a small green between the north-east row and the Center lane, with a tree and benches
 g.at('B', (12, -12), (20, -10)); g.at('b', (15, -12)); g.at('f', (17, -13), (10, -13))
 # the beach: boats drawn up, crates
@@ -87,4 +87,4 @@ g.at('R', (-41, 15), (-36, 17)); g.at('x', (-39, 14)); g.at('q', (-38, 15))
 for (x, y) in ((-32, -30), (24, -36), (30, 34), (-24, 36), (36, -12), (-40, -22), (34, 4), (-32, 24), (16, 38), (-8, 38)): g.at('B', (x, y)); g.at('T', (x + 3, y + 1), (x - 2, y + 2))
 g.at('f', (-34, -24), (26, -18), (32, 24), (-20, 38), (38, -2)); g.at('F', (-30, -26), (20, -38), (36, 30), (-14, 34))
 
-plan.build('G3', g.text(), P, blds=g.blds, extra=dict(lim=48, deco=[["pond", -20, -3, 4.5, 2.6], ["pond", -6, 3.4, 4.5, 2.6]]))
+plan.build('G3', g.text(), P, blds=g.blds, pp=g.pp, extra=dict(lim=48, deco=[["pond", -20, -3, 4.5, 2.6], ["pond", -6, 3.4, 4.5, 2.6]]))
