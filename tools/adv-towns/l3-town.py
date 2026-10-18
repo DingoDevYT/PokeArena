@@ -78,7 +78,7 @@ g.claim([(x, y) for y in range(-N, N + 1) for x in range(-N, N + 1) if not land(
 
 SNOWT = ['rg_pine_green_snow0', 'rg_tall_green_snow0', 'rg_round_teal_snow0', 'rg_pine_teal_snow1', 'rg_tall_teal_snow0', 'rg_round_green_snow1', 'rg_fir_green_snow0', 'rg_fir_teal_snow1', 'snowPineLarge', 'snowDomeTree', 'rg_pine_green_snow1', 'rg_tall_olive_snow0']
 SLIM = ['rg_slim_green_snow', 'rg_slim_teal_snow', 'rg_cone_green_snow', 'rg_cone_teal_snow', 'rg_young_green_snow0', 'rg_young_teal_snow0']
-SMALL = ['rg_snow_lump', 'rg_snow_lump2', 'rg_snowpile', 'rg_ice_pebble', 'rg_ice_pebble2', 'rg_ice_pebble3', 'snowBall', 'rg_bush_green_snow', 'rg_bush_teal_snow', 'rg_ice_stone', 'rg_leaves_tiny']
+SMALL = ['rg_snow_lump', 'rg_ice_pebble', 'rg_ice_pebble2', 'rg_ice_pebble3', 'snowBall', 'rg_bush_green_snow', 'rg_bush_teal_snow', 'rg_ice_stone', 'rg_leaves_tiny']
 ROCKS = ['rg_ice_boulder', 'rg_ice_boulder2', 'rg_ice_rock', 'rg_ice_rock2', 'rg_boulder_grey', 'rg_rock_grey', 'rockSnowCap']
 def st(x0, y0, x1, y1, ch='p'): g.rect(x0, y0, x1, y1, ch)
 def scatter(kinds, x0, y0, x1, y1, n, mind=3, seed=1, tries=800, walk=False):
@@ -87,7 +87,10 @@ def scatter(kinds, x0, y0, x1, y1, n, mind=3, seed=1, tries=800, walk=False):
         if len(got) >= n: break
         x, y = r.randint(x0, x1), r.randint(y0, y1)
         if (x, y) in g.occ or not land(x, y) or wet(x, y, 1) or any(abs(x - a) < mind and abs(y - b) < mind for a, b in got): continue
-        if g.prop(r.choice(kinds), x, y, walk=walk): got.append((x, y))
+        if not walk and any((x + i, y + k) in g.occ for i in (-1, 0, 1) for k in (-1, 0, 1)): continue      # nothing is planted touching another prop
+        nm = r.choice(kinds)
+        if not walk and kit.size(nm)[1] >= 1.3 and (any(g.get(x + i, y + k) not in ('.', 'Z', 'a') for i in (-1, 0, 1) for k in (-2, -1)) or any(g.get(x + i, y) not in ('.', 'Z', 'a') for i in (-1, 1))): continue   # a tree keeps its canopy and trunk off the walks
+        if g.prop(nm, x, y, walk=walk): got.append((x, y))
     return got
 def blob(cx, cy, rx, ry, ch):
     for y in range(cy - ry, cy + ry + 1):
@@ -97,10 +100,10 @@ def blob(cx, cy, rx, ry, ch):
 # ================================================================ the road, the grand avenue, the plaza and the castle court
 g.lane([(18, 26), (18, 24), (5, 24)], 2, 'p')                                              # the road from Route 18 (exit)
 g.exit(18, 26, 'S')
-blob(0, 2, 10, 4, 'p'); blob(0, 2, 8, 3, 't')                                               # the castle's courtyard before the gate
-blob(0, 12, 10, 5, 'p'); blob(0, 12, 8, 3, 't')                                             # the League Plaza: a stone round with a tan heart
+blob(0, 2, 10, 4, 't')                                               # the castle's courtyard before the gate
+blob(0, 12, 10, 5, 't')                                             # the League Plaza: a stone round with a tan heart
 st(-2, 5, 2, 8, 't')                                                                        # the court and the plaza meet
-st(-1, 17, 1, 22, 'p'); st(-3, 17, -2, 22, 't'); st(2, 17, 3, 22, 't')                      # the grand avenue, 3 wide, with a tan walk each side
+st(-3, 17, 3, 22, 't')                      # the grand avenue, 3 wide, with a tan walk each side
 st(-5, 23, 4, 25, 't')                                                                      # the gate forecourt, where the road comes in
 g.building('castle', 0, -2, 'house')
 
@@ -108,7 +111,7 @@ g.building('castle', 0, -2, 'house')
 g.props('statueDog', [(-3, -1), (3, -1)], walk=True)
 g.props('torchPost', [(-5, 0), (5, 0), (-8, 2), (8, 2), (-6, 5), (6, 5), (-2, 6), (2, 6)], walk=True)
 g.props('rg_planter_snow', [(-7, -1), (7, -1), (-9, 3), (9, 3), (-4, 3), (4, 3)], walk=True); g.props('rg_pot_snow', [(-1, -1), (1, -1), (-5, 1), (5, 1)], walk=True)
-g.props('rg_column', [(-12, 0), (12, 1), (-10, -1), (10, -1)])
+g.props('torchPost', [(-11, 1), (11, 1)], walk=True)
 g.props('rg_bench', [(-6, 3), (6, 3)], walk=True)
 
 # ================================================================ the League Plaza
@@ -116,18 +119,17 @@ g.prop('maFountain', 0, 13, walk=True)
 g.props('statueDog', [(-4, 9), (4, 9), (-4, 16), (4, 16)], walk=True)
 g.props('torchPost', [(-8, 10), (8, 10), (-8, 15), (8, 15), (-2, 8), (2, 8), (-3, 17), (3, 17), (-6, 12), (6, 12)], walk=True)
 g.props('rg_bench', [(-7, 13), (7, 13), (-5, 17), (5, 17)], walk=True); g.props('rg_planter_snow', [(-6, 9), (6, 9), (-6, 16), (6, 16), (-9, 12), (9, 12)], walk=True)
-g.props('rg_column', [(-11, 8), (11, 8), (-11, 17), (11, 17)])
+g.props('torchPost', [(-11, 9), (11, 9), (-11, 16), (11, 16)], walk=True)
 
 # ================================================================ the grand avenue: torches, snow beds, hedges, guard towers at the foot
 g.props('torchPost', [(-4, y) for y in range(18, 23, 2)] + [(4, y) for y in range(18, 23, 2)], walk=True)
 g.props('statueDog', [(-3, 19), (3, 19)], walk=True)
-g.props('rg_column', [(-2, 23), (2, 23)], walk=True)
+g.props('rg_column', [(-5, 21), (4, 21)])                                                   # the gate columns, on the snow beside the avenue walks
 g.props('rg_planter_snow', [(-5, y) for y in (19, 21)] + [(5, y) for y in (19, 21)], walk=True)
 g.props('torchPost', [(-5, 24), (4, 24)], walk=True); g.prop('rg_sign_board', 3, 23, walk=True)
 
 # ================================================================ formal snow gardens on both sides of the avenue: stone hedges, topiary, beds, bare young trees
 for sx in (-1, 1):
-    for y in range(18, 23, 1): g.prop('mHedgeTallStone', 7 * sx, y)
     for x in (6, 7, 8, 9, 10): g.prop('mHedgeLongStone', sx * x if sx > 0 else -x, 17) if False else None
     for i, y in enumerate((19, 21)): g.prop(('mPineStone', 'mFirStone', 'mBushStone')[i % 3], 6 * sx, y)
     g.props('rg_pot_snow', [(5 * sx, 20), (5 * sx, 22)], walk=True)
@@ -138,11 +140,10 @@ st(-14, 12, -11, 12, 't') if False else None
 g.lane([(-11, 12), (-15, 12), (-15, -8)], 1, 't')                                           # out of the plaza's west side and north to the beach
 blob(-17, -9, 3, 1, 'a')                                                                    # a sand court at the path's end
 for x, y in ((-19, -9), (-15, -11), (-17, -11), (-13, -9), (-19, -7)): g.prop('standingStoneMintTall' if (x + y) % 2 else 'standingStoneMint', x, y)
-g.props('rg_lantern', [(-16, -8), (-14, -8)], walk=True); g.prop('rg_arch_white', -15, -6, walk=True)
-g.pond(-24, 20, 3, 2)                                                                       # the frozen pond lies where the site is snow already, so its ground is left as it is
-POND = (-29, 16, -19, 24)
+g.props('rg_lantern', [(-16, -8), (-14, -8)], walk=True); g.prop('rg_sign_board', -13, -7, walk=True); g.prop('rg_arch_white', -15, -6, walk=True)
+POND = (0, 0, -1, -1)      # (the generator draws ponds only on grass or sand, so there is no pond on this snow)
 g.props('rg_bench', [(-20, 18), (-26, 18)], walk=True)
-g.lane([(-15, 12), (-15, 24), (-6, 24)], 1, 't'); g.lane([(-15, 18), (-18, 18)], 1, 't'); g.props('rg_lantern', [(-14, 16), (-16, 17), (-14, 21), (-12, 23)], walk=True); g.prop('rg_arch_white', -15, 14, walk=True)
+g.lane([(-15, 12), (-15, 24), (-6, 24)], 1, 't'); g.lane([(-15, 18), (-19, 18)], 1, 't'); g.props('rg_bench', [(-20, 18)], walk=True); g.props('rg_lantern', [(-14, 16), (-16, 17), (-14, 21), (-12, 23)], walk=True); g.prop('rg_arch_white', -15, 14, walk=True)
 
 # ================================================================ the east: the lantern terrace over the sea, a path along the cape
 g.lane([(11, 12), (15, 12), (15, 1)], 1, 't'); g.lane([(15, 12), (15, 23)], 1, 't'); g.props('rg_lantern', [(14, 7), (16, 5), (14, 17), (16, 20)], walk=True); g.prop('rg_arch_white', 15, 14, walk=True)
@@ -153,11 +154,6 @@ g.props('rg_bench', [(17, 17), (22, 17)], walk=True); g.prop('rg_fountain2', 19,
 # ================================================================ parterres by the castle court: stone hedge borders round snow beds, a pot or a spire in the middle
 def parterre(x0, y0, x1, y1, centre='rg_basin', gap=None):
     """a clipped garden: a ring of low stone hedges (a gap on the south side), snow beds inside, a basin in the middle"""
-    for x in range(x0, x1, 2):
-        g.prop('mHedgeLongStone', x + 1, y0)
-        if not (gap and gap[0] <= x <= gap[1]): g.prop('mHedgeLongStone', x + 1, y1)
-    for y in range(y0 + 1, y1, 2):
-        g.prop('mHedgeTallStone', x0, y + 1); g.prop('mHedgeTallStone', x1, y + 1)
     cx_, cy_ = (x0 + x1) // 2, (y0 + y1) // 2
     g.prop(centre, cx_, cy_, walk=True)
     for x in range(x0 + 2, x1 - 1, 2):
@@ -178,6 +174,8 @@ g.props('rg_bench', [(17, 2)], walk=True); g.props('rg_lantern', [(16, 8)], walk
 g.trees(-26, -9, -17, 26, SNOWT, seed=1); g.trees(18, 1, 26, 26, SNOWT, seed=3); g.trees(-26, 22, 26, 26, SNOWT, seed=4)       # the belts: canopies overlapping, as in the mockups
 g.trees(-26, -9, 26, 26, SNOWT, dx=2, dy=2, seed=2); g.trees(-25, -8, 25, 26, SNOWT, dx=2, dy=2, seed=9)
 scatter(ROCKS, -26, -9, 26, 26, 22, mind=4, seed=7); scatter(['rg_snowpile', 'rg_snow_lump', 'rg_ice_tall', 'rg_ice_spike'], -26, -9, 26, 26, 20, mind=3, seed=8)
+# the open sea: rock islets and reefs
+for nm, x, y in (('rg_water_rocks', -20, -17), ('rg_water_boulder_grey', -8, -22), ('rg_water_rock_grey', 6, -20), ('rg_water_rocks_grey', 17, -15), ('rg_water_rock', 24, -23), ('rg_water_boulder', -14, -25), ('rg_water_rock2', 1, -26), ('rg_water_rocks', 12, -10), ('rg_water_boulder_grey2', 22, -9), ('rg_water_rock_grey', -23, -12)): g.prop(nm, x, y, force=True, walk=True)
 scatter(['mPineStone', 'mFirStone', 'mBushStone', 'mFirStone'], -14, 5, 14, 11, 8, mind=3, seed=11)                        # clipped topiary round the plaza's waist
 scatter(['rg_bare_green_snow0', 'rg_bare_teal_snow1', 'rg_bare_olive_snow0', 'rg_bare_orange_snow1'], -26, -9, 26, 26, 18, mind=4, seed=12)
 scatter(SLIM + SNOWT[:6], -26, -9, 26, 26, 90, mind=2, seed=13, tries=2000)
