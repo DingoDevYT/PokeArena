@@ -43,7 +43,7 @@ window.ADV_NPCS = [
   { id: 'r22-pond', x: 697, y: 405, sprite: 'npc4-ponytail-girl', face: 2, move: 'still', lines: ['The pond is so still today. You can see every cloud in it.'] },
 
   // ---------- Route 7: the grazing country (ranchers, hikers) ----------
-  { id: 'r7-walt', x: 180, y: 750, sprite: 'npc2-bearded-man', face: 0, move: 'still', lines: ['Those turbines sell power all over. Goldacre makes more than it needs.'],
+  { id: 'r7-walt', x: 180, y: 752, sprite: 'npc2-bearded-man', face: 0, move: 'still', lines: ['Those turbines sell power all over. Goldacre makes more than it needs.'],
     trainer: { cls: 'Rancher', name: 'Walt', sight: 5, money: 24, team: [['mareep', 0], ['mareep', 1], ['smoliv', 1], ['mareep', 2], ['smoliv', 2], ['mareep', 3]], say: 'Stock grazes all over Route 7. Mind you do not startle my Mareep!', lose: 'Fair fight. You win.' } },
   { id: 'r7-gus', x: 199, y: 762, sprite: 'npc1-explorer', face: 6, move: 'still', script: 'coach', skill: 'rough', name: 'Gus', time: 22, course: [[186, 751], [192, 752], [199, 755], [201, 758]], coach: ['Rough ground suits a heavy mount. I can teach you.', 'Pay me, take the hard lesson, or ride my course against the clock.'], known: ['You ride rough ground well. Keep at it.'], lines: ['Houndour come down onto the pasture at night. I would not camp out here.'],
     trainer: { cls: 'Hiker', name: 'Gus', sight: 5, money: 24, team: [['rockruff', 0], ['mankey', 1], ['rockruff', 1], ['mankey', 2], ['rockruff', 2], ['mankey', 3]], say: 'The ground gets rough up here. Good country for a hiker!', lose: 'My legs are stronger than my Pokemon.' } },

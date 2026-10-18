@@ -480,15 +480,17 @@ for _c, _t in TOWN.items():
 # the hand-built lab windows are met the same way (the exporter lays their own ground over this afterwards): a route road stops short of the window and
 # joins the nearest of the window's road entries (its path tiles on the border) with a straight 2 wide leg and one square bend. An entry facing a town
 # box is the town's to meet (its exit is drawn onto it), so it gets no stub here.
+_TD = np.zeros((HP, WP), bool)                                # every town's ground (its disc, or its box when drawn with exits): inside it the town meets the windows itself
+for _t in TOWN.values(): _TD |= (XX - _t['tx']) ** 2 + (YY - _t['ty']) ** 2 <= (_t['R'] + 8) ** 2
 _TB = np.zeros((HP, WP), bool)
 for _c, _j in EXITS.items(): _TB |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
-for (wx_, wy_, ww_, wh_), mf_ in zip(LABWIN, LABMAPF):
+WINE = []                                                     # every lab window's road entries: [window, side, x, y]; (x, y) = the 2 wide road's top-left cell just outside the border
+for wi_, ((wx_, wy_, ww_, wh_), mf_) in enumerate(zip(LABWIN, LABMAPF)):
     if K == 1: break
     g_ = json.load(open(os.path.join(ROOT, mf_)))['ground']
     pt_ = lambda tx, ty: any(2 * ty + j < len(g_) and 2 * tx + i < len(g_[2 * ty + j]) and g_[2 * ty + j][2 * tx + i] == 'd' for i in (0, 1) for j in (0, 1))
     wr_ = np.zeros((HP, WP), bool); wr_[wy_:wy_ + wh_, wx_:wx_ + ww_] = True
     band &= ~(dil(wr_, 3) & ~EXJ)
-    ents = []                                                     # (outward cells of the stub, its far end, side)
     for side, cells, inw in (('N', [(i, 0) for i in range(ww_)], (0, 1)), ('S', [(i, wh_ - 1) for i in range(ww_)], (0, -1)), ('W', [(0, j) for j in range(wh_)], (1, 0)), ('E', [(ww_ - 1, j) for j in range(wh_)], (-1, 0))):
         run = []
         for c in cells + [None]:
@@ -496,21 +498,56 @@ for (wx_, wy_, ww_, wh_), mf_ in zip(LABWIN, LABMAPF):
             if run:
                 deep = [q for q in run if all(pt_(q[0] + k * inw[0], q[1] + k * inw[1]) for k in range(1, 6))] or run       # line up with the road five tiles in (the border cells may flare)
                 lx, ly = min(q[0] for q in deep), min(q[1] for q in deep); ox, oy = -inw[0], -inw[1]
-                stub = [(wx_ + lx + ox * k, wy_ + ly + oy * k) for k in range(1, 5)]
-                if not any(_TB[wy_ + ly + oy * k, wx_ + lx + ox * k] for k in range(1, 7)):
-                    for x, y in stub: band[y:y + 2, x:x + 2] = True
-                    ents.append((stub[-1], side))
+                if not any(_TB[wy_ + ly + oy * k, wx_ + lx + ox * k] for k in range(1, 7)): WINE.append([wi_, side, wx_ + lx + ox, wy_ + ly + oy])
             run = []
+WJ = np.zeros((HP, WP), bool); used_ = set()                 # WJ: roads the windows laid themselves (corners, stubs); two windows' entries facing each other a few tiles apart: one square corner joins them
+for a_, A in enumerate(WINE):
+    for b_, B in enumerate(WINE):
+        if a_ in used_ or b_ in used_ or A[0] == B[0] or A[1] not in 'NS' or B[1] not in 'WE' or abs(A[2] - B[2]) > 8 or abs(A[3] - B[3]) > 8: continue
+        if not ((B[3] >= A[3] - 1) if A[1] == 'S' else (B[3] <= A[3] + 1)) or not ((A[2] <= B[2] + 1) if B[1] == 'W' else (A[2] >= B[2] - 1)): continue
+        for m_ in (band, WJ): m_[min(A[3], B[3]):max(A[3], B[3]) + 2, A[2]:A[2] + 2] = True; m_[B[3]:B[3] + 2, min(A[2], B[2]):max(A[2], B[2]) + 2] = True
+        used_ |= {a_, b_}
+        log(f'  lab windows {A[0]} and {B[0]}: their {A[1]} and {B[1]} entries meet at a corner {A[2]},{B[3]}')
+for wi_, (wx_, wy_, ww_, wh_) in enumerate(LABWIN):
+    if K == 1: break
+    wr_ = np.zeros((HP, WP), bool); wr_[wy_:wy_ + wh_, wx_:wx_ + ww_] = True; ents = []
+    for k_, (w_, side, x0_, y0_) in enumerate(WINE):
+        if w_ != wi_ or k_ in used_: continue
+        ox, oy = {'N': (0, -1), 'S': (0, 1), 'W': (-1, 0), 'E': (1, 0)}[side]; stub = [(x0_ + ox * k, y0_ + oy * k) for k in range(4)]
+        sm_ = np.zeros((HP, WP), bool)
+        for x, y in stub: sm_[y:y + 2, x:x + 2] = True
+        band |= sm_; WJ |= sm_; ents.append((stub[-1], side, sm_, [False]))
     lbw, nlw = ndi.label(band & dil(wr_, 14) & ~dil(wr_, 4), np.ones((3, 3)))
     for i_ in range(1, nlw + 1):
         c_ = np.argwhere(lbw == i_)
         if EXJ[c_[:, 0], c_[:, 1]].any() or not ents: continue      # a town's exit road: the town met it already
+        if WJ[c_[:, 0], c_[:, 1]].any():                          # a window's own road; a scrap of route road left touching it by the cut is dropped
+            if len(c_) < 40: band[c_[:, 0], c_[:, 1]] = WJ[c_[:, 0], c_[:, 1]]
+            continue
         dw = np.maximum(np.maximum(wx_ - c_[:, 1], c_[:, 1] - (wx_ + ww_ - 1)), np.maximum(wy_ - c_[:, 0], c_[:, 0] - (wy_ + wh_ - 1)))
         if dw.min() > 9: continue
-        ty_, tx_ = c_[dw.argmin()]; (fx, fy), side = min(ents, key=lambda e: abs(e[0][0] - tx_) + abs(e[0][1] - ty_))
+        if _TD[tuple(c_[dw.argmin()])] or _TB[tuple(c_[dw.argmin()])]: continue
+        ty_, tx_ = c_[dw.argmin()]; (fx, fy), side, _, hit_ = min(ents, key=lambda e: abs(e[0][0] - tx_) + abs(e[0][1] - ty_)); hit_[0] = True
+        hz = side in 'WE'; off = (fy - ty_) if hz else (fx - tx_)
+        if 0 < abs(off) <= 4:                                     # the road's last straight run lies a little off the entry's line: slide that run over (no dogleg)
+            b0_ = band.copy(); lane = [v for v in range((ty_ if hz else tx_) - 2, (ty_ if hz else tx_) + 3) if (b0_[v, tx_] if hz else b0_[ty_, v])]
+            if len(lane) <= 3:
+                run_ = set(); st_ = [(ty_, tx_)]
+                while st_:
+                    q = st_.pop()
+                    if q in run_ or not b0_[q] or (q[0] if hz else q[1]) not in lane or abs(q[1] - tx_) + abs(q[0] - ty_) > 40: continue
+                    run_.add(q); st_ += [(q[0], q[1] + 1), (q[0], q[1] - 1)] if hz else [(q[0] + 1, q[1]), (q[0] - 1, q[1])]
+                    st_ += [(q[0] + 1, q[1]), (q[0] - 1, q[1])] if hz else [(q[0], q[1] + 1), (q[0], q[1] - 1)]
+                for y, x in run_: band[y, x] = False
+                for y, x in run_: band[y + (off if hz else 0), x + (0 if hz else off)] = True
+                if hz: ty_ += off
+                else: tx_ += off
+        if abs(fx - tx_) + abs(fy - ty_) <= 2: continue              # the road already meets the entry
         pts = [(fx, fy), (fx, ty_), (tx_, ty_)] if side in 'NS' else [(fx, fy), (tx_, fy), (tx_, ty_)]
         for (xa, ya), (xb, yb) in zip(pts, pts[1:]): band[min(ya, yb):max(ya, yb) + 2, min(xa, xb):max(xa, xb) + 2] = True
         log(f'  lab window at {wx_},{wy_}: joins the road end at {tx_},{ty_} to its {side} entry by {pts}')
+    for _, _, sm_, hit_ in ents:                                 # an entry no route road reaches keeps no stub (the window's own road ends there)
+        if not hit_[0]: band &= ~sm_
 
 # ---------------------------------------------------------------- 4. heights
 cave_seed = (int(LABELS[4][0] / S), int(LABELS[4][1] / S))
