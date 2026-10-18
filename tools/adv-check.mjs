@@ -802,7 +802,8 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   eq(zoneAt(cx6 + 9, cy6 - 60), 'route3', 'north of the town is Route 3'); eq(zoneAt(cx6 + 40, cy6 + 4), 'route111', 'east of the town is Route 111');
   // both roads walk on foot from the town to the end of the road
   let n3 = ADV.entity(...tile(cx6 + 10, cy6 + 4), 0); walk(n3, 0, -1, 28); ok(n3.y < (cy6 - 75) * T, 'Route 3 walks on foot from the town to its far end (reached ' + Math.floor(n3.y / T - cy6) + ')');
-  let e111 = ADV.entity(...tile(cx6 + 13, cy6 + 4), 0); walk(e111, 1, 0, 40); ok(e111.x > (cx6 + 100) * T, 'Route 111 walks on foot from the town to its far end (reached ' + Math.floor(e111.x / T - cx6) + ')');
+  const run = y => { let n = 0; while (ADV.palette[ADV.mat(cx6 + 20 + n, y)] === 'path') n++; return n; }, ry111 = [...Array(17)].map((_, k) => cy6 - 4 + k).sort((a, b) => run(b) - run(a))[0];   // the row the road east keeps to longest
+  let e111 = ADV.entity(...tile(cx6 + 20, ry111), 0); walk(e111, 1, 0, 40); ok(e111.x > (cx6 + 100) * T, 'Route 111 walks on foot from the town to its far end (reached ' + Math.floor(e111.x / T - cx6) + ')');
   // wild: the town rolls Route 3's table (no nat20), never on its own streets
   const E6 = window.ADV_ENC, nn = tb => tb.filter(e => e[1] !== 'nat20'); eq(JSON.stringify(E6.pinegrove), JSON.stringify({ day: nn(E6.route3.day), night: nn(E6.route3.night) }), 'Pinegrove\'s table is Route 3\'s, without the nat20 slot');
   const bon = ADVW.tm('bonsly'), p6 = [(cx6 + 8) * T + 16, (cy6 - 12) * T + 16]; eq(ADV.palette[ADV.mat(cx6 + 8, cy6 - 12)], 'path', 'the town street north of the plaza is a dirt lane'); ok(!ADVW.ok(p6[0], p6[1], bon, 0), 'no wild Pokemon stands on Pinegrove\'s streets'); ok(ADVW.ok(...tile(cx6 + 12, cy6 - 25), bon, 0) || ADVW.ok(...tile(cx6 + 14, cy6 - 25), bon, 0), 'but they do stand in the clearing around it');
@@ -988,7 +989,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(E4.quietplain.day.some(e => e[0] === 'greavard') && E4.quietplain.night.some(e => e[0] === 'duskull'), 'Greavard on the plain by day, Duskull by night'); ok(![...E4.route1.day, ...E4.route1.night].some(e => ['pidgey', 'starly', 'spearow', 'wingull', 'taillow', 'hoppip'].includes(e[0])), 'no birds on Route 1');
   // Route 1: an old paved road, 2 to 4 wide on the straights, cracked (grass holes and weeds in the seams), nothing solid on it
   const corr = []; for (let y = 787; y < 884; y++) for (let x = 382; x < 447; x++) if (pal(x, y) === 'pavingStone') corr.push([x, y]);
-  ok(corr.length >= 380, corr.length + ' tiles of old paving on Route 1');
+  ok(corr.length >= 320, corr.length + ' tiles of old paving on Route 1 (plan B: straight runs, shorter than the old wiggling line)');
   for (const y of [808, 812, 826, 830, 844, 856, 872]) { const w = [...Array(65)].filter((_, i) => pal(382 + i, y) === 'pavingStone').length; ok(w >= 2 && w <= 4, `Route 1 is 2 to 4 tiles wide at row ${y} (${w})`); }
   const weeds = all.filter(p => ['grassBlades', 'dryTuft', 'leafPlantGrey'].includes(p.n) && pal(Math.floor(p.x / T), Math.floor((p.y - 3) / T)) === 'pavingStone'); ok(weeds.length >= 40, weeds.length + ' weeds forced up through the seams');
   ok(all.filter(p => ADV.propDef(p.n)?.solid && p.x / T >= 382 && p.x / T < 447 && p.y / T >= 787 && p.y / T < 884 && pal(Math.floor(p.x / T), Math.floor((p.y - 3) / T)) === 'pavingStone').length === 0, 'nothing solid stands on the paving');

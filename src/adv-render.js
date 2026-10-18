@@ -81,14 +81,12 @@ const ADVR = {
   ground(g, ch, i, c, r, x, y) {
     if (ch.bake && ch.bake[i] >= 0) return this.tile(g, ch.bake[i], x, y, window.ADV_TILESET_REGION);   // a map-lab cell is one region sheet tile whatever its mat (a cave room's mats belong to the interior sheet)
     const def = ADV.defOf(ADV.palette[ch.mat[i]]);
-    if (def) {
+    if (def && def.quad) { const bd = ADV.defOf(ADV.palette[ch.qb[i]]); if (bd) this.tile(g, ADV.pick(bd, 'C', c, r), x, y, ADV.originOf(bd), bd.density); }   // a path cell: the ground under the path layer
+    else if (def) {
       if (def.overlay) { const bd = ADV.defOf(def.base || 'grass'); if (bd) this.tile(g, ADV.pick(bd, 'C', c, r), x, y, ADV.originOf(bd), bd.density); }
-      if (def.mode === 'under') {   // a diagonal shore tile (tools/adv_lab_ground.py) leaves its land half clear: the land neighbour's own ground goes under it
-        const rn = ADV.roleName(c, r, 0);
-        if (rn && rn[0] === 'd') { const nd = ADV.defOf(ADV.palette[ADV.mat(c, r + (rn[1] === 'N' ? -1 : 1))]); if (nd && nd !== def) this.tile(g, ADV.pick(nd, 'C', c, r), x, y, ADV.originOf(nd), nd.density); }
-      }
       this.tile(g, ADV.frameId(def, ch.role[i], ch.tile[i], this.frame), x, y, ADV.originOf(def), def.density);
     }
+    if (ch.dq) for (let q = 0; q < 4; q++) { const id = ch.dq[i * 4 + q]; if (id >= 0) this.tile(g, id, x, y, window.ADV_TILESET_REGION); }   // the path layer's quarters (ADV.quadCell)
     if (ch.otile[i] >= 0 && ch.over[i]) {
       const od = ADV.defOf(ADV.palette[ch.over[i]]);
       if (od) this.tile(g, ADV.frameId(od, ch.orole[i], ch.otile[i], this.frame), x, y, ADV.originOf(od), od.density);

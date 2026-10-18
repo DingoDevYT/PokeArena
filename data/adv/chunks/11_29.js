@@ -1,1 +1,1 @@
-ADV.chunk(11,29,{h:"0x1024",mat:"6x6,5x4,1x22,6x7,5x4,1x21,6x8,5x4,1x20,6x9,5x4,1x19,6x10,5x4,1x18,6x11,5x21,6x12,5x20,6x14,5x18,6x768",over:"0x1024",kind:"0x1024",props:[["leafPlantGrey",11762,29718],["grassBlades",12007,29712]]});
+ADV.chunk(11,29,{h:"0x1024",mat:"6x4,5x6,1x22,6x5,5x5,1x22,6x7,5x6,1x19,6x8,5x5,1x19,6x10,5x6,1x16,6x11,5x8,1x13,6x13,5x16,1x3,6x16,5x16,6x19,5x13,6x29,5x3,6x704",over:"0x1024",kind:"0x1024",props:[["leafPlantGrey",11762,29718],["grassBlades",12007,29712]]});

@@ -3,15 +3,11 @@
 'use strict';
 const ADV = (() => {
   const T = 32, CH = 32, N = CH * CH;   // T = the art tile; a map draws it S times bigger (S = A.OUT outdoors, 1 in rooms and the cave), see S / Tp / Tc
-  const ROLES = ['C', 'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'iNE', 'iNW', 'iSE', 'iSW', 'dNE', 'dNW', 'dSE', 'dSW', 'eNE', 'eNW', 'eSE', 'eSW', 'xNE', 'xNW'];
-  // 45 degree edges (tools/adv_lab_ground.py diagonals): an outer corner in a diagonal run is dXX, the inner corner under it eXX, the middle of a 3 wide diagonal
-  // (an inner corner of both edges) xNE / xNW. A set without them draws the plain corner (BASE).
-  const BASE = { dNE: 'NE', dNW: 'NW', dSE: 'SE', dSW: 'SW', eNE: 'iNE', eNW: 'iNW', eSE: 'iSE', eSW: 'iSW', xNE: 'iNE', xNW: 'iNW' };
-  const CHAIN = { NE: [[1, 1], [-1, -1]], SW: [[1, 1], [-1, -1]], NW: [[1, -1], [-1, 1]], SE: [[1, -1], [-1, 1]] };   // where an outer corner's diagonal run continues
+  const ROLES = ['C', 'N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'iNE', 'iNW', 'iSE', 'iSW'];
+  const NB8 = [[0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1]], NB4 = NB8.slice(0, 4);
   const STAIR = [null, [0, -1], [0, 1], [1, 0], [-1, 0]];                 // by kind 1..4: ascent direction
   const LEDGE = [null, null, null, null, null, [0, 1], [1, 0], [-1, 0]];  // by kind 5..7: drop direction
   const SIDES = { N: [[0, -1]], S: [[0, 1]], E: [[1, 0]], W: [[-1, 0]], NE: [[0, -1], [1, 0]], NW: [[0, -1], [-1, 0]], SE: [[0, 1], [1, 0]], SW: [[0, 1], [-1, 0]], iNE: [[1, -1]], iNW: [[-1, -1]], iSE: [[1, 1]], iSW: [[-1, 1]] };   // the neighbours an edge role faces
-  for (const [k, v] of Object.entries(BASE)) SIDES[k] = SIDES[v];
   const hash = (c, r) => {   // variant pick per cell; the final mix (murmur3 fmix) keeps a modulo of it from falling into a lattice
     let h = Math.imul(c, 73856093) ^ Math.imul(r, 19349663);
     h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
@@ -195,8 +191,8 @@ const ADV = (() => {
 
     // ---------- autotiling ----------
     pick(def, role, c, r) {
-      let id = def[role] ?? def[BASE[role]]; if (id === undefined) id = def.C;
-      const b = def.by && this.groundBy(def, role, c, r); if (b) id = b[role] ?? b[BASE[role]] ?? b.C;
+      let id = def[role]; if (id === undefined) id = def.C;
+      const b = def.by && this.groundBy(def, role, c, r); if (b) id = b[role] ?? b.C;
       return Array.isArray(id) ? id[hash(c, r) % id.length] : id;
     },
     // derived sets (tileset-derived.js): def.by[ground] = the tiles drawn where the cell meets that ground. mode nb: an edge tile of this def by the neighbour on the edge's side; base: the plain tile an overlay
@@ -215,7 +211,7 @@ const ADV = (() => {
       const i = (r & 31) * 32 + (c & 31), g = this.grp; if (layer || !g ? ch[layer ? 'over' : 'mat'][i] === m : g[ch.mat[i]] === g[m]) return true;
       return !layer && !!this.jn && this.jn[m * this.palette.length + ch.mat[i]] === 1;   // jn: a snow cell counts a path beside it as snow (tileset-derived.js joins), the path draws the edge
     },
-    role0(c, r, m, layer) {
+    roleOf(c, r, m, layer) {
       const s = (dc, dr) => this.same(c + dc, r + dr, m, layer);
       const n = s(0, -1), so = s(0, 1), e = s(1, 0), w = s(-1, 0);
       const v = !n ? 'N' : !so ? 'S' : '', hz = !e ? 'E' : !w ? 'W' : '';
@@ -226,21 +222,35 @@ const ADV = (() => {
       if (!s(-1, 1)) return 'iSW';
       return 'C';
     },
-    diagOuter(c, r, m, layer, role) { return !!CHAIN[role] && CHAIN[role].some(([a, b]) => this.same(c + a, r + b, m, layer) && this.role0(c + a, r + b, m, layer) === role); },
-    roleOf(c, r, m, layer) {
-      const role = this.role0(c, r, m, layer);
-      if (CHAIN[role]) return this.diagOuter(c, r, m, layer, role) ? 'd' + role : role;
-      if (role[0] !== 'i') return role;
-      const o = role.slice(1), vy = o[0] === 'N' ? -1 : 1, hx = o[1] === 'E' ? 1 : -1, s = (dc, dr) => this.same(c + dc, r + dr, m, layer);
-      const run = (dc, dr) => s(dc, dr) && this.role0(c + dc, r + dr, m, layer) === o && this.diagOuter(c + dc, r + dr, m, layer, o);
-      if (!run(0, vy) && !run(hx, 0)) return role;
-      if (!s(-hx, -vy)) return 'x' + (o === 'NE' || o === 'SW' ? 'NE' : 'NW');   // the opposite corner is open too: the middle of a 3 wide diagonal
-      return 'e' + o;
+    // paths drawn as the lab draws them (tools/adv_lab_ground.py quad): a layer of quarter tiles over the ground. Quarter q of a cell (0 NW, 1 NE, 2 SW, 3 SE)
+    // is picked by 4 cells: the cell itself, its edge neighbours on that side and the diagonal one (bits self | vertical << 1 | horizontal << 2 | diagonal << 3),
+    // so a 1 tile path is the mockups' path and its edge art lies half on the grass beside it. A path cell draws the ground round it under the layer (qb).
+    quadSetup() {
+      if (this.qmPal === this.palette) return; this.qmPal = this.palette;
+      this.qm = Uint8Array.from(this.palette, n => { const d = this.defOf(n); return d && d.quad ? 1 : 0; });
+      this.qGrass = Math.max(0, this.palette.indexOf('grass'));
+    },
+    quadCell(ch, i, c, r) {
+      const mi = ch.mat[i], qm = this.qm; let m = qm[mi] ? mi : -1;
+      for (let q = 0; q < 4; q++) ch.dq[i * 4 + q] = -1;
+      if (m < 0) for (const [a, b] of NB8) { const mm = this.mat(c + a, r + b); if (qm[mm]) { m = mm; break; } }
+      if (m < 0) return;
+      let base = mi;
+      if (qm[mi]) { base = this.qGrass; for (const [a, b] of NB4) { const mm = this.mat(c + a, r + b); if (mm && !qm[mm] && !(this.wset && this.wset[mm])) { base = mm; break; } } ch.qb[i] = base; }
+      const def = this.defOf(this.palette[m]), K = typeof window !== 'undefined' && window.ADV_TILESET_DERIVED?.keys, key = K && K[this.palette[base]];
+      const set = (key && def.by && def.by[key] && def.by[key].quad) || def.quad;
+      const on = (dc, dr) => { const nc = this.chunkAt(c + dc, r + dr); return (nc ? nc.mat[((r + dr) & 31) * 32 + ((c + dc) & 31)] === m : qm[mi] === 1) ? 1 : 0; };   // an unloaded neighbour continues the cell
+      for (let q = 0; q < 4; q++) {
+        const hx = q & 1 ? 1 : -1, vy = q & 2 ? 1 : -1, bits = on(0, 0) | on(0, vy) << 1 | on(hx, 0) << 2 | on(hx, vy) << 3;
+        ch.dq[i * 4 + q] = bits ? set[q * 16 + bits] : -1;
+      }
     },
     autotile(ch) {
       const ts = this.ts(); if (!ts) return; ch.gv = (ch.gv | 0) + 1;   // gv: the renderer's cached ground for this chunk is stale
+      this.quadSetup(); ch.dq = ch.dq || new Int16Array(N * 4); ch.qb = ch.qb || new Int16Array(N);
       for (let i = 0; i < N; i++) {
         const c = ch.cx * CH + (i & 31), r = ch.cy * CH + (i >> 5);
+        this.quadCell(ch, i, c, r);
         for (let layer = 0; layer < 2; layer++) {
           const m = layer ? ch.over[i] : ch.mat[i], def = m && this.defOf(this.palette[m]), tiles = layer ? ch.otile : ch.tile;
           if (!def) { tiles[i] = -1; continue; }

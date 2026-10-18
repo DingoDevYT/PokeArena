@@ -72,36 +72,68 @@ def dp(pts, tol):
     k = int(np.argmax(d))
     if d[k] <= tol: return [pts[0], pts[-1]]
     return dp(pts[:k + 1], tol)[:-1] + dp(pts[k:], tol)
-def octi_road(ridge, tol=3.0, w=1):
-    """plan B roads: each stretch of the centre line becomes straight and 45 degree legs (the diagonal path tiles draw the slants), dilated to 2w+1 wide"""
-    c = np.zeros_like(ridge)
-    for path in trace(ridge):
-        v = dp(path, tol); x1, y1 = v[0]
-        for i, (xt, yt) in enumerate(v[1:]):
-            x0, y0 = x1, y1; dx, dy = xt - x0, yt - y0; sx, sy = int(np.sign(dx)), int(np.sign(dy)); n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
-            if (i < len(v) - 2 and 0 < n < 3 <= m or n == 1 <= m): n = 0; dx, dy = (dx, 0) if abs(dx) > abs(dy) else (0, dy)       # a leg a step or two off straight: straight, the next leg takes up the offset (no 1 tile jog; on the last leg a 1 tile offset is dropped, the 3 wide band still meets the junction)
-            elif i < len(v) - 2 and 0 < m < 3 <= n: m = 0; dx, dy = sx * n, sy * n                                 # nearly 45 degrees: a clean diagonal
-            x1, y1 = x0 + dx, y0 + dy; n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
-            st = (sx, 0) if abs(dx) > abs(dy) else (0, sy); a = m // 2
-            x, y = x0, y0; c[y, x] = True
-            for step in [st] * a + [(sx, sy)] * n + [st] * (m - a):
-                x += step[0]; y += step[1]; c[y, x] = True
-    return ndi.binary_dilation(c, ndi.generate_binary_structure(2, 1), iterations=w)
-def octi_legs(v, closed=False):
-    """integer vertices -> unit steps of straight and 45 degree legs (a leg a step or two off straight goes straight and the next leg takes up the offset)"""
-    out = [v[0]]; x1, y1 = v[0]
+def walk(x, y, steps, c):
+    c[y, x] = True
+    for dx, dy in steps: x += dx; y += dy; c[y, x] = True
+    return x, y
+def road_legs(v, minjog=4):
+    """plan B roads (no diagonals): each simplified stretch runs straight, or as a Z (half the run, the jog, the rest of the run) when it is off its axis by
+    minjog or more; a smaller offset goes straight and the next stretch takes it up (no 1 tile jogs). Returns the unit steps from v[0]."""
+    steps = []; x1, y1 = v[0]
     for i, (xt, yt) in enumerate(v[1:]):
-        x0, y0 = x1, y1; dx, dy = xt - x0, yt - y0; n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
-        last = i == len(v) - 2
-        if not last and 0 < n < 3 <= m: dx, dy = (dx, 0) if abs(dx) > abs(dy) else (0, dy)
-        elif not last and 0 < m < 3 <= n: dx, dy = int(np.sign(dx)) * n, int(np.sign(dy)) * n
-        x1, y1 = x0 + dx, y0 + dy; sx, sy = int(np.sign(dx)), int(np.sign(dy)); n = min(abs(dx), abs(dy)); m = max(abs(dx), abs(dy)) - n
-        st = (sx, 0) if abs(dx) > abs(dy) else (0, sy); a = m // 2; x, y = x0, y0
-        for step in [st] * a + [(sx, sy)] * n + [st] * (m - a): x += step[0]; y += step[1]; out.append((x, y))
+        x0, y0 = x1, y1; dx, dy = xt - x0, yt - y0; hx = abs(dx) >= abs(dy)
+        if (abs(dy) if hx else abs(dx)) < minjog and i < len(v) - 2: dx, dy = (dx, 0) if hx else (0, dy)
+        x1, y1 = x0 + dx, y0 + dy; sx, sy = int(np.sign(dx)), int(np.sign(dy))
+        if hx: steps += [(sx, 0)] * (abs(dx) // 2) + [(0, sy)] * abs(dy) + [(sx, 0)] * (abs(dx) - abs(dx) // 2)
+        else: steps += [(0, sy)] * (abs(dy) // 2) + [(sx, 0)] * abs(dx) + [(0, sy)] * (abs(dy) - abs(dy) // 2)
+    return steps
+def turn_path(a, b, cost, turn=10.0, pad=30):
+    """the cheapest 4 way path from a to b ((x, y) cells) where every turn costs `turn` on top of the cells' own cost: long straight runs, few bends"""
+    (xa, ya), (xb, yb) = a, b; x0, x1 = max(0, min(xa, xb) - pad), min(cost.shape[1], max(xa, xb) + pad + 1); y0, y1 = max(0, min(ya, yb) - pad), min(cost.shape[0], max(ya, yb) + pad + 1)
+    cw = cost[y0:y1, x0:x1]; H_, W_ = cw.shape; D4 = ((1, 0), (0, 1), (-1, 0), (0, -1))
+    best = np.full((H_, W_, 4), np.inf); prev = {}; pq = []
+    for d in range(4): best[ya - y0, xa - x0, d] = 0; heapq.heappush(pq, (0.0, ya - y0, xa - x0, d))
+    end = None
+    while pq:
+        g_, y, x, d = heapq.heappop(pq)
+        if g_ > best[y, x, d]: continue
+        if (x + x0, y + y0) == (xb, yb): end = (y, x, d); break
+        for nd, (dx, dy) in enumerate(D4):
+            if nd == (d + 2) % 4: continue
+            ny, nx = y + dy, x + dx
+            if not (0 <= ny < H_ and 0 <= nx < W_): continue
+            ng = g_ + cw[ny, nx] + (turn if nd != d else 0)
+            if ng < best[ny, nx, nd]: best[ny, nx, nd] = ng; prev[(ny, nx, nd)] = (y, x, d); heapq.heappush(pq, (ng, ny, nx, nd))
+    if end is None: return [a, b]
+    out = []; st = end
+    while st in prev: out.append((st[1] + x0, st[0] + y0)); st = prev[st]
+    out.append((st[1] + x0, st[0] + y0)); return out[::-1]
+def axis_road(line, tol=5.0, w=2, avoid=None):
+    """plan B roads (no diagonals): the drawn road's centre line is traced into stretches between ends and junctions, and each stretch is laid again as the
+    cheapest path between its two ends that pays for every turn and for straying from the drawn line (water dearly): long straight runs and square
+    bends, every stretch one clean line that meets the next at the junction. w cells wide (owner: trunk roads 2 cells)"""
+    dl_ = np.minimum(ndi.distance_transform_edt(~line), 20); cost = 1 + .12 * dl_ + (300 * avoid if avoid is not None else 0)
+    c = np.zeros_like(line)
+    deg = lambda x, y: int(line[max(0, y - 1):y + 2, max(0, x - 1):x + 2].sum()) - 1
+    for path in trace(line):
+        tips = (deg(*path[0]) == 1) + (deg(*path[-1]) == 1)
+        if len(path) < 6 or (tips == 1 and len(path) < 10): continue                      # a short dead-end spur off a road (a cave mouth road is longer)
+        for (x, y) in turn_path(path[0], path[-1], cost, turn=45.0, pad=40): c[y, x] = True
+    out = c.copy()
+    for k in range(1, w): out |= np.roll(c, k, 1) | np.roll(c, k, 0) | np.roll(np.roll(c, k, 1), k, 0)
     return out
-def octi_mask(m, tol=1.6, keep=None):
-    """plan B shores: the boundary of a mask traced along the cell edges, simplified, redrawn as straight and 45 degree runs and filled again (4x
-    supersampled: a cell the slant cuts in half stays outside, so it draws the diagonal water tile). keep: cells that stay as they were"""
+def shore_legs(v, minrun=3):
+    """a shore stretch as a staircase of straight runs of minrun or more with 1+ tile steps between them, the steps spread evenly (the autotile rounds each corner)"""
+    steps = []
+    for (x0, y0), (x1, y1) in zip(v, v[1:]):
+        dx, dy = x1 - x0, y1 - y0; hx = abs(dx) >= abs(dy); M, m = (abs(dx), abs(dy)) if hx else (abs(dy), abs(dx)); sx, sy = int(np.sign(dx)), int(np.sign(dy))
+        run, rise = ((sx, 0), (0, sy)) if hx else ((0, sy), (sx, 0))
+        n = max(1, min(m, M // minrun)) if m else 1
+        for k in range(n): steps += [run] * (M * (k + 1) // n - M * k // n) + [rise] * (m * (k + 1) // n - m * k // n)
+    return steps
+def shore_mask(m, tol=1.6, keep=None):
+    """plan B shores (no diagonals): the boundary of a mask traced along the cell edges, simplified and redrawn as straight runs of 3+ stepped evenly
+    (the autotile rounds the corners), then filled again. keep: cells that stay as they were"""
     from PIL import ImageDraw
     H_, W_ = m.shape; a = np.pad(m, 1); nxt = {}
     # directed unit edges with the mask on the left, on the corner lattice of the padded grid (corner (X, Y) = the top left of padded cell (X, Y))
@@ -124,11 +156,12 @@ def octi_mask(m, tol=1.6, keep=None):
             # simplify from the point farthest from the start, so a closed loop has two fixed ends
             k = max(range(len(pts)), key=lambda i: (pts[i][0] - pts[0][0]) ** 2 + (pts[i][1] - pts[0][1]) ** 2)
             v = dp(pts[:k + 1], tol)[:-1] + dp(pts[k:] + [pts[0]], tol)
-            o = octi_legs(v)
+            o = [v[0]]; x_, y_ = v[0]
+            for d_ in shore_legs(v): x_ += d_[0]; y_ += d_[1]; o.append((x_, y_))
             loops += 1; ImageDraw.Draw(tmp := Image.new('1', im.size, 0)).polygon([(x * 4, y * 4) for x, y in o], fill=1)
             im = Image.fromarray(np.array(im) ^ np.array(tmp))
     cov = np.array(im)[4:4 + H_ * 4, 4:4 + W_ * 4].reshape(H_, 4, W_, 4).mean((1, 3))
-    out = cov > .7                                    # a cell the slant halves covers ~.62 (the line's own px count in): outside
+    out = cov > .5
     for _ in range(3):                                # a 1 tile strip pinched between two runs of the mask (a diagonal one draws as a checkerboard), or a lone tip, joins the mask
         nb = np.roll(out, 1, 0).astype(np.int8) + np.roll(out, -1, 0) + np.roll(out, 1, 1) + np.roll(out, -1, 1)
         out |= ~out & ((np.roll(out, 1, 0) & np.roll(out, -1, 0)) | (np.roll(out, 1, 1) & np.roll(out, -1, 1)) | (nb >= 3))
@@ -143,11 +176,13 @@ def rrect_mask(h_, w_, r):
     for j, ins in enumerate(rcorner(r)): m[j, :ins] = False; m[j, w_ - ins:] = False; m[h_ - 1 - j, :ins] = False; m[h_ - 1 - j, w_ - ins:] = False
     return m
 
-PAL =['void', 'grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'dryGrass', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble']
+PAL =['void', 'grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'dryGrass', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble', 'pond']
 M_ = {n: i for i, n in enumerate(PAL)}
+POND = M_['pond']
 GRASS, PATH, SAND, DUNE, WAT, WATD, SWAT, SWATD, TALL, ASH, SNOW, SWAMP, PAVE, FORD, SOIL, HAYF, WETG, BW, TAN, COBB = (M_[n] for n in ['grass', 'path', 'sand', 'duneSand', 'water', 'waterDeep', 'sandWater', 'sandWaterDeep', 'tallgrass', 'ashGround', 'snow', 'swamp', 'pavingStone', 'ford', 'soilTilled', 'hayField', 'wetGrass', 'boardwalk', 'pavingTan', 'soilCobble'])
 MATN = {'path': PATH, 'tan': TAN, 'cobble': COBB, 'soil': SOIL, 'hay': HAYF, 'grass': GRASS, 'sand': SAND, 'snow': SNOW}     # soil / hay: a hand plan's tilled beds and hay fields
 WATER_NAMES = ['water', 'waterDeep', 'sandWater', 'sandWaterDeep']
+WORLD_WATER = WATER_NAMES + ['pond']                 # plan B village ponds: water you cannot walk into, drawn by the lab's own pond art (tools/adv_lab_ground.py)
 GROUPS = [WATER_NAMES + ['ford'], ['sand', 'duneSand', 'path', 'pavingStone'], ['ashGround', 'snow']]
 isw = lambda m: (m >= WAT) & (m <= SWATD)
 
@@ -166,8 +201,11 @@ slug = lambda s: re.sub(r'[^a-z0-9]', '', s.lower())
 # ---------------------------------------------------------------- tileset facts (sizes, doors, solids)
 _ts = open(os.path.join(OUT, 'tileset.js'), encoding='utf8').read()
 PROPS = json.loads(_ts[_ts.index('{'):_ts.rindex('}') + 1])['props']
+sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops
+LABPROPS = {n: v[4] for n, v in adv_labprops.library().items()}   # the map-lab object library (rg_<name>), exported into the region sheet by tools/adv-region-export.py
 def P(name):
     """the prop's sizes in DATA px: 2x pixel art (def density 0.5) is stored in sheet px, one sheet px is `density` data px"""
+    if name in LABPROPS: return LABPROPS[name]
     assert name in PROPS, 'unknown prop ' + name
     d = PROPS[name]; k = d.get('density')
     if not k: return d
@@ -261,13 +299,13 @@ bl = set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]])) - {0}
 sea = dil(np.isin(lab, list(bl)), 12) & water0
 inl = dil(water0 & ~sea, 1)                           # rivers stay at least 4 tiles wide
 sea = ndi.gaussian_filter(sea.astype(np.float32), 2.0) > .5; inl = ndi.gaussian_filter(inl.astype(np.float32), 1.4) > .5      # v2: soft curved shores, no 1 tile jags
-if K != 1:                                           # plan B: the sea shore in straight and 45 degree runs (the diagonal water tiles draw the slants); the lab windows keep theirs
+if K != 1:                                           # plan B: the sea shore in straight runs with rounded steps; the lab windows keep theirs
     _keep = np.zeros((HP, WP), bool)
     for _x, _y, _w, _h in LABWIN: _keep[max(0, _y - 4):_y + _h + 4, max(0, _x - 4):_x + _w + 4] = True
     _ks = _keep.copy()                                # the coastal towns keep the shore their hand layouts were drawn against (quays, piers, bollards)
     for _i, _c in enumerate(WARP.codes): _ks |= np.hypot(XX - WARP.t[_i][0], YY - WARP.t[_i][1]) <= RIGID.get(_c, RADIUS[_c[0]]) + 3
-    _n0 = int(sea.sum()); sea = octi_mask(sea, keep=_ks); log('sea shore made octilinear', _n0, '->', int(sea.sum()))
-    _n0 = int(inl.sum()); inl = octi_mask(inl, keep=_keep) & ~sea; log('lake and river banks made octilinear', _n0, '->', int(inl.sum()))
+    _n0 = int(sea.sum()); sea = shore_mask(sea, keep=_ks); log('sea shore in straight runs', _n0, '->', int(sea.sum()))
+    _n0 = int(inl.sum()); inl = shore_mask(inl, keep=_keep) & ~sea; log('lake and river banks in straight runs', _n0, '->', int(inl.sum()))
 water = sea | inl
 land = ~water
 beachc = (cls == C['beach']) & land
@@ -291,7 +329,7 @@ riv = stroke(RIVER); chan = [stroke(c) for c in CHAN]
 for (px, py, rx, ry) in ((237, 874, 11, 6), (242, 825, 4.5, 4), (296, 806, 4, 3.5), (297, 824, 3.5, 3), (228, 846, 5, 3.5)): px, py = wpf(px, py); riv |= ((XX - px) / rx) ** 2 + ((YY - py) / ry) ** 2 <= 1
 for c in chan: riv |= c
 if K == 1: riv = blocky(riv, 3, .42)
-else: _u = octi_mask(inl | riv, keep=_keep) & ~sea; riv = _u & dil(riv, 3); inl = _u   # plan B: straight and 45 degree banks, the river and the lakes laid as one shape (no slivers where they meet)
+else: _u = shore_mask(inl | riv, keep=_keep) & ~sea; riv = _u & dil(riv, 3); inl = _u   # plan B: banks in straight runs, the river and the lakes laid as one shape (no slivers where they meet)
 # v2 (K == 1): the river bends in straight runs of 3+ with rounded corners, not a 1 tile staircase
 FORDC = wpt(255, 848)                                    # ford: a wadeable band across the river, 30 tiles downstream of the bridge
 ford = riv & (((XX - FORDC[0]) ** 2 + (YY - FORDC[1]) ** 2 <= 5.2 ** 2) if K == 1 else (np.maximum(np.abs(XX - FORDC[0]), np.abs(YY - FORDC[1])) <= 4))   # plan B: a square, so its edges run straight across the slanted river
@@ -403,8 +441,39 @@ if K != 1:                                           # plan B: join each pair of
     _lb, _n = ndi.label(~ridge); _sz = ndi.sum(~ridge, _lb, range(1, _n + 1)); ridge |= np.isin(_lb, [i + 1 for i, v in enumerate(_sz) if v <= 12])
     ridge = reroute(thin(ridge), sea | inl)
 dt = onnew(dt_o); roadt = onnew(roadt.astype(np.float32)) > .5
-band = (snap_road(ridge, 3) if K == 1 else octi_road(ridge)) & ~(dil(sea, 1))           # v2: a 3 wide road laid as blocks of 3, long straight runs and proper corners where the artwork's line wanders (no 1 tile sawtooth)
+band = (snap_road(ridge, 3) if K == 1 else axis_road(ridge, avoid=water)) & ~(dil(sea, 1))           # v2: a 3 wide road laid as blocks of 3, long straight runs and proper corners where the artwork's line wanders (no 1 tile sawtooth)
 log('road band tiles', int(band.sum()))
+# plan B (docs/REGION-REBUILD.md section 17): a town drawn with exits owns everything in its box; a route road stops short of the box and joins the
+# nearest exit with a 2 wide straight leg out of it and one square bend, so every road meets the town where its street leaves it, at the street's width
+EXITS = {}
+for _c, _t in TOWN.items():
+    _f = os.path.join(ROOT, 'tools', 'adv-towns', _c + '.json')
+    if K == 1 or not os.path.exists(_f): continue
+    _j = json.load(open(_f))
+    if not _j.get('exits'): continue
+    EXITS[_c] = _j; L_ = _j.get('lim', 46); tx_, ty_ = _t['tx'], _t['ty']
+    box_ = (np.abs(XX - tx_) <= L_) & (np.abs(YY - ty_) <= L_); band &= ~dil(box_, 3)
+    lb_, nl_ = ndi.label(band & dil(box_, 12), np.ones((3, 3)))
+    nets = {}                                                     # per exit: the road cells already joined to it, starting with a stub out of the box
+    for k_, ex in enumerate(_j['exits']):
+        x_, y_ = tx_ + ex[0], ty_ + ex[1]; w_ = ex[3] if len(ex) > 3 else 2; dx_, dy_ = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}[ex[2]]
+        st_ = [(x_ + dx_ * i, y_ + dy_ * i) for i in range(0, L_ - max(abs(ex[0]), abs(ex[1])) + 5)]
+        for (sx_, sy_) in st_: band[sy_:sy_ + w_, sx_:sx_ + w_] = True
+        nets[k_] = [st_[-1]]
+    comps = []
+    for i_ in range(1, nl_ + 1):
+        c_ = np.argwhere(lb_ == i_); dbox = np.maximum(np.maximum(np.abs(c_[:, 1] - tx_), np.abs(c_[:, 0] - ty_)) - L_, 0)
+        if dbox.min() <= 8: comps.append(c_[dbox.argmin()])
+    for tip in sorted(comps, key=lambda t: min(abs(tx_ + e[0] - t[1]) + abs(ty_ + e[1] - t[0]) for e in _j['exits'])):
+        k_ = min(range(len(_j['exits'])), key=lambda k: abs(tx_ + _j['exits'][k][0] - tip[1]) + abs(ty_ + _j['exits'][k][1] - tip[0]))
+        w_ = _j['exits'][k_][3] if len(_j['exits'][k_]) > 3 else 2
+        fx, fy = min(nets[k_], key=lambda q: abs(q[0] - tip[1]) + abs(q[1] - tip[0]))          # the nearest cell already on this exit's road
+        vert = _j['exits'][k_][2] in 'NS'
+        pts = [(fx, fy), (fx, tip[0]), (tip[1], tip[0])] if vert else [(fx, fy), (tip[1], fy), (tip[1], tip[0])]
+        for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
+            band[min(ya, yb):max(ya, yb) + w_, min(xa, xb):max(xa, xb) + w_] = True
+            nets[k_] += [(x, y) for x in range(min(xa, xb), max(xa, xb) + 1) for y in range(min(ya, yb), max(ya, yb) + 1)]
+    log(f'{_c}: route roads stop at its box and join its {len(_j["exits"])} exits')
 
 # ---------------------------------------------------------------- 4. heights
 cave_seed = (int(LABELS[4][0] / S), int(LABELS[4][1] / S))
@@ -429,6 +498,8 @@ disc = np.zeros((HP, WP), bool); tid = np.zeros((HP, WP), np.int16); TL = list(T
 for i, t in enumerate(TL, 1):
     m = (XX - t['tx']) ** 2 + (YY - t['ty']) ** 2 <= t['R'] ** 2
     disc |= m; tid[m & (tid == 0)] = i
+BOXALL = np.zeros((HP, WP), bool)                     # the boxes of the towns drawn with exits: the generic dressing (tall grass, crop fields, scatter) keeps out
+for _c, _j in EXITS.items(): BOXALL |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
 roadc = band & ~cave & ~disc
 r4 = roadc & dil(cave, 28)
 lab, n = ndi.label(roadc, np.ones((3, 3)))
@@ -537,7 +608,7 @@ def poly_mask(pts):
         n = int(max(abs(xb - xa), abs(yb - ya))) * 2 + 1
         for j in range(n + 1): m[int(ya + (yb - ya) * j / n), int(xa + (xb - xa) * j / n)] = True
     return m
-ROAD103 = road103_line(); road103 = (dil(poly_mask(ROAD103), 1) if K == 1 else octi_road(poly_mask(ROAD103))) & land & ~mount & ~cave
+ROAD103 = road103_line(); road103 = (dil(poly_mask(ROAD103), 1) if K == 1 else axis_road(poly_mask(ROAD103))) & land & ~mount & ~cave
 rz[road103 & ~roadc] = 103; roadc |= road103; band |= road103; LABELS[103] = (int(ROAD103[0][0] * S), int(ROAD103[0][1] * S))
 log('T8 Route 103 road', int(road103.sum()), 'tiles from', ROAD103[0][:2], 'to', ROAD103[-1][:2])
 
@@ -558,7 +629,7 @@ def smooth_poly(way, k=6):
     return [(x + .5, y + .5) for x, y in sm.tolist()]
 R1PTS = [(x + .5, y + .5) for x, y in R1WAY]
 R1LEN = float(sum(np.hypot(a[0] - b[0], a[1] - b[1]) for a, b in zip(R1PTS, R1PTS[1:])))
-road1_new = (dil(poly_mask(R1PTS), 1) if K == 1 else octi_road(poly_mask(R1PTS))) & land & ~mount & ~cave & ~((rz == 2) & roadc)
+road1_new = (dil(poly_mask(R1PTS), 1) if K == 1 else axis_road(poly_mask(R1PTS), w=3)) & land & ~mount & ~cave & ~((rz == 2) & roadc)
 band &= ~r1_old; roadc &= ~r1_old; rz[r1_old] = 0
 rz[road1_new] = 1; roadc |= road1_new; band |= road1_new
 log('L4 Route 1 road', int(road1_new.sum()), 'tiles, length', int(R1LEN), 'from', R1S, 'to', R1WAY[-1])
@@ -729,7 +800,7 @@ def pave(y0, y1, x0, x1, t, lim=-1, m=PAVE, r=None):
     """paint a rectangle of material m; v2: a plaza (both sides 8+) gets rounded corners (radius r, default 4) so no surface is a hard rectangle"""
     ok = np.zeros((HP, WP), bool); hh_, ww_ = y1 - y0 + 1, x1 - x0 + 1
     ok[y0:y1 + 1, x0:x1 + 1] = rrect_mask(hh_, ww_, 4 if r is None else r) if (r or (r is None and min(hh_, ww_) >= 8)) else True
-    ok &= land & (np.hypot(XX - t['tx'], YY - t['ty']) < (t['R'] - 1 if lim < 0 else lim)) & (kind == 0)
+    ok &= land & ((np.maximum(np.abs(XX - t['tx']), np.abs(YY - t['ty'])) <= lim) if t['code'] in EXITS else (np.hypot(XX - t['tx'], YY - t['ty']) < (t['R'] - 1 if lim < 0 else lim))) & (kind == 0)   # a town with exits owns its square box
     if m in (GRASS, SAND, SNOW): ok &= h == t['lv']; mat[ok] = m; return      # a hand plan's grass, sand and snow are ground, not paving: they recolour the town's level ground and leave hills alone
     paved[ok] = True; mat[ok] = m; h[ok] = t['lv']
 def board(y0, y1, x0, x1):
@@ -840,7 +911,7 @@ for t in TL:
         if wet: print(f'  {code}: {len(wet)} plan props on water with no dry cell near, left out', sorted(set(wet))[:8])
         for x0, y0, x1, y1 in j.get('boards', []): board(cy + y0, cy + y1, cx + x0, cx + x1)
         if 'mouth' in j: cave_mouth('w', cx + j['mouth'][0], cy + j['mouth'][1])    # T4: the Route 4 cave's west mouth (door-front tile, like a building)
-        if not j.get('noconnect'): connect(t, PATH)      # noconnect (L4): the re-laid Route 1 reaches the landmark itself, no dirt connector
+        if not j.get('noconnect') and code not in EXITS: connect(t, PATH)      # noconnect (L4): the re-laid Route 1 reaches the landmark itself, no dirt connector
         town_out[code] = dict(door=(cx + j['door'][0], cy + j['door'][1]) if j.get('door') else (cx, cy)); continue
     nst = max(1, (2 * R - 16) // 16) if kd != 'L' else 1
     tops = [int(round(cy + 16 * (i - (nst - 1) / 2) - 2)) for i in range(nst)] if kd != 'L' else [cy + 4, cy + 9, cy + 13]
@@ -913,14 +984,14 @@ def fields(region, seed, step=(15, 11)):
             plotocc[ya:yb, xa:xb] = True; occ[ya:yb, xa:xb] = True; PLOTS.append((x, y, w, hh, kd_)); n += 1
     return n
 keep_core = (np.abs(XX - g7x) <= 18) & (YY - g7y >= -13) & (YY - g7y <= 11)       # the village green
-n1 = fields((dg >= 43) & (dg <= 66) & ~keep_core, 41)           # v2: the hand laid village fills the disc (radius 40), the crop plots start outside it
-n2 = fields((d5 >= 5.5) & (d5 <= 40) & (d5 < d8) & (dg > 44), 42)
+n1 = fields((dg >= 43) & (dg <= 66) & ~keep_core & ~BOXALL, 41)           # v2: the hand laid village fills the disc (radius 40), the crop plots start outside it
+n2 = fields((d5 >= 5.5) & (d5 <= 40) & (d5 < d8) & (dg > 44) & ~BOXALL, 42)
 log('crop plots: Goldacre', n1, 'Route 5', n2)
 # Route 7: broken, rising ground on both sides of the road (1-2 level ridges with stairs); the turbines go on the ridge tops
 rn1, rn2, rn3 = noise(7, 21), noise(6, 22), noise(5, 23)
 xr = (OXX >= 222) & (OXX <= 298)
 rl = (d7 >= 11 + 2 * rn1) & (d7 <= 38 * K + 4 * rn2) & xr & (rn3 > -1.0)
-rl &= land & ~dil(water, 3) & ~dil(roadm, 6) & (dg > 47) & (mat == GRASS) & (kind == 0) & ~dil(brk, 3) & ~dil(occ | plotocc, 3)
+rl &= land & ~BOXALL & ~dil(water, 3) & ~dil(roadm, 6) & (dg > 47) & (mat == GRASS) & (kind == 0) & ~dil(brk, 3) & ~dil(occ | plotocc, 3)
 rl = ndi.binary_opening(rl, disk(2)); lb_, nb_ = ndi.label(rl); sz_ = ndi.sum(rl, lb_, range(1, nb_ + 1)); rdg7 = np.isin(lb_, [i + 1 for i, v in enumerate(sz_) if v >= 90])
 rdg7 = blocky(rdg7, 3) & land & ~dil(water, 2) & ~dil(roadm, 5) & (mat == GRASS) & (kind == 0)        # v2: ridges in straight runs
 core = blocky(ndi.binary_opening(rdg7 & ero(rdg7, 3) & (d7 >= 15) & (rn2 > -.2), disk(1)), 3) & rdg7
@@ -943,7 +1014,7 @@ def stairs_pass(zone, spacing, seed):
 log('Route 7 ridges', int(rdg7.sum()), 'tiles, core', int(core.sum()), 'stairs', stairs_pass(dil(rdg7, 1), 14, 51))
 # Route 8: swampy water meadows around the river, wadeable puddles, and the ford's dirt track
 wn = noise(3, 31)
-wet = (dr < 20) & land & (mat == GRASS) & (kind == 0) & ~dil(roadm, 1) & ~plotocc & (h == 0)
+wet = (dr < 20) & land & ~BOXALL & (mat == GRASS) & (kind == 0) & ~dil(roadm, 1) & ~plotocc & (h == 0)
 wg = ndi.binary_opening(wet & (noise(6, 33) > -.3 + dr * .05), disk(2))          # damp meadow
 swm = wet & (wn > .55 + dr * .05) & (dr < 12)                                    # muddy cores near the water
 swm = ndi.binary_opening(swm, disk(1))
@@ -953,7 +1024,7 @@ trk = np.zeros((HP, WP), bool)
 WAY = waxis([(281, 829), (281, 841), (264, 841), (264, 849), (249, 849), (249, 836), (252, 836), (252, 815), (254, 815), (254, 807)])      # v2: long straight runs (no 1 tile staircase)
 for a, b in zip(WAY, WAY[1:]):
     for px_, py_ in bline(a, b): trk[py_:py_ + 2, px_:px_ + 2] = True
-trk &= land & (kind == 0) & (h == 0)
+trk &= land & (kind == 0) & (h == 0) & ~BOXALL
 mat[trk & (mat != FORD)] = PATH; roadm |= trk; paved |= trk & False
 log('Route 8 swamp', int(swm.sum()), 'puddles', int(pud.sum()), 'track', int(trk.sum()))
 
@@ -975,7 +1046,12 @@ log('T8 treeline swamp', int(fung8t.sum()), 'black sand', int(black.sum()), 'cli
 dL4 = odist('L4'); road1 = (rz == 1) & roadc & ~brk; d1r = ndi.distance_transform_edt(~road1)
 core4 = (dL4 < 46) & land; bare |= core4 | (d1r <= 16)                  # `bare` = open country: no forest scatter; core4 also loses the open-ground trees and bushes below
 mat[road1 & land] = PAVE
-crack = (np.random.default_rng(201).random((HP, WP)) < .09 + .12 * np.clip(1 - (dL4 - 10) / 130, 0, 1)) & road1 & ~poly_mask(R1PTS) & ~(np.roll(road1, 1, 1) & np.roll(road1, 1, 0)) & (dL4 > 8) & (np.hypot(XX - R1S[0], YY - R1S[1]) > 7)          # small holes: about a sixth of the cells at the Route 2 end, a third by the memorial; the centre line and the junction stay whole
+crack = (np.random.default_rng(201).random((HP, WP)) < (.09 + .12 * np.clip(1 - (dL4 - 10) / 130, 0, 1)) * np.where(ndi.binary_erosion(road1) | poly_mask(R1PTS), .5 if K != 1 else 0, 1)) & road1 & ~(np.roll(road1, 1, 1) & np.roll(road1, 1, 0) & (K == 1)) & (dL4 > 8) & (np.hypot(XX - R1S[0], YY - R1S[1]) > 7)          # small holes: about a sixth of the cells at the Route 2 end, a third by the memorial; the centre line and the junction stay whole
+if K != 1:                             # plan B: the road is 3 wide, so a crack never has another within 2 tiles (no row of the road goes to grass)
+    _kc = np.zeros_like(crack)
+    for y, x in np.argwhere(crack):
+        if not _kc[y - 2:y + 3, x - 2:x + 3].any(): _kc[y, x] = True
+    crack = _kc
 mat[crack] = GRASS
 court4 = paved & (dL4 < 19) & (mat == PAVE) & ~road1; crack4 = (noise(1.3, 207) > 1.2) & court4 & (np.hypot(XX - l4x, YY - (l4y + 8)) > 3.5); mat[crack4] = GRASS      # v2: the memorial court is old paving too: grass through its seams
 log('L4 Route 1 paving', int((road1 & ~crack).sum()), 'tiles, cracks', int(crack.sum()))
@@ -989,7 +1065,7 @@ for reg, thr in ((verge, .6), (meadow, .55)):
     sel = reg & (nz > thr)
     sel = ndi.binary_closing(ndi.binary_opening(sel, disk(2)), disk(2))              # v2: rounded blobs, no jagged edges
     lb, nb = ndi.label(sel); sz = ndi.sum(sel, lb, range(1, nb + 1)); keep = np.isin(lb, [i + 1 for i, s in enumerate(sz) if 20 <= s <= 200])
-    over[keep & ~dil(brk, 1)] = TALL
+    over[keep & ~dil(brk, 1) & ~BOXALL] = TALL
 log('tallgrass', int((over > 0).sum()))
 
 # ---------------------------------------------------------------- walkability flood fill (same rules as ADV.step)
@@ -1238,13 +1314,14 @@ for i, b in enumerate(bnd):                                   # a stack of timbe
         if c: p = c[int(hq('g6t', i) * len(c))]; g6put(('logShort', 'fallenLog', 'fallenLog', 'fallenLog')[(i // 2) % 4], p[0], p[1], 2)
 # Route 111: a landing every 22 to 32 tiles, on alternating sides: cleared pad, stacks, a parked log truck, now and then the loader
 la = 4 if K != 1 else 8                # plan B: Route 111 is about 20 tiles between the two towns now; start the first landing nearer the town
+nl111 = 0                              # landings laid so far: the truck and the empty pad alternate by landing, not by slot (a slot with no room is skipped)
 for i in range(40):
     la += 15 + int(hq('g6l', i) * 9)         # v2: the road is now a 3 wide band of straight runs (shorter by its old wiggles), so the landings come a little closer
     c = g6ring(arc111, d111, la, 6, 7.5) or (g6ring(arc111, d111, la, 4.5, 9) if K != 1 else [])
     if not c: continue
-    c.sort(key=lambda p: hq('g6c', i, p[0], p[1])); x0, y0 = c[0]; sgn = -1 if i % 2 else 1
+    c.sort(key=lambda p: (occ[p[1] - 1:p[1] + 2, p[0] - 3:p[0] + 4].any(), hq('g6c', i, p[0], p[1]))); x0, y0 = c[0]; sgn = -1 if i % 2 else 1   # a spot the truck fits first
     pad = (np.abs(XX - x0) <= 8) & (np.abs(YY - y0) <= 6) & (d111 >= 3.5) & land & (dg6 > 41); g6clear |= pad
-    g6put('vanGrey' if i % 2 == 0 else 'fallenLog', x0, y0, 3)
+    g6put('vanGrey' if nl111 % 2 == 0 else 'fallenLog', x0, y0, 3); nl111 += 1
     for dx, dy, nm in ((-6, 0, 'logShort'), (5, 1, 'fallenLog'), (-3, 3, 'fallenLog'), (3, -3, 'barrelOrange'), (7, -2, 'crateWide'), (0, -4, 'bulldozer' if i % 3 == 1 else 'logShort')): g6put(nm, x0 + dx, y0 + dy, 2)
 # the clearing around the town: felled ground and stumps east and south, seedlings west, the forest standing in a ring where the disc ends
 dg6c = (dg6 <= 40) & okt & ~dil(paved, 1) & (dg6 > 7)
@@ -1256,7 +1333,7 @@ for y, x in np.argwhere(dg6c & ~occ):
 log('G6 regions: route 3 stands', int(reg3.sum()), 'cells, felled', int((st3 == 0).sum()), 'replanted', int((st3 == 1).sum()), 'route 3 road', int(road3.sum()), 'route 111 road', int(road111.sum()))
 log('G6 props', dict(g6n))
 flat =(ndi.maximum_filter(h, 3) == ndi.minimum_filter(h, 3)) & ~dil(kind > 0, 2) & ~dil(brk, 2)
-free = land & flat & (mat != FORD) & ~dil(roadm, 1) & ~occ & ~doorc & ~dil(doorc, 1) & ~nowalk & ~dil(cave, 1)
+free = land & flat & (mat != FORD) & ~dil(roadm, 1) & ~occ & ~doorc & ~dil(doorc, 1) & ~nowalk & ~dil(cave, 1) & ~BOXALL
 free_town = free & (tid > 0); free &= tid == 0
 # north / ridge side uses layered spruces, the rest green pines and oaks
 ridge = dil(mount, int(70 * K)) | (OXX > 640) & (OYY < 560)
@@ -1449,8 +1526,11 @@ for code_, cx_, cy_, dl_ in DECO:
         elif d_[0] == 'pond':                   # [pond, x, y, rx, ry]: shallow water (ford) with reeds, a log and rocks on its bank
             _, px_, py_, rx_, ry_ = d_; x0, y0 = cx_ + px_, cy_ + py_; xi0, yi0 = int(round(x0)), int(round(y0)); gr_ = np.isin(mat, [GRASS, WETG, SAND, DUNE])      # an oasis pool cuts into sand too
             pm = (((XX - x0) / rx_) ** 2 + ((YY - y0) / ry_) ** 2 <= 1) & land & gr_ & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
-            pm = blocky(pm, 2, .5) & land & gr_ & ~roadm & ~occ
-            mat[pm] = FORD; ford[pm] = True; occ[yi0 - int(ry_) - 2:yi0 + int(ry_) + 3, xi0 - int(rx_) - 2:xi0 + int(rx_) + 3] = True
+            if K != 1: pm = np.zeros_like(pm); pm[yi0 - int(ry_):yi0 + int(ry_) + 1, xi0 - int(rx_):xi0 + int(rx_) + 1] = rrect_mask(2 * int(ry_) + 1, 2 * int(rx_) + 1, 3); pm &= land & gr_ & ~roadm & ~occ   # plan B: a rounded pool like the mockups'
+            else: pm = blocky(pm, 2, .5) & land & gr_ & ~roadm & ~occ
+            if K != 1: mat[pm] = POND; water[pm] = True; land = ~water   # plan B: the mockups' pond (sand ring and water drawn by the lab art), not wadeable
+            else: mat[pm] = FORD; ford[pm] = True
+            occ[yi0 - int(ry_) - 2:yi0 + int(ry_) + 3, xi0 - int(rx_) - 2:xi0 + int(rx_) + 3] = True
             rg = np.random.default_rng((15, xi0, yi0))
             for nm, dx, dy, ydy in (('reedsPair', -rx_ - .6, -ry_ * .4, .8), ('reeds', rx_ + .4, -ry_ * .3, .8), ('reedsOlive', -rx_ * .4, ry_ + 1.0, .8), ('reeds', rx_ * .5, ry_ + 1.1, .8), ('fallenLog', -rx_ - 1.4, ry_ * .5, .8), ('rockGrey', rx_ + 1.2, ry_ * .7, .9), ('flowersWhite', 0, -ry_ - 1.2, .8), ('stoneGrey', -rx_ * .6, -ry_ - 1.2, .9)):
                 xx_, yy_ = int(np.floor(x0 + dx)), int(np.floor(y0 + dy))
@@ -1723,7 +1803,12 @@ for id_, x, y, face, tr, li in NPCS:
     for dx, dy in sorted(((a, b) for a in range(-20, 21) for b in range(-20, 21)), key=lambda d: (abs(d[0]) + abs(d[1]), d)):   # 20: a river or shore redrawn can move a zone edge past a hand-set spot
         if npc_good(x + dx, y + dy, face, tr, sight, zname, taken):
             NPC_SRC[li] = NPC_SRC[li].replace(f'x: {x}, y: {y},', f'x: {x + dx}, y: {y + dy},', 1); taken.add((x + dx, y + dy)); moved.append((id_, (x, y), (x + dx, y + dy))); break
-    else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot within 20 tiles')
+    else:
+        zb = np.argwhere(np.array([[ZID[v] == zname for v in row] for row in ZC])) if zname else np.zeros((0, 2), int)   # the route's own zone, wherever its road went
+        cand_ = sorted(((by_ * B + j, bx_ * B + i) for by_, bx_ in zb for j in range(B) for i in range(B)), key=lambda p_: (p_[0] - y) ** 2 + (p_[1] - x) ** 2)
+        hit_ = next(((cx_, cy_) for cy_, cx_ in cand_[:4000] if npc_good(cx_, cy_, face, tr, sight, zname, taken)), None)
+        if hit_: NPC_SRC[li] = NPC_SRC[li].replace(f'x: {x}, y: {y},', f'x: {hit_[0]}, y: {hit_[1]},', 1); taken.add(hit_); moved.append((id_, (x, y), hit_))
+        else: print('WARN NPC', id_, 'at', (x, y), 'has no usable spot in its zone')
 if moved or NPC_WARP or NPC_SET:
     open(os.path.join(OUT, 'npcs.js'), 'w', encoding='utf8', newline='').write('\n'.join(NPC_SRC))
 log('NPC fixer moved', len(moved), [m[0] for m in moved])
@@ -1764,7 +1849,7 @@ for k in range(6, 20):
     if R_[y, x] and not blkp[y, x] and paved[y, x]: wild.append(dict(species='wooloo', level=8, x=int((x + .5) * T), y=int((y + .5) * T))); break
 towns = {t['code']: dict(name=t['name'], x=int((t['tx'] + .5) * T), y=int((t['ty'] + .5) * T), center=dict(x=int((town_out[t['code']]['door'][0] + .5) * T), y=int((town_out[t['code']]['door'][1] + 1.5) * T))) for t in TL}
 if not ONLY:
-    world = dict(name='Kenora', chunksW=CW, chunksH=CHN, fill='waterDeep', palette=PAL, water=WATER_NAMES, groups=GROUPS, blank=blank, spawn=spawn, wild=wild, towns=towns, doors=ROOM_DOORS, buildings=BUILDINGS, supply=SUPPLY)
+    world = dict(name='Kenora', chunksW=CW, chunksH=CHN, fill='waterDeep', palette=PAL, water=WORLD_WATER, groups=GROUPS, blank=blank, spawn=spawn, wild=wild, towns=towns, doors=ROOM_DOORS, buildings=BUILDINGS, supply=SUPPLY)
     if K != 1: world['scale'] = K                    # plan B: npcs.js and the map-lab windows are at this scale
     open(os.path.join(OUT, 'world.js'), 'w', encoding='utf8').write('// Generated by tools/adv-gen-region.py. spawn is in world px; blank = chunk indices (cy * chunksW + cx) that are plain deep sea and have no file.\nwindow.ADV_WORLD = ' + json.dumps(world, separators=(',', ':')) + ';\n')
     zc = [rle(ZC[i]) for i in range(ZC.shape[0])]

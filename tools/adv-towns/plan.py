@@ -4,7 +4,7 @@ tools/.cache/plan-<code>.png, a quick look at the plan with every sprite's real 
 Ground characters (paving runs): d dirt lane, p stone paving, c cobbles, t tan paving (plazas), s tilled soil, h hay field. Anything else is a prop or building from
 the town's legend: {char: prop name} for props (the char stands where the prop's foot is), {char: [name, id, footprint]} for an enterable building (the char is the
 walkway tile in front of its door). '.' and ' ' are open ground."""
-import json, os
+import json, os, sys
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); T = 32
@@ -19,6 +19,8 @@ def _props():
             k = d.get('density') or 1; out.setdefault(n, {key_: d[key_] * k for key_ in ('sw', 'sh', 'ax', 'ay')} | {'door': [v * k for v in d.get('door', [0, -2])]})
     return out
 PROPS = _props()
+sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops      # the map-lab object library (rg_<name>), the mockups' houses, trees and props
+for _n, _v in adv_labprops.library().items(): _d = _v[4]; PROPS[_n] = {k_: _d[k_] for k_ in ('sw', 'sh', 'ax', 'ay')} | {'door': _d.get('door', [0, -2])}
 
 def build(code, plan, legend, extra=None, blds=(), pp=()):
     """plan: the map as a string; legend: {char: prop name | [name, id, {w, d, ex}] | [name] (a building with no interior)}; extra: more JSON keys (deco, lim, noconnect...)"""

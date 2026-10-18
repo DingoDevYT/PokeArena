@@ -33,19 +33,8 @@ DATA = os.environ.get('ADV_GEN_OUT') or os.path.join(ROOT, 'data/adv')   # ADV_G
 COLS = 20
 WET, TALL, NONPATH = set('wvV'), set('tTu'), set('.tTuSwvVi')
 
-# ---------- prop collision: solid rect [x0, y0, x1, y1] in art px relative to the anchor (foot centre); None = walk-through
-WALK = ('cave_', 'cv_pebbles', 'cv_drip', 'flower', 'tiny', 'clover', 'sprout', 'mushroom', 'leaves', 'bed_', 'sunflower', 'clump', 'pot_', 'mound', 'pumpkin', 'route_sign', 'arch', 'water_', 'raft', 'planter_')
-TREES = ('round_', 'tall_', 'pine_', 'young_', 'fir_', 'bare_')
-def prop_def(name, rect):
-    sx, sy, sw, sh = rect
-    d = dict(sw=sw, sh=sh, ax=sw // 2, ay=sh)
-    if name.startswith(TREES): d.update(ay=sh - 3, solid=[-5, -5, 5, 1])
-    elif name.startswith('house_'): d.update(solid=[-sw // 2 + 3, -56, sw // 2 - 3, 0])
-    elif name == 'stall': d.update(solid=[-sw // 2 + 4, -20, sw // 2 - 4, 0])
-    elif name.startswith(WALK): d.update(solid=None, noOutline=name.startswith('cave_'))   # a cave stamp is a rectangle of cliff face art: no silhouette outline round it
-    elif name in ('bench', 'bench_stone'): d.update(solid=[-sw // 2 + 2, -8, sw // 2 - 2, 0])
-    else: d.update(solid=[-(sw // 2 - 2), -min(10, max(4, sh // 3)), sw // 2 - 2, 0])
-    return d
+# ---------- prop collision and the lab object library: tools/adv_labprops.py (shared with the generator and the town preview)
+sys.path.insert(0, os.path.join(ROOT, 'tools')); from adv_labprops import prop_def, library as lab_library, WALK
 
 
 def parse_chunk(path):
@@ -235,7 +224,8 @@ def main():
     # ---- region sheet: baked tiles, then the prop crops shelf-packed under them
     sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_lab_ground as LG   # the lab look for the generated world's grass, paths and tall grass (docs/REGION-REBUILD.md section 14)
     lg_tiles, lg_mats = LG.build(); base_i = len(tiles); tiles += lg_tiles
-    off = lambda v: [base_i + i for i in v] if isinstance(v, list) else base_i + v
+    for n_, v_ in lab_library().items(): rects.setdefault(n_, v_)   # every lab object, so a town plan can use the mockups' houses, trees and props
+    off = lambda v: [base_i + i if i >= 0 else -1 for i in v] if isinstance(v, list) else base_i + v   # -1: an empty path quarter stays empty
     def offd(d): return {r: (offd(v) if isinstance(v, dict) else v if r == 'mode' else off(v)) for r, v in d.items()}   # nested by-sets too
     ground_mats = {m: offd(d) for m, d in lg_mats.items()}; cliff_by = ground_mats.pop('cliffBy')
     trows = -(-len(tiles) // COLS); W_SHEET = COLS * 32; y = trows * 32 + 8; x = 0; shelf = 0; place = {}
@@ -254,6 +244,7 @@ def main():
     for n, (sx, sy, sw, sh, d, src) in rects.items():
         o = dict(sx=place[n][0], sy=place[n][1], sw=sw * d.get('k', 1), sh=sh * d.get('k', 1), ax=d['ax'], ay=d['ay'], solid=d['solid'])
         if d.get('noOutline'): o['noOutline'] = True
+        if d.get('door'): o['door'] = d['door']
         if d.get('k', 1) > 1: o['density'] = d['k']   # nearest upscaled art for a room (scale 1, 2x art): one art pixel is k sheet px
         pdefs[n] = o
     ts = dict(file='assets/adv/region.png', T=32, cols=COLS, mats={**{n: {'C': WSRC[1] if n == 'rgWater' else 0} for n in ID}, **ground_mats},   # rgWater's centre tile is a real water tile: adv-water.js reads its colours to mask the water pixels

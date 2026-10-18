@@ -13,7 +13,7 @@ const ADVWA = {
   GREY: { cloudy: [150, 160, 176], rain: [104, 116, 136], storm: [70, 78, 98], fog: [196, 204, 214], snow: [200, 210, 226], sand: [210, 170, 110] },
 
   cv(k, w, h) { const c = this[k] || (this[k] = document.createElement('canvas')); if (c.width !== w || c.height !== h) { c.width = w; c.height = h; } const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.imageSmoothingEnabled = false; g.clearRect(0, 0, w, h); return g; },
-  open(c, r) { return ADV.isWater(c, r) && ADV.h(c, r) === 0 && ADV.deck(c, r) < 0; },
+  open(c, r) { return ADV.isWater(c, r) && ADV.h(c, r) === 0 && ADV.deck(c, r) < 0 && !ADV.defOf(ADV.palette[ADV.mat(c, r)])?.quad; },   // a village pond (quad art) carries its own lab water
 
   // the water colours of a material: every colour of its centre tile across its animation frames, plus the most common one (the tint for reflections and the submerged)
   pal(def) {
