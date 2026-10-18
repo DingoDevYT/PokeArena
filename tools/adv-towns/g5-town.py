@@ -96,7 +96,9 @@ def scatter(kinds, x0, y0, x1, y1, n, mind=3, seed=1, tries=600, walk=False):
         if len(got) >= n: break
         x, y = r.randint(x0, x1), r.randint(y0, y1)
         if (x, y) in g.occ or any(abs(x - a) < mind and abs(y - b) < mind for a, b in got): continue
-        if g.prop(r.choice(kinds), x, y, walk=walk): got.append((x, y))
+        nm = r.choice(kinds)
+        if not walk and kit.size(nm)[1] >= 1.3 and (any(g.get(x + i, y + k) not in ('.', 'g') for i in (-1, 0, 1) for k in (-2, -1)) or any(g.get(x + i, y) not in ('.', 'g') for i in (-1, 1))): continue    # a tree keeps its canopy and trunk off the walks
+        if g.prop(nm, x, y, walk=walk): got.append((x, y))
     return got
 def pockets(x0, y0, x1, y1, w, h, n, margin=1, seed=1):
     """up to n free w x h rectangles of open ground inside the box, each kept `margin` clear of paving, buildings and props (the first ones found, scanning in a shuffled order)"""
@@ -115,6 +117,7 @@ def furn(name, pts):
         if y in (2, 5): y = OUT[(y, 'y')]
         elif x in (9, 12, 13, 16): x = OUT[(x, 'x')]
         if any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED) or near_door(x, y): continue
+        if g.get(x, y) not in ('.', 'g') or any(b[0] - .6 < x + .5 < b[2] + .6 and b[1] - 1.3 <= y + 1 <= b[3] + .3 for b in BX): continue
         g.prop(name, x, y, walk=True)
 
 def grove(x0, y0, x1, y1, kinds, dx=3, dy=2, seed=1, prob=1.0, jit=1):
@@ -306,14 +309,18 @@ for (x, y) in sorted(g.openmask(-49, -49, 49, 49, 1)):
     if R2.random() < .42 and not near_door(x, y) and not any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED):
         nm = R2.choice(FILL); g.prop(nm, x, y, walk=nm.startswith(('rg_clump', 'rg_tiny', 'rg_flower', 'rg_bed')))
 # ---- clipped hedges along the lawn edge wherever a block meets a real street (2 wide), with gaps; then a second, lighter fill right up to the kerbs
-HEDGE = ['mHedgeRoundGreen', 'mHedgeRoundTeal', 'mHedgeRoundGreen', 'mHedgeRoundPink']
 R3 = random.Random(9)
-for y in range(-48, 49):
-    for x in range(-48, 49):
-        if g.get(x, y) != '.' or (x, y) in g.occ or near_door(x, y): continue
-        for dx_, dy_ in ((0, -1), (0, 1), (-1, 0), (1, 0)):
-            if g.get(x + dx_, y + dy_) == 'p' and g.get(x + 2 * dx_, y + 2 * dy_) == 'p' and R3.random() < .55:
-                g.prop(HEDGE[(x + y) % 4], x, y); break
+HL = ['mHedgeLongGreen', 'mHedgeLongTeal', 'mHedgeLongGreen']; HT = ['mHedgeTallGreen', 'mHedgeTallTeal']
+def roadside(x, y, dx_, dy_): return g.get(x + dx_, y + dy_) == 'p' and g.get(x + 2 * dx_, y + 2 * dy_) == 'p'
+for y in range(-48, 49):                                   # along the north and south edges of blocks: long clipped hedges in runs, a gap now and then
+    x = -48
+    while x < 48:
+        if g.get(x, y) == '.' and g.get(x + 1, y) == '.' and (roadside(x, y, 0, -1) or roadside(x, y, 0, 1)) and all((x + i, y) not in g.occ and not near_door(x + i, y) for i in (0, 1)) and R3.random() < .6:
+            g.prop(R3.choice(HL), x + 1, y); x += 2
+        else: x += 1
+for x in range(-48, 49):                                   # along the east and west edges: tall hedges
+    for y in range(-48, 49):
+        if g.get(x, y) == '.' and (x, y) not in g.occ and not near_door(x, y) and (roadside(x, y, -1, 0) or roadside(x, y, 1, 0)) and R3.random() < .35: g.prop(R3.choice(HT), x, y)
 for (x, y) in sorted(g.openmask(-49, -49, 49, 49, 0)):
     if R2.random() < .25 and not near_door(x, y) and not any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED):
         nm = R2.choice(FILL); g.prop(nm, x, y, walk=nm.startswith(('rg_clump', 'rg_tiny', 'rg_flower', 'rg_bed')))
@@ -324,6 +331,9 @@ def roofed(nm, x, y):
     for b in BX:
         if b[0] - 1.0 < x + .5 < b[2] + 1.0 and b[1] - 1.3 <= y + 1 <= b[1] + 1.0: return True
     return False
-g.pp[:] = [(c, x, y) for c, x, y in g.pp if not (any(w in ch2n[c] for w in TREEWORDS) and roofed(ch2n[c], x, y))]
+def beside_wall(nm, x, y):
+    sw, sh, ax, ay = kit.size(nm); x0, x1 = x + .5 - ax, x + .5 - ax + sw
+    return any(x0 < b[2] - .4 and b[0] + .4 < x1 and b[1] + 1.0 < y + 1 <= b[3] + .5 for b in BX)
+g.pp[:] = [(c, x, y) for c, x, y in g.pp if not (any(w in ch2n[c] for w in TREEWORDS) and (roofed(ch2n[c], x, y) or (kit.size(ch2n[c])[1] >= 1.3 and beside_wall(ch2n[c], x, y))))]
 
 g.done(dict(lim=LIM, hide_site_paths=True))
