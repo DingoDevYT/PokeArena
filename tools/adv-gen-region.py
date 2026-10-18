@@ -500,7 +500,9 @@ for i, t in enumerate(TL, 1):
     disc |= m; tid[m & (tid == 0)] = i
 BOXALL = np.zeros((HP, WP), bool)                     # the boxes of the towns drawn with exits: the generic dressing (tall grass, crop fields, scatter) keeps out
 for _c, _j in EXITS.items(): BOXALL |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
-roadc = band & ~cave & ~disc
+EXD = np.zeros((HP, WP), bool)                        # a town drawn with exits keeps its route roads right up to its box (the join legs run inside its old disc)
+for _c in EXITS: EXD |= (XX - TOWN[_c]['tx']) ** 2 + (YY - TOWN[_c]['ty']) ** 2 <= TOWN[_c]['R'] ** 2
+roadc = band & ~cave & ~(disc & ~EXD)
 r4 = roadc & dil(cave, 28)
 lab, n = ndi.label(roadc, np.ones((3, 3)))
 rz = np.zeros((HP, WP), np.int16)                    # route number per road tile
