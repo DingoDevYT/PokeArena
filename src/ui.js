@@ -276,6 +276,13 @@ const ControlsScene = {
   draw() {
     bgFill(); const s = S();
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
+    if (window.TOUCH?.on) {   // a phone: the on-screen controls, not the pad and keyboard tables (they do not fit)
+      const L = [['Move', 'drag on the left half'], ['Moves 1 to 4', 'A  B  X  Y'], ['Dodge roll', 'DODGE'], ['Swap', 'hold SWAP, aim the stick, let go'], ['Mega Evolve', 'MEGA'],
+        ['Items', 'BAG, then d-pad and A'], ['Talk', 'A'], ['Run', 'hold B'], ['Menu', 'MENU, or tap B'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B'], ['Bottom icons', 'are buttons too']];
+      const rh = Math.max(18, (VH - 130 * s - 60) / L.length), fs = Math.max(11, Math.min(18, rh * 0.5)), x0 = Math.max(VW * 0.08, 175), x1 = x0 + Math.max(VW * 0.22, 130);   // right of the d-pad
+      L.forEach(([a, b], i) => { const y = 110 * s + i * rh; text(a, x0, y, fs, '#ffde3b', 'left', null); text(b, x1, y, fs, '#fff', 'left', null); });
+      hint('B back'); backButton(() => setScene(this.back || MenuScene)); return;
+    }
     const rows = [
       ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor, always']],
       ['Move 1', ['xbox_a'], ['mouse_left']], ['Move 2', ['xbox_b'], ['mouse_right']], ['Move 3', ['xbox_x'], ['key_q']], ['Move 4', ['xbox_y'], ['key_e']],

@@ -65,14 +65,15 @@ const TOUCH = window.TOUCH = (() => {
   const play = () => adv() ? !!(SCENE.save && SCENE.ready && !SCENE.uis.length) : arena();
   const fight = () => adv() ? SCENE.mode === 'battle' || SCENE.mode === 'pvp' : arena();
   const stickOK = () => play() && (!adv() || (!SCENE.wh && (SCENE.mode === 'walk' || SCENE.mode === 'battle' || SCENE.mode === 'pvp')));
+  const coarse = matchMedia('(pointer: coarse)');
   setInterval(() => {
+    rot.style.display = (T.on || coarse.matches) && innerHeight > innerWidth * 1.1 ? 'flex' : 'none';   // a phone held upright, from the first frame
     if (!T.on) return;
     const p = play(), f = fight(), c = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && SCENE.chatOn && SCENE.chatOn();
     const r = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && !!SCENE.save && (!!SCENE.mount || !!ADVP.mountKind(SCENE.save, SCENE.save.party[SCENE.leadIdx()]));   // the mount button: anything to get on, or off
     const bag = adv() && SCENE.mode === 'battle' && !SCENE.wh && !!B && !B.over && typeof ADVUI !== 'undefined' && ADVUI.wheelItems(SCENE).length > 0;   // the item wheel (C on a keyboard)
     const m = !stickOK() && !(typeof TitleScene !== 'undefined' && SCENE === TitleScene);   // a screen, not the world: the d-pad, A and B (the other buttons are the icons in its hint, ui.js)
     root.classList.toggle('menu', m); root.classList.toggle('fight', f);
-    rot.style.display = innerHeight > innerWidth * 1.1 ? 'flex' : 'none';
     for (const k in els) {
       const e = els[k], w = e.dataset.when, on = (w === 'bag' && bag) || w === 'all' || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m);
       e.style.display = on ? 'flex' : 'none';
@@ -119,6 +120,7 @@ const TOUCH = window.TOUCH = (() => {
     for (const t of e.changedTouches) {
       const o = tps.get(t.identifier); if (!o) continue;
       if (o.stick) setStick(t.clientX, t.clientY);
+      else if (!o.k && pinch(t, o)) continue;
       else if (!o.k) {   // a swipe scrolls whatever list is under the finger
         MOUSE.x = t.clientX; MOUSE.y = t.clientY; o.acc += o.y - t.clientY;
         while (Math.abs(o.acc) >= 38) { const s = Math.sign(o.acc); MOUSE.wheel += s; o.acc -= s * 38; o.swipe = true; }
@@ -126,6 +128,15 @@ const TOUCH = window.TOUCH = (() => {
       o.x = t.clientX; o.y = t.clientY;
     }
   }, opt);
+  // two fingers on the world (not on a button or the stick) pinch the camera in or out, a tier per ~30% of spread
+  let pin = 0;
+  function pinch(t, o) {
+    const free = [...tps.values()].filter(q => !q.k && !q.stick); if (free.length !== 2 || !adv() || !play() || typeof ADVR === 'undefined') { pin = 0; return false; }
+    o.x = t.clientX; o.y = t.clientY; for (const q of free) q.swipe = true;   // neither finger taps or scrolls
+    const d = Math.hypot(free[0].x - free[1].x, free[0].y - free[1].y); if (!pin) pin = d;
+    if (d > pin * 1.3) { ADVR.zoomBy(1); pin = d; } else if (d < pin / 1.3) { ADVR.zoomBy(-1); pin = d; }
+    return true;
+  }
   const end = (e, cancel) => {
     e.preventDefault();
     for (const t of e.changedTouches) {
