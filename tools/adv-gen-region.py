@@ -13,6 +13,7 @@ Image.MAX_IMAGE_PIXELS = None
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 MAPS = 'C:/Users/lando/Desktop/dungeons-pokemon/MAPS/KENORA REGION W- '
 OUT = os.environ.get('ADV_GEN_OUT') or os.path.join(ROOT, 'data', 'adv')   # ADV_GEN_OUT: a copy of data/adv to generate into (a trial run never touches the live world)
+PLANS = os.environ.get('ADV_TOWN_PLANS') or os.path.join(ROOT, 'tools', 'adv-towns')   # ADV_TOWN_PLANS: another folder of town plans (<code>.json, <code>-in.json) to build from
 REPO_MAPS = {'TERRAIN ONLY.png': 'terrain-only.webp', 'LOCATIONS.png': 'locations.webp'}   # tools/kenora-maps: the owner's maps at 1717 x 2000, the same art as the 3640 x 4240 originals
 def mapimg(name):
     """one of the owner's maps at the original 3640 x 4240: the PC original when present, else the repo copy scaled up (nearest, so the flat colours stay exact)"""
@@ -241,7 +242,7 @@ for code in OLDC:                                    # a few icons sit on the sh
 del _o, _w, _lb, _sea, _inl, _land, _dl
 def layout_reach(code):
     """how far a town's hand layout (tools/adv-towns/<code>.json) reaches from its centre, in tiles: the warp keeps all of it rigid"""
-    f = os.path.join(ROOT, 'tools', 'adv-towns', code + '.json')
+    f = os.path.join(PLANS, code + '.json')
     if not os.path.exists(f): return 0
     j = json.load(open(f)); pts = [tuple(j['mouth'])] if 'mouth' in j else []
     for k in ('paving', 'plazas', 'boards'): pts += [(e[a], e[b]) for e in j.get(k, []) for a in (0, 2) for b in (1, 3)]
@@ -449,7 +450,7 @@ EXITS = {}; EXJ = np.zeros((HP, WP), bool)                   # EXJ: the cells th
 WAP = np.zeros((HP, WP), bool)                                # the lab windows and 6 tiles round them: their roads are joined to the window (below), not to a town
 for _x, _y, _w, _h in LABWIN: WAP[max(0, _y - 6):_y + _h + 6, max(0, _x - 6):_x + _w + 6] = True
 for _c, _t in TOWN.items():
-    _f = os.path.join(ROOT, 'tools', 'adv-towns', _c + '.json')
+    _f = os.path.join(PLANS, _c + '.json')
     if K == 1 or not os.path.exists(_f): continue
     _j = json.load(open(_f))
     if not _j.get('exits'): continue
@@ -966,13 +967,13 @@ def cave_mouth(end, cc, fy):
 FARM_PROPS = []                                      # [name, tile x, tile y, anchor dy px] placed after the generic scatter (crops, bales, scarecrows)
 for t in TL:
     cx, cy, R, kd = t['tx'], t['ty'], t['R'], t['kind']; code = t['code']
-    if os.path.exists(os.path.join(ROOT, 'tools', 'adv-towns', code + '.json')):
+    if os.path.exists(os.path.join(PLANS, code + '.json')):
         # hand layout (tools/adv-towns/<code>.json, coordinates in tiles relative to the town centre): paving [[x0, y0, x1, y1, 'path'?]], buildings [[name, door-front x, y]], props [[name, x, y]]; "door" = the Pokemon Center front tile
-        j = json.load(open(os.path.join(ROOT, 'tools', 'adv-towns', code + '.json')))
+        j = json.load(open(os.path.join(PLANS, code + '.json')))
         for x0, y0, x1, y1, *m_ in j.get('paving', []): pave(cy + y0, cy + y1, cx + x0, cx + x1, t, j.get('lim', -1), MATN[m_[0]] if m_ else PAVE)   # lim: paving may reach this far from the centre (T4: the market runs out to the cave mouth)
         for x0, y0, x1, y1, r_, *m_ in j.get('plazas', []): pave(cy + y0, cy + y1, cx + x0, cx + x1, t, j.get('lim', -1), MATN[m_[0]] if m_ else PAVE, r_)      # v2: rounded plazas, [x0, y0, x1, y1, corner radius, 'path'?]
         if j.get('deco'): DECO.append((code, cx, cy, j['deco']))                                  # v2: families and prop rows, placed once the composition helpers exist (see `deco` below)
-        IN = json.load(open(os.path.join(ROOT, 'tools', 'adv-towns', code + '-in.json'))) if os.path.exists(os.path.join(ROOT, 'tools', 'adv-towns', code + '-in.json')) else {}   # S2: what is inside each building of the town, by id
+        IN = json.load(open(os.path.join(PLANS, code + '-in.json'))) if os.path.exists(os.path.join(PLANS, code + '-in.json')) else {}   # S2: what is inside each building of the town, by id
         for nm, x, y, *rm in j.get('buildings', []):
             fp = rm[1] if len(rm) > 1 else None
             cc_, y_ = building_at(t, nm, x, y, fp)
@@ -1240,7 +1241,7 @@ def put(name, x, y): props.append([name, int(round(x)), int(round(y))])
 # ---------------------------------------------------------------- C1 props A: hedgerows, crops, turbines, willows and dams (mark `occ` first so the generic scatter keeps clear)
 c1n = collections.Counter()
 def hedges5():
-    ring = (d5 > 2.4) & (d5 <= 3.9) & land & (kind == 0) & (h == 0) & (mat != FORD) & ~occ & ~dil(brk, 1) & ~dil((roadc & (rz != 5)) | paved | doorc, 4)
+    ring = (d5 > 2.4) & (d5 <= 3.9) & land & (kind == 0) & (h == 0) & (mat != FORD) & ~occ & ~dil(brk, 1) & ~dil((roadc & (rz != 5)) | paved | doorc, 4) & ~BOXALL
     ring &= (dg > 44) | ~dil(paved, 6)
     ys_, xs_ = np.nonzero(road5); ga = np.full((HP, WP), -1, np.int32)
     lr, nr_ = ndi.label(road5, np.ones((3, 3)))
@@ -1285,9 +1286,10 @@ for x, y, w, hh, kd_ in PLOTS:                      # Goldacre plots and pasture
             c1n['fence'] += 2
 flat5 = ndi.maximum_filter(h, 5) == ndi.minimum_filter(h, 5)
 def turbines(cands, n, spacing, seed):
-    rr = np.random.default_rng(seed); got = []; idx = rr.permutation(len(cands))
+    rr = np.random.default_rng(seed); got = []; idx = rr.permutation(len(cands)); nearb_ = dil(BOXALL, 6)
     for i in idx:
         y, x = cands[i]
+        if nearb_[y, x]: continue                        # never against a town drawn with exits (its tree belt)
         if any((y - b) ** 2 + (x - a) ** 2 < spacing ** 2 for a, b in got): continue
         got.append((x, y))
         if len(got) >= n: break
@@ -1298,7 +1300,7 @@ turbines(np.argwhere(tc & ~occ & ~dil(kind > 0, 3)), 14, 10, 61)
 tg = land & flat5 & (mat == GRASS) & ~occ & ~plotocc & ~dil(roadm, 9) & (h == 0) & (dg >= 47) & (dg <= 58) & ~dil(riv, 4)
 turbines(np.argwhere(tg), 4, 22, 62)                                 # Goldacre makes its own power: a few on the edge of town
 # willows along the river and the ponds, dams of fallen logs across the small channels
-wc = (dr >= 3.5) & (dr <= 15) & land & ((mat == GRASS) | (mat == SWAMP) | (mat == WETG)) & flat1 & ~occ & ~dil(roadm, 3) & ~dil(ford, 1) & (h == 0) & ~plotocc
+wc = (dr >= 3.5) & (dr <= 15) & land & ((mat == GRASS) | (mat == SWAMP) | (mat == WETG)) & flat1 & ~occ & ~dil(roadm, 3) & ~dil(ford, 1) & (h == 0) & ~plotocc & ~BOXALL
 rw = np.random.default_rng(63); wl = []
 for y, x in np.argwhere(wc)[np.random.default_rng(64).permutation(int(wc.sum()))]:
     if rw.random() > .06 or any((y - b) ** 2 + (x - a) ** 2 < 36 for a, b in wl): continue
@@ -1438,6 +1440,11 @@ def scatter(mask, prob, names, weights=None, step=2, jit=True, ydy=.9):
                 if callable(nm): nm = nm(c, r_)
                 put(nm, (cx_) * T, (cy_ + ydy) * T)
 lush = ['pineTree', 'pineTree', 'bushyOak', 'roundOak', 'canopyTree', 'pineTreeDark', 'bigRoundTree']
+# the woods a town drawn with exits sits in: thick against its box, thinning out over 8 tiles, never on a road or its verge (docs/REGION-REBUILD.md section 17)
+if K != 1 and BOXALL.any():
+    _db = ndi.distance_transform_edt(~BOXALL); _fr = free & ~dil(roadm, 2) & ~dil(water, 1) & (_db > 0)
+    _fw = ['rg_round_green0', 'rg_tall_green0', 'rg_round_teal0', 'rg_pine_green0', 'rg_round_green1', 'rg_tall_teal0', 'rg_pine_teal0']
+    scatter(_fr & (_db <= 3) & ~ridge, .75, _fw); scatter(_fr & (_db > 3) & (_db <= 8) & ~ridge, .3, _fw + ['rg_bush_green', 'rg_bush_teal'])
 cold = ['spruceTree', 'layerTree', 'spruceTreeDark', 'layerTreeDark', 'pineTreeDark']
 
 # ---------------------------------------------------------------- v2 composition (docs/MAPDESIGN.md "Look and feel v2"): families of props placed with intent instead of single props sprinkled evenly
@@ -1609,11 +1616,11 @@ for code_, cx_, cy_, dl_ in DECO:
             _, px_, py_, rx_, ry_ = d_; x0, y0 = cx_ + px_, cy_ + py_; xi0, yi0 = int(round(x0)), int(round(y0)); gr_ = np.isin(mat, [GRASS, WETG, SAND, DUNE])      # an oasis pool cuts into sand too
             pm = (((XX - x0) / rx_) ** 2 + ((YY - y0) / ry_) ** 2 <= 1) & land & gr_ & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
             if K != 1:                          # plan B: an irregular pool like the mockups' (a main bowl and two hashed lobes, no 1 tile spurs or notches)
-                rq = np.random.default_rng((16, xi0, yi0)); sx_ = 1 if rq.random() < .5 else -1
+                rq = np.random.default_rng((16, xi0, yi0)); sx_ = 1 if rq.random() < .5 else -1; sy_ = 1 if rq.random() < .5 else -1
                 el = lambda ex, ey, ax, ay: ((XX + .5 - ex) / ax) ** 2 + ((YY + .5 - ey) / ay) ** 2 <= 1
-                pm = el(x0 + .5, y0 + .5, rx_ + .4, ry_ + .4) | el(x0 + .5 + sx_ * rx_ * .55, y0 + .5 - ry_ * .55, rx_ * .6 + .5, ry_ * .55 + .5) | el(x0 + .5 - sx_ * rx_ * .5, y0 + .5 + ry_ * .6, rx_ * .55 + .5, ry_ * .5 + .5)
-                win = (np.abs(XX - xi0) <= rx_ * 1.6 + 2) & (np.abs(YY - yi0) <= ry_ * 1.6 + 2); pm &= win
-                pm = ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(pm, np.ones((2, 2))), np.ones((2, 2)))) & win & land & gr_ & ~roadm & ~occ
+                pm = el(x0 + .5, y0 + .5, rx_ + .5, ry_ + .5) | el(x0 + .5 + sx_ * rx_ * .3, y0 + .5 + sy_ * ry_ * .3, rx_ * .85 + .5, ry_ * .85 + .5)
+                win = (np.abs(XX - xi0) <= int(rx_) + 1) & (np.abs(YY - yi0) <= int(ry_) + 1); pm &= win
+                pm = ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(pm, np.ones((3, 3))), np.ones((3, 3)))) & win & land & gr_ & ~roadm & ~occ
             else: pm = blocky(pm, 2, .5) & land & gr_ & ~roadm & ~occ
             if K != 1: mat[pm] = POND; water[pm] = True; land = ~water   # plan B: the mockups' pond (sand ring and water drawn by the lab art), not wadeable
             else: mat[pm] = FORD; ford[pm] = True

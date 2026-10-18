@@ -76,7 +76,7 @@ class Town(plan.Grid):
         """a flower meadow: flowers and tufts on about every other tile of the area, a bush now and then (walk-through, so it never blocks)"""
         import random; r = random.Random(seed)
         for (x, y) in sorted(cells):
-            if (x + y) % 2 == 0 and r.random() < .8: s.prop(r.choice(kinds), x, y, walk=True)
+            if r.random() < .42: s.prop(r.choice(kinds), x, y, walk=True)           # loose, not a lattice
             elif r.random() < .06: s.prop(r.choice(('rg_bush_green', 'rg_bush_teal', 'rg_bush_pink', 'rg_rock_small')), x, y)
     def groves(s, x0, y0, x1, y1, kinds, gap=2, min_area=20, seed=11, styles=None):
         """woods in every open area big enough to read as one (min_area tiles once `gap` is kept from everything): a dense staggered mass, like the mockups"""
@@ -113,6 +113,7 @@ class Town(plan.Grid):
                 n = r.choice(kinds)
                 if any(c in s.occ and s.occ[c] not in s.treeset for c in s.box(n, x, y)): continue      # its canopy never covers a prop or a building
                 if any(s.get(x + i, y + k) not in ('.', 'g', 'a', 'Z', None) for i in (-2, -1, 1, 2) for k in (0, 1)): continue   # a trunk keeps two tiles clear of a path beside it (its canopy stays off the path)
+                if any(s.get(x + i, y + k) not in ('.', 'g', 'a', 'Z', None) for i in (-1, 0, 1) for k in (-2, -1)): continue        # nor a path just above it (the canopy would cover it)
                 s.pp.append((s.char(n), x, y)); s.occ[(x, y)] = n; s.treeset.add(n)
                 for c in s.box(n, x, y): s.occ.setdefault(c, n)
     def field(s, x0, y0, x1, y1, crop, every=2, soil='s'):

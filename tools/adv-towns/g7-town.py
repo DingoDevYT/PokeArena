@@ -27,8 +27,8 @@ g.lane([(-12, 4), (-29, 4)], 2, 'd')                                            
 g.lane([(-11, -8), (-36, -8)], 1, 'd'); g.lane([(-15, -20), (-32, -20)], 1, 'd')                   # Weavers Row, Chapel Row
 g.lane([(-11, -33), (-27, -33), (-27, -40)], 1, 'd')                                                # the track to the mill
 g.lane([(31, -20), (4, -20), (4, -10)], 1, 'd')                                                     # Dairy Row, round behind the store
-g.lane([(-7, 16), (36, 16), (36, 28)], 1, 'd')                                                      # the windmill track
-g.lane([(-10, 28), (-36, 28)], 1, 'd')                                                              # the allotment track
+g.lane([(-7, 16), (36, 16), (36, 32)], 1, 'd')                                                      # the windmill track
+g.lane([(-4, 28), (-36, 28)], 1, 'd')                                                              # the allotment track
 g.exit(-10, -44, 'N'); g.exit(44, -36, 'E'); g.exit(0, 44, 'S')
 
 # ================================================================ the green and the market
@@ -38,7 +38,7 @@ for x, y in ((-7, 3), (-7, 5), (9, 3), (9, 5)): g.prop('rg_planter_tall_pink' if
 g.props('rg_bench', [(1, 0), (1, 8), (-3, 4)]); g.props('rg_bench_stone', [(5, 4)])
 g.props('rg_lamp', [(-9, -1), (11, -1), (-9, 8), (11, 8)])
 g.props('rg_young_green0', [(-6, 0), (8, 0)]); g.props('rg_young_teal0', [(-6, 8), (8, 8)])
-for k, x in enumerate((-6, -2, 2, 6, 10)): g.prop('rg_stall_rug' if k % 2 else 'rg_stall', x, 13)
+for k, x in enumerate((-5, -1, 3, 7, 11)): g.prop('rg_stall_rug' if k % 2 else 'rg_stall', x, 15)      # the Saturday market faces the windmill track
 g.props('rg_crates', [(-9, 12), (12, 12)]); g.props('rg_crates2', [(-8, 14)]); g.props('rg_barrel', [(11, 14), (13, 13)]); g.props('rg_pumpkin', [(0, 14), (4, 14), (8, 14)])
 g.props('rg_pumpkin_face', [(-4, 14)]); g.props('rg_table', [(14, 12)]); g.props('rg_woodpile', [(-11, 13)])
 
@@ -60,7 +60,7 @@ for x, n, role in ((-19, 'rg_house_red_c', ['g7-h5', FP4(1)]), (-25, 'rg_house_w
 for x0 in (-36, -30, -24, -19): g.field(x0, -18, x0 + 3, -16, 'leafPlantB')                     # kitchen gardens between the rows
 g.props('rg_hut_round', [(-38, -16)]); g.props('rg_woodpile', [(-15, -16), (-27, -15)]); g.props('rg_barrel_water', [(-21, -15)])
 # east of Mill Lane: the old houses facing the lane
-g.lot('rg_house_wood_a', -4, -15, street_x=-9, role=['g7-h1', FP4(1)])
+g.lot('rg_house_wood_a', -4, -15, street_x=-12, role=['g7-h1', FP4(1)])
 g.lot('rg_house_wood_c', -4, -27, street_x=-9, role=['g7-h2', FP4(2)])
 g.lot('rg_house_red_a', -4, -38, street_x=-9)
 g.field(-2, -24, 2, -22, 'leafPlantB'); g.props('rg_woodpile', [(0, -14)]); g.props('rg_hut_round', [(1, -34)])
@@ -72,11 +72,11 @@ g.lot('rg_house_wood_d', -19, -34, street_y=-33)
 for k, y in enumerate(range(-40, -27, 3)):
     for x in range(6 + (k % 2), 23, 3): g.prop(FRUIT[(x + y) % len(FRUIT)], x, y)
 g.lot('rg_house_red_a', 16, -21, street_y=-20, role=['g7-whitney', FP4(1)])
-g.building('barnRed', 9, -21); g.props('maHayBales', [(6, -22), (12, -24)]); g.props('maHayPile', [(3, -27)]); g.props('rg_barrel_water', [(21, -21)])
+g.lot('barnRed', 9, -21, street_y=-20, beds=None); g.props('maHayBales', [(6, -22), (12, -24)]); g.props('maHayPile', [(3, -27)]); g.props('rg_barrel_water', [(21, -21)])
 g.building('maManorOrange', 24, -1, ['g7-gym', {'w': 6, 'd': 4, 'ex': 2}]); g.rect(24, -2, 24, 2, 'd'); g.props('rg_lamp', [(20, 1), (28, 1)])
 g.props('rg_planter_pink', [(21, -1), (27, -1)])
 # the pasture between Dairy Row and the market road: the herd's shelter, troughs, hay
-g.building('thatchBarn', 22, -10); g.props('rg_barrel_water', [(17, -11), (27, -9)]); g.props('maHayBales', [(12, -14), (28, -15)]); g.props('maHayPile', [(15, -8)])
+g.lot('thatchBarn', 22, -10, street_x=4, beds=None); g.props('rg_barrel_water', [(17, -11), (27, -9)]); g.props('maHayBales', [(12, -14), (28, -15)]); g.props('maHayPile', [(15, -8)])
 # the newer houses along the market road
 for y, n, role in ((-13, 'rg_house_wood_b', 'house'), (-21, 'rg_house_wood_a', ['g7-h3', FP4(1)]), (-29, 'rg_house_red_b', 'house')):
     g.lot(n, 39, y, street_x=34, role=role, beds=(BEDS[y % 3], BEDS[(y + 1) % 3]))
