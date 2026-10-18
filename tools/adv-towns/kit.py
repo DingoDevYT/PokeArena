@@ -49,8 +49,9 @@ class Town(plan.Grid):
         if street_y is not None: s.rect(x, y, x, street_y, walk)
         if street_x is not None: s.rect(x, y, x, y + 1, walk); s.rect(min(x, street_x), y + 1, max(x, street_x), y + 1, walk)   # down off the doorstep, then along to the street
         sw = size(name)[0]; half = int(sw / 2)
-        if beds:
-            s.prop(beds[0], x - 2, y, walk=True); s.prop(beds[-1], x + 2, y, walk=True)
+        if beds:                                                     # beds and pots are walk-through, but they never lie on a lane
+            for b_, bx in ((beds[0], x - 2), (beds[-1], x + 2)):
+                if s.get(bx, y) in ('.', 'g', 'a', 'Z'): s.prop(b_, bx, y, walk=True)
         for nm, dx, dy in extras: s.prop(nm, x + dx, y + dy)
         s.lots.append((name, x, y, sw))
     def dress(s, seed=7, trees=('rg_round_green1', 'rg_young_green0', 'rg_round_teal1', 'rg_young_teal0', 'rg_tall_green1'),
@@ -62,7 +63,7 @@ class Town(plan.Grid):
             for dx in (-hw - 1, hw + 1):
                 s.prop(r.choice(trees), x + dx, y - 3) or s.prop(r.choice(bushes), x + dx, y - 2)
                 s.prop(r.choice(bushes), x + dx, y)
-            s.prop(r.choice(pots), x + 1, y, walk=True)
+            if s.get(x + 1, y) in ('.', 'g', 'a', 'Z'): s.prop(r.choice(pots), x + 1, y, walk=True)
     def openmask(s, x0, y0, x1, y1, gap):
         """open grass in the box: nothing claimed, not a lawn ('g'), at least `gap` tiles from paving, buildings and deco"""
         pav = {(x, y) for y in range(-s.N, s.N + 1) for x in range(-s.N, s.N + 1) if s.get(x, y) not in ('.', 'a', 'Z')}
