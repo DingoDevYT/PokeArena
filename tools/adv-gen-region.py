@@ -270,9 +270,9 @@ def waxis(way):
         x, y = wpt(xb, yb); px, py = out[-1]; out.append((px, y) if xa == xb else (x, py) if ya == yb else (x, y))
     return out
 # the hand-built map-lab windows (tools/adv-region-export.py WINDOWS; their maps are maplab/maps/*.json, 2 x 2 lab cells per tile): the exporter overwrites them after this
-_ex = open(os.path.join(ROOT, 'tools', 'adv-region-export.py'), encoding='utf8').read(); LABWIN = []
+_ex = open(os.path.join(ROOT, 'tools', 'adv-region-export.py'), encoding='utf8').read(); LABWIN = []; LABMAPF = []
 for _m in re.finditer(r"dict\(map='([^']+)', wx=(\d+), wy=(\d+)", _ex[_ex.index('WINDOWS = ['):_ex.index('ROOMS = [')]):
-    _sz = json.load(open(os.path.join(ROOT, _m.group(1))))['size']; LABWIN.append((int(_m.group(2)), int(_m.group(3)), _sz[0] // 2, _sz[1] // 2))
+    _sz = json.load(open(os.path.join(ROOT, _m.group(1))))['size']; LABWIN.append((int(_m.group(2)), int(_m.group(3)), _sz[0] // 2, _sz[1] // 2)); LABMAPF.append(_m.group(1))
 LABWIN_OLD = [(840, 464, 48, 48), (240, 928, 64, 48), (808, 416, 64, 48)]      # where they stood on the 1.0 island, same order (NPCs in them move with the window, not the warp)
 log('plan B warp K', K, 'grid', WARP.W1, 'x', WARP.H1, 'tiles,', CW, 'x', CHN, 'chunks; town shifts', SHIFT, 'smallest dG', round(WARP.minsv, 3))
 
@@ -445,7 +445,9 @@ band = (snap_road(ridge, 3) if K == 1 else axis_road(ridge, avoid=water)) & ~(di
 log('road band tiles', int(band.sum()))
 # plan B (docs/REGION-REBUILD.md section 17): a town drawn with exits owns everything in its box; a route road stops short of the box and joins the
 # nearest exit with a 2 wide straight leg out of it and one square bend, so every road meets the town where its street leaves it, at the street's width
-EXITS = {}
+EXITS = {}; EXJ = np.zeros((HP, WP), bool)                   # EXJ: the cells the towns' exit roads and join legs were laid on
+WAP = np.zeros((HP, WP), bool)                                # the lab windows and 6 tiles round them: their roads are joined to the window (below), not to a town
+for _x, _y, _w, _h in LABWIN: WAP[max(0, _y - 6):_y + _h + 6, max(0, _x - 6):_x + _w + 6] = True
 for _c, _t in TOWN.items():
     _f = os.path.join(ROOT, 'tools', 'adv-towns', _c + '.json')
     if K == 1 or not os.path.exists(_f): continue
@@ -458,22 +460,57 @@ for _c, _t in TOWN.items():
     for k_, ex in enumerate(_j['exits']):
         x_, y_ = tx_ + ex[0], ty_ + ex[1]; w_ = ex[3] if len(ex) > 3 else 2; dx_, dy_ = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}[ex[2]]
         st_ = [(x_ + dx_ * i, y_ + dy_ * i) for i in range(0, L_ - max(abs(ex[0]), abs(ex[1])) + 5)]
-        for (sx_, sy_) in st_: band[sy_:sy_ + w_, sx_:sx_ + w_] = True
+        for (sx_, sy_) in st_: band[sy_:sy_ + w_, sx_:sx_ + w_] = True; EXJ[sy_:sy_ + w_, sx_:sx_ + w_] = True
         nets[k_] = [st_[-1]]
     comps = []
     for i_ in range(1, nl_ + 1):
         c_ = np.argwhere(lb_ == i_); dbox = np.maximum(np.maximum(np.abs(c_[:, 1] - tx_), np.abs(c_[:, 0] - ty_)) - L_, 0)
-        if dbox.min() <= 8: comps.append(c_[dbox.argmin()])
+        if dbox.min() <= 8 and not WAP[tuple(c_[dbox.argmin()])]: comps.append(c_[dbox.argmin()])
     for tip in sorted(comps, key=lambda t: min(abs(tx_ + e[0] - t[1]) + abs(ty_ + e[1] - t[0]) for e in _j['exits'])):
         k_ = min(range(len(_j['exits'])), key=lambda k: abs(tx_ + _j['exits'][k][0] - tip[1]) + abs(ty_ + _j['exits'][k][1] - tip[0]))
         w_ = _j['exits'][k_][3] if len(_j['exits'][k_]) > 3 else 2
         fx, fy = min(nets[k_], key=lambda q: abs(q[0] - tip[1]) + abs(q[1] - tip[0]))          # the nearest cell already on this exit's road
         vert = _j['exits'][k_][2] in 'NS'
         pts = [(fx, fy), (fx, tip[0]), (tip[1], tip[0])] if vert else [(fx, fy), (tip[1], fy), (tip[1], tip[0])]
+        log(f'  {_c} exit {_j["exits"][k_][2]}: joins the road end at {tip[1]},{tip[0]} by {pts}')
         for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
-            band[min(ya, yb):max(ya, yb) + w_, min(xa, xb):max(xa, xb) + w_] = True
+            band[min(ya, yb):max(ya, yb) + w_, min(xa, xb):max(xa, xb) + w_] = True; EXJ[min(ya, yb):max(ya, yb) + w_, min(xa, xb):max(xa, xb) + w_] = True
             nets[k_] += [(x, y) for x in range(min(xa, xb), max(xa, xb) + 1) for y in range(min(ya, yb), max(ya, yb) + 1)]
     log(f'{_c}: route roads stop at its box and join its {len(_j["exits"])} exits')
+# the hand-built lab windows are met the same way (the exporter lays their own ground over this afterwards): a route road stops short of the window and
+# joins the nearest of the window's road entries (its path tiles on the border) with a straight 2 wide leg and one square bend. An entry facing a town
+# box is the town's to meet (its exit is drawn onto it), so it gets no stub here.
+_TB = np.zeros((HP, WP), bool)
+for _c, _j in EXITS.items(): _TB |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
+for (wx_, wy_, ww_, wh_), mf_ in zip(LABWIN, LABMAPF):
+    if K == 1: break
+    g_ = json.load(open(os.path.join(ROOT, mf_)))['ground']
+    pt_ = lambda tx, ty: any(2 * ty + j < len(g_) and 2 * tx + i < len(g_[2 * ty + j]) and g_[2 * ty + j][2 * tx + i] == 'd' for i in (0, 1) for j in (0, 1))
+    wr_ = np.zeros((HP, WP), bool); wr_[wy_:wy_ + wh_, wx_:wx_ + ww_] = True
+    band &= ~(dil(wr_, 3) & ~EXJ)
+    ents = []                                                     # (outward cells of the stub, its far end, side)
+    for side, cells, inw in (('N', [(i, 0) for i in range(ww_)], (0, 1)), ('S', [(i, wh_ - 1) for i in range(ww_)], (0, -1)), ('W', [(0, j) for j in range(wh_)], (1, 0)), ('E', [(ww_ - 1, j) for j in range(wh_)], (-1, 0))):
+        run = []
+        for c in cells + [None]:
+            if c is not None and pt_(*c): run.append(c); continue
+            if run:
+                deep = [q for q in run if all(pt_(q[0] + k * inw[0], q[1] + k * inw[1]) for k in range(1, 6))] or run       # line up with the road five tiles in (the border cells may flare)
+                lx, ly = min(q[0] for q in deep), min(q[1] for q in deep); ox, oy = -inw[0], -inw[1]
+                stub = [(wx_ + lx + ox * k, wy_ + ly + oy * k) for k in range(1, 5)]
+                if not any(_TB[wy_ + ly + oy * k, wx_ + lx + ox * k] for k in range(1, 7)):
+                    for x, y in stub: band[y:y + 2, x:x + 2] = True
+                    ents.append((stub[-1], side))
+            run = []
+    lbw, nlw = ndi.label(band & dil(wr_, 14) & ~dil(wr_, 4), np.ones((3, 3)))
+    for i_ in range(1, nlw + 1):
+        c_ = np.argwhere(lbw == i_)
+        if EXJ[c_[:, 0], c_[:, 1]].any() or not ents: continue      # a town's exit road: the town met it already
+        dw = np.maximum(np.maximum(wx_ - c_[:, 1], c_[:, 1] - (wx_ + ww_ - 1)), np.maximum(wy_ - c_[:, 0], c_[:, 0] - (wy_ + wh_ - 1)))
+        if dw.min() > 9: continue
+        ty_, tx_ = c_[dw.argmin()]; (fx, fy), side = min(ents, key=lambda e: abs(e[0][0] - tx_) + abs(e[0][1] - ty_))
+        pts = [(fx, fy), (fx, ty_), (tx_, ty_)] if side in 'NS' else [(fx, fy), (tx_, fy), (tx_, ty_)]
+        for (xa, ya), (xb, yb) in zip(pts, pts[1:]): band[min(ya, yb):max(ya, yb) + 2, min(xa, xb):max(xa, xb) + 2] = True
+        log(f'  lab window at {wx_},{wy_}: joins the road end at {tx_},{ty_} to its {side} entry by {pts}')
 
 # ---------------------------------------------------------------- 4. heights
 cave_seed = (int(LABELS[4][0] / S), int(LABELS[4][1] / S))
@@ -496,12 +533,12 @@ log('mountain tiles', int(mount.sum()), 'cave', int(cave.sum()))
 from scipy.spatial import cKDTree
 disc = np.zeros((HP, WP), bool); tid = np.zeros((HP, WP), np.int16); TL = list(TOWN.values())
 for i, t in enumerate(TL, 1):
-    m = (XX - t['tx']) ** 2 + (YY - t['ty']) ** 2 <= t['R'] ** 2
+    m = ((np.abs(XX - t['tx']) <= EXITS[t['code']].get('lim', 46)) & (np.abs(YY - t['ty']) <= EXITS[t['code']].get('lim', 46))) if t['code'] in EXITS else (XX - t['tx']) ** 2 + (YY - t['ty']) ** 2 <= t['R'] ** 2   # a town drawn with exits owns its square box, no more (the routes are dressed right up to it)
     disc |= m; tid[m & (tid == 0)] = i
 BOXALL = np.zeros((HP, WP), bool)                     # the boxes of the towns drawn with exits: the generic dressing (tall grass, crop fields, scatter) keeps out
 for _c, _j in EXITS.items(): BOXALL |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
 EXD = np.zeros((HP, WP), bool)                        # a town drawn with exits keeps its route roads right up to its box (the join legs run inside its old disc)
-for _c in EXITS: EXD |= (XX - TOWN[_c]['tx']) ** 2 + (YY - TOWN[_c]['ty']) ** 2 <= TOWN[_c]['R'] ** 2
+for _c in EXITS: EXD |= BOXALL
 roadc = band & ~cave & ~(disc & ~EXD)
 r4 = roadc & dil(cave, 28)
 lab, n = ndi.label(roadc, np.ones((3, 3)))
@@ -527,6 +564,11 @@ if orphan.any():
     l2, n2 = ndi.label(orphan, np.ones((3, 3))); print(f'WARN {n2} road pieces without a route label ({int(orphan.sum())} tiles)')
     for i in range(1, n2 + 1):
         yy, xx = np.nonzero(l2 == i); print('   piece near tile', int(xx.mean()), int(yy.mean()), 'size', len(xx))
+if orphan.any():                                       # a town's exit stub that only meets a lab window (no route road of its own): it takes the nearest route's number
+    _, ii_ = ndi.distance_transform_edt(rz == 0, return_indices=True); l2, n2 = ndi.label(orphan, np.ones((3, 3)))
+    for i in range(1, n2 + 1):
+        pc = l2 == i
+        if (pc & EXJ).any(): rz[pc] = rz[ii_[0][pc], ii_[1][pc]]
 roadc = roadc & (rz > 0)
 
 # docs/TRAVEL.md: the supply path between Sailsport (T2) and Aldermere City (G5). Routes 24 and 23 are the trade routes and already carry a 4 tile dirt band (PATH); the supply path is that band traced down its middle
@@ -835,7 +877,8 @@ def building_at(t, name, fx, fy, fp=None):
     props.append([name, int(round((cc + .5) * T - dx)), int(y * T - 1)])
     if fp:
         c0, r0, c1 = cc - fp['ex'], y - fp['d'], cc - fp['ex'] + fp['w']; reg = (slice(r0, y), slice(c0, c1))
-        assert not (paved[reg].any() or water[reg].any() or (h[reg] != t['lv']).any() or (kind[reg] != 0).any()), f'{name}: footprint {c0},{r0} {fp["w"]}x{fp["d"]} is not level, dry, unpaved ground (paved {int(paved[reg].sum())} water {int(water[reg].sum())} h {np.unique(h[reg]).tolist()} lv {t["lv"]} kind {np.unique(kind[reg]).tolist()})'
+        pv_ = paved[reg].copy(); pv_[-1, fp['ex']] = False                 # the walk may run under the door itself (it meets the door flush)
+        assert not (pv_.any() or water[reg].any() or (h[reg] != t['lv']).any() or (kind[reg] != 0).any()), f'{name}: footprint {c0},{r0} {fp["w"]}x{fp["d"]} is not level, dry, unpaved ground (paved {int(paved[reg].sum())} water {int(water[reg].sum())} h {np.unique(h[reg]).tolist()} lv {t["lv"]} kind {np.unique(kind[reg]).tolist()})'
         occ[r0 - 1:y, c0 - 1:c1 + 1] = True
         px, py = props[-1][1], props[-1][2]   # the sprite must cover the footprint and its upright back wall (a tile of wall height)
         if c0 * T < px - d['ax'] - T // 2 or c1 * T > px - d['ax'] + d['sw'] + T // 2 or r0 * T - T < py - d['ay'] - 20: print(f'WARN {name}: the footprint pokes out of the sprite')
@@ -1528,11 +1571,17 @@ for code_, cx_, cy_, dl_ in DECO:
         elif d_[0] == 'pond':                   # [pond, x, y, rx, ry]: shallow water (ford) with reeds, a log and rocks on its bank
             _, px_, py_, rx_, ry_ = d_; x0, y0 = cx_ + px_, cy_ + py_; xi0, yi0 = int(round(x0)), int(round(y0)); gr_ = np.isin(mat, [GRASS, WETG, SAND, DUNE])      # an oasis pool cuts into sand too
             pm = (((XX - x0) / rx_) ** 2 + ((YY - y0) / ry_) ** 2 <= 1) & land & gr_ & ~roadm & ~occ & (kind == 0) & (h == h[cy_, cx_])
-            if K != 1: pm = np.zeros_like(pm); pm[yi0 - int(ry_):yi0 + int(ry_) + 1, xi0 - int(rx_):xi0 + int(rx_) + 1] = rrect_mask(2 * int(ry_) + 1, 2 * int(rx_) + 1, 3); pm &= land & gr_ & ~roadm & ~occ   # plan B: a rounded pool like the mockups'
+            if K != 1:                          # plan B: an irregular pool like the mockups' (a main bowl and two hashed lobes, no 1 tile spurs or notches)
+                rq = np.random.default_rng((16, xi0, yi0)); sx_ = 1 if rq.random() < .5 else -1
+                el = lambda ex, ey, ax, ay: ((XX + .5 - ex) / ax) ** 2 + ((YY + .5 - ey) / ay) ** 2 <= 1
+                pm = el(x0 + .5, y0 + .5, rx_ + .4, ry_ + .4) | el(x0 + .5 + sx_ * rx_ * .55, y0 + .5 - ry_ * .55, rx_ * .6 + .5, ry_ * .55 + .5) | el(x0 + .5 - sx_ * rx_ * .5, y0 + .5 + ry_ * .6, rx_ * .55 + .5, ry_ * .5 + .5)
+                win = (np.abs(XX - xi0) <= rx_ * 1.6 + 2) & (np.abs(YY - yi0) <= ry_ * 1.6 + 2); pm &= win
+                pm = ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(pm, np.ones((2, 2))), np.ones((2, 2)))) & win & land & gr_ & ~roadm & ~occ
             else: pm = blocky(pm, 2, .5) & land & gr_ & ~roadm & ~occ
             if K != 1: mat[pm] = POND; water[pm] = True; land = ~water   # plan B: the mockups' pond (sand ring and water drawn by the lab art), not wadeable
             else: mat[pm] = FORD; ford[pm] = True
             occ[yi0 - int(ry_) - 2:yi0 + int(ry_) + 3, xi0 - int(rx_) - 2:xi0 + int(rx_) + 3] = True
+            if K != 1: occ |= dil(pm, 1)
             rg = np.random.default_rng((15, xi0, yi0))
             for nm, dx, dy, ydy in (('reedsPair', -rx_ - .6, -ry_ * .4, .8), ('reeds', rx_ + .4, -ry_ * .3, .8), ('reedsOlive', -rx_ * .4, ry_ + 1.0, .8), ('reeds', rx_ * .5, ry_ + 1.1, .8), ('fallenLog', -rx_ - 1.4, ry_ * .5, .8), ('rockGrey', rx_ + 1.2, ry_ * .7, .9), ('flowersWhite', 0, -ry_ - 1.2, .8), ('stoneGrey', -rx_ * .6, -ry_ - 1.2, .9)):
                 xx_, yy_ = int(np.floor(x0 + dx)), int(np.floor(y0 + dy))

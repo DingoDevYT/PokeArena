@@ -84,7 +84,7 @@ def build(code, plan, legend, extra=None, blds=(), pp=()):
         for b_ in bx[i + 1:]:
             if a_[1] < b_[3] - .3 and b_[1] < a_[3] - .3 and a_[2] < b_[4] - .3 and b_[2] < a_[4] - .3: print(f'  {code}: buildings overlap: {a_[0]} at {a_[5:]} and {b_[0]} at {b_[5:]}')
     for a_ in bx:                                                     # the building's base (its two bottom rows) must stand on open ground, not on a street
-        hit = [(x, y) for y in (a_[6] - 2, a_[6] - 1) for x in range(int(a_[1] + .5), int(a_[3] - .5) + 1) if 0 <= y + cy < len(rows) and 0 <= x + cx < W and rows[y + cy][x + cx] in GROUND and rows[y + cy][x + cx] not in 'gaZ']
+        hit = [(x, y) for y in (a_[6] - 2, a_[6] - 1) for x in range(int(a_[1] + .5), int(a_[3] - .5) + 1) if 0 <= y + cy < len(rows) and 0 <= x + cx < W and rows[y + cy][x + cx] in GROUND and rows[y + cy][x + cx] not in 'gaZ' and (x, y) != (a_[5], a_[6] - 1)]   # the walk may run under the door row (it meets the door flush)
         if hit: print(f'  {code}: {a_[0]} at {a_[5:]} stands on paving at {hit[:3]}')
     for pr in props:
         for a_ in bx:

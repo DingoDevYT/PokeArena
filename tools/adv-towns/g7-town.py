@@ -6,7 +6,7 @@ and the old drove road south (Route 7). The green with its fountain is the cross
 Saturday market sets up on its south side. The oldest cottages crowd the rows off Mill Lane, which wanders north past them to the river mill; each row
 backs onto the next across kitchen gardens. The orchard and Whitney's farm lie along the market road, where the dairy hall (the gym) and the newer, bigger
 houses stand. South of the green the drove road passes the tavern and runs down between worked fields to the windmill track; a lane goes west to the duck
-pond. Woods wall the village in except where the roads leave. Exits: north (-10, -44) Route 8, east (44, -36) Route 5, south (-9, 44) Route 7."""
+pond. Woods wall the village in except where the roads leave. Exits: north (-10, -44) Route 8, east (44, -36) Route 5, south (0, 44) Route 7."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import kit
 
@@ -22,14 +22,14 @@ g.lane([(-11, -3), (13, -3), (13, 9), (-11, 9), (-11, -3)], 2, 'd')             
 g.rect(-9, -1, 11, 8, 'g')
 g.lane([(-10, -3), (-10, -12), (-14, -12), (-14, -26), (-10, -26), (-10, -44)], 2, 'd')            # Mill Lane
 g.lane([(14, 3), (32, 3), (32, -36), (44, -36)], 2, 'd')                                          # the market road
-g.lane([(-8, 11), (-8, 22), (-3, 22), (-3, 33), (-9, 33), (-9, 44)], 2, 'd')                       # the drove road
-g.lane([(-12, 4), (-27, 4)], 2, 'd')                                                                # Pond Lane
-g.lane([(-11, -8), (-38, -8)], 1, 'd'); g.lane([(-15, -20), (-38, -20)], 1, 'd')                   # Weavers Row, Chapel Row
-g.lane([(-11, -33), (-27, -33), (-27, -39)], 1, 'd')                                                # the track to the mill
+g.lane([(-8, 11), (-8, 22), (-3, 22), (-3, 33), (0, 33), (0, 44)], 2, 'd')                         # the drove road (leaves where Route 7's lab-drawn road comes in)
+g.lane([(-12, 4), (-29, 4)], 2, 'd')                                                                # Pond Lane
+g.lane([(-11, -8), (-36, -8)], 1, 'd'); g.lane([(-15, -20), (-32, -20)], 1, 'd')                   # Weavers Row, Chapel Row
+g.lane([(-11, -33), (-27, -33), (-27, -40)], 1, 'd')                                                # the track to the mill
 g.lane([(31, -20), (4, -20), (4, -10)], 1, 'd')                                                     # Dairy Row, round behind the store
 g.lane([(-7, 16), (36, 16), (36, 28)], 1, 'd')                                                      # the windmill track
-g.lane([(-10, 28), (-38, 28)], 1, 'd')                                                              # the allotment track
-g.exit(-10, -44, 'N'); g.exit(44, -36, 'E'); g.exit(-9, 44, 'S')
+g.lane([(-10, 28), (-36, 28)], 1, 'd')                                                              # the allotment track
+g.exit(-10, -44, 'N'); g.exit(44, -36, 'E'); g.exit(0, 44, 'S')
 
 # ================================================================ the green and the market
 g.prop('rg_fountain', 1, 4)
@@ -43,8 +43,8 @@ g.props('rg_crates', [(-9, 12), (12, 12)]); g.props('rg_crates2', [(-8, 14)]); g
 g.props('rg_pumpkin_face', [(-4, 14)]); g.props('rg_table', [(14, 12)]); g.props('rg_woodpile', [(-11, 13)])
 
 # ================================================================ the Center and the co-op store
-g.building('pokeCenterGrand', -4, -5, ['g7-center', {'w': 5, 'd': 3, 'ex': 2}]); g.rect(-4, -4, -4, -4, 'd')
-g.building('warehouse', 7, -5, ['g7-mart', {'w': 6, 'd': 3, 'ex': 2}]); g.rect(7, -4, 7, -4, 'd')
+g.building('pokeCenterGrand', -4, -5, ['g7-center', {'w': 5, 'd': 3, 'ex': 2}]); g.rect(-4, -6, -4, -4, 'd')
+g.building('warehouse', 7, -5, ['g7-mart', {'w': 6, 'd': 3, 'ex': 2}]); g.rect(7, -6, 7, -4, 'd')
 g.props('rg_planter_pink', [(-8, -5), (0, -5)]); g.props('rg_planter_orange', [(2, -5), (11, -5)]); g.prop('rg_sign_board', 1, -7); g.props('rg_lamp_mid', [(1, -5)])
 g.props('rg_bush_green', [(-7, -11), (-5, -11), (-3, -11), (-1, -11)]); g.props('rg_crates', [(10, -10)]); g.props('rg_barrel', [(12, -10), (12, -8)])
 
@@ -72,8 +72,8 @@ g.lot('rg_house_wood_d', -19, -34, street_y=-33)
 for k, y in enumerate(range(-40, -27, 3)):
     for x in range(6 + (k % 2), 23, 3): g.prop(FRUIT[(x + y) % len(FRUIT)], x, y)
 g.lot('rg_house_red_a', 16, -21, street_y=-20, role=['g7-whitney', FP4(1)])
-g.building('barnRed', 9, -21); g.props('maHayBales', [(6, -22), (12, -24)]); g.props('maHayPile', [(5, -25)]); g.props('rg_barrel_water', [(21, -21)])
-g.building('maManorOrange', 24, -1, ['g7-gym', {'w': 6, 'd': 4, 'ex': 2}]); g.rect(24, 0, 24, 2, 'd'); g.props('rg_lamp', [(20, 1), (28, 1)])
+g.building('barnRed', 9, -21); g.props('maHayBales', [(6, -22), (12, -24)]); g.props('maHayPile', [(3, -27)]); g.props('rg_barrel_water', [(21, -21)])
+g.building('maManorOrange', 24, -1, ['g7-gym', {'w': 6, 'd': 4, 'ex': 2}]); g.rect(24, -2, 24, 2, 'd'); g.props('rg_lamp', [(20, 1), (28, 1)])
 g.props('rg_planter_pink', [(21, -1), (27, -1)])
 # the pasture between Dairy Row and the market road: the herd's shelter, troughs, hay
 g.building('thatchBarn', 22, -10); g.props('rg_barrel_water', [(17, -11), (27, -9)]); g.props('maHayBales', [(12, -14), (28, -15)]); g.props('maHayPile', [(15, -8)])
@@ -91,9 +91,9 @@ g.lot('rg_house_red_d', -15, 27, street_y=28)
 g.lot('rg_house_wood_d', 4, 32, street_x=-2)
 g.lot('rg_house_red_b', 22, 15, street_y=16)
 g.lot('rg_house_wood_b', 30, 15, street_y=16)
-g.field(-1, 36, 12, 41, 'leafPlantB'); g.field(8, 18, 18, 26, 'rg_sunflowers', every=2)
+g.field(4, 36, 15, 41, 'leafPlantB'); g.field(8, 18, 18, 26, 'rg_sunflowers', every=2)
 g.field(20, 19, 33, 26, 'leafPlantB'); g.field(12, 29, 33, 33, 'rg_pumpkin', every=2)
-g.prop('maWindmill', 38, 33); g.props('maHayBales', [(35, 30), (40, 30)]); g.prop('rg_scarecrow', 26, 22); g.prop('rg_scarecrow', 5, 38)
+g.prop('maWindmill', 38, 33); g.props('maHayBales', [(35, 30), (40, 30)]); g.prop('rg_scarecrow', 26, 22); g.prop('rg_scarecrow', 9, 38)
 # the allotments west of the drove road
 for x0 in (-36, -30, -24, -18):
     g.field(x0, 30, x0 + 4, 33, 'leafPlantB'); g.prop('rg_hut_round', x0 + 2, 36)
@@ -110,7 +110,8 @@ g.trees(40, -44, 44, 44, WOOD)
 g.trees(-44, -26, -40, 44, WOOD)
 g.trees(-12, -44, 4, -40, WOOD); g.trees(-44, -12, -40, 0, WOOD)
 g.dress()
-g.groves(-43, -43, 43, 43, WOOD, gap=2, min_area=12)
-g.garden(-43, -43, 43, 43)
+MEAD = SMALL + ['rg_flower_pink', 'rg_flower_yellow', 'rg_tiny_pink', 'rg_tiny_white']
+g.groves(-43, -43, 43, 43, WOOD, gap=1, min_area=8, styles=[('woods', WOOD), ('meadow', MEAD), ('woods', WOOD), ('orchard', FRUIT), ('meadow', MEAD)])
+g.garden(-43, -43, 43, 43, every=3)
 g.drift(-44, -44, 44, 44, SMALL, every=6)
 g.done(dict(lim=46))

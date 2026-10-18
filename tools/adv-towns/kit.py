@@ -31,7 +31,9 @@ class Town(plan.Grid):
         """one prop with its foot on tile (x, y); refused (and remembered) if its sprite would cover another; walk: flat decals that may lie on paving"""
         cells = s.box(name, x, y)
         if not force and not s.free(cells, ground_ok=True): return False
-        if not walk and not force and s.get(x, y) not in ('.', 'g', 'a', 'Z', 't', 'c', 'p', 'd', 's', 'h'): return False
+        if not walk and not force:                                   # a solid prop never stands on paving: its whole foot row is open ground
+            foot = max(c[1] for c in cells) if cells else y
+            if any(s.get(cx, cy) not in ('.', 'g', 'a', 'Z') for cx, cy in cells if cy == foot) or s.get(x, y) not in ('.', 'g', 'a', 'Z'): return False
         s.claim(cells, name); s.pp.append((s.char(name), x, y)); return True
     def props(s, name, pts, **k): return sum(s.prop(name, x, y, **k) for x, y in pts)
     def building(s, name, x, y, role='house'):
@@ -43,7 +45,7 @@ class Town(plan.Grid):
     # ---- composites
     def lot(s, name, x, y, street_y=None, street_x=None, role='house', beds=('rg_bed_pink', 'rg_bed_yellow'), extras=(), walk='d'):
         """a house lot: the building (door walkway (x, y)), a one tile walk from its door down (or across) to the street, a flower bed each side of the door"""
-        s.building(name, x, y, role)
+        s.building(name, x, y, role); s.rect(x, y - 1, x, y, walk)        # the walk starts under the door row (hidden by the wall), so it meets the door flush
         if street_y is not None: s.rect(x, y, x, street_y, walk)
         if street_x is not None: s.rect(x, y, x, y + 1, walk); s.rect(min(x, street_x), y + 1, max(x, street_x), y + 1, walk)   # down off the doorstep, then along to the street
         sw = size(name)[0]; half = int(sw / 2)
@@ -70,7 +72,13 @@ class Town(plan.Grid):
             if d[0] == 'pond': pav |= {(x, y) for y in range(int(d[2] - d[4]) - 3, int(d[2] + d[4]) + 4) for x in range(int(d[1] - d[3]) - 3, int(d[1] + d[3]) + 4)}
         near = lambda x, y: any((x + i, y + j) in pav for i in range(-gap, gap + 1) for j in range(-gap, gap + 1))
         return {(x, y) for y in range(y0, y1 + 1) for x in range(x0, x1 + 1) if s.get(x, y) == '.' and (x, y) not in s.occ and not near(x, y)}
-    def groves(s, x0, y0, x1, y1, kinds, gap=2, min_area=20, seed=11):
+    def meadow(s, cells, kinds, seed=5):
+        """a flower meadow: flowers and tufts on about every other tile of the area, a bush now and then (walk-through, so it never blocks)"""
+        import random; r = random.Random(seed)
+        for (x, y) in sorted(cells):
+            if (x + y) % 2 == 0 and r.random() < .8: s.prop(r.choice(kinds), x, y, walk=True)
+            elif r.random() < .06: s.prop(r.choice(('rg_bush_green', 'rg_bush_teal', 'rg_bush_pink', 'rg_rock_small')), x, y)
+    def groves(s, x0, y0, x1, y1, kinds, gap=2, min_area=20, seed=11, styles=None):
         """woods in every open area big enough to read as one (min_area tiles once `gap` is kept from everything): a dense staggered mass, like the mockups"""
         op = s.openmask(x0, y0, x1, y1, gap); seen = set(); n = 0
         for c in sorted(op):
@@ -81,8 +89,11 @@ class Town(plan.Grid):
                 for q in ((p[0] + 1, p[1]), (p[0] - 1, p[1]), (p[0], p[1] + 1), (p[0], p[1] - 1)):
                     if q in op and q not in seen: seen.add(q); st.append(q)
             if len(comp) < min_area: continue
-            cs = set(comp); n += 1
-            s.trees(min(x for x, _ in comp), min(y for _, y in comp), max(x for x, _ in comp), max(y for _, y in comp), kinds, skip=lambda x, y: (x, y) not in cs, seed=seed + n)
+            cs = set(comp); n += 1; bb = (min(x for x, _ in comp), min(y for _, y in comp), max(x for x, _ in comp), max(y for _, y in comp))
+            st, ks = (styles[(n * 7 + len(comp)) % len(styles)] if styles else ('woods', kinds))
+            if st == 'meadow': s.meadow(cs, ks, seed=seed + n)
+            elif st == 'orchard': s.trees(*bb, ks, dx=3, dy=3, skip=lambda x, y: (x, y) not in cs, seed=seed + n)
+            else: s.trees(*bb, ks, skip=lambda x, y: (x, y) not in cs, seed=seed + n)
     def garden(s, x0, y0, x1, y1, seed=12, every=4):
         """lawn left near paths: a bush, a young tree or a flower clump about every `every` tiles, kept off the walking line"""
         import random; r = random.Random(seed)
@@ -99,8 +110,10 @@ class Town(plan.Grid):
                 if skip and skip(x, y): continue
                 if any(s.get(x, y + k) not in ('.', 'g', 'a', 'Z', None) or (x, y + k) in s.occ and s.occ[(x, y + k)] not in s.treeset for k in (0, 1)): continue
                 if (x, y) in s.occ: continue
+                n = r.choice(kinds)
+                if any(c in s.occ and s.occ[c] not in s.treeset for c in s.box(n, x, y)): continue      # its canopy never covers a prop or a building
                 if any(s.get(x + i, y + k) not in ('.', 'g', 'a', 'Z', None) for i in (-2, -1, 1, 2) for k in (0, 1)): continue   # a trunk keeps two tiles clear of a path beside it (its canopy stays off the path)
-                n = r.choice(kinds); s.pp.append((s.char(n), x, y)); s.occ[(x, y)] = n; s.treeset.add(n)
+                s.pp.append((s.char(n), x, y)); s.occ[(x, y)] = n; s.treeset.add(n)
                 for c in s.box(n, x, y): s.occ.setdefault(c, n)
     def field(s, x0, y0, x1, y1, crop, every=2, soil='s'):
         """a worked field: tilled soil with a crop in rows every `every` tiles"""
