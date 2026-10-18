@@ -34,14 +34,14 @@ def ring(names, r, n, phase=0.0, skip=None, **kw):
 disc(22, 'g')                                                                                   # the clearing's lawn
 disc(9.4, 'p'); disc(5.6, 't')                                                                  # the court, and its inner ring of tan stone
 g.rect(-1, 9, 1, 16, 'p')                                                                       # the avenue south from the court gate
-g.rect(-1, 17, 8, 18, 'p'); g.rect(9, 17, 24, 18, 'a')                                                                     # the sand track east, out of the clearing
-g.claim([(x, y) for x in range(9, 25) for y in (17, 18)], 'track')                           # nothing is planted on it
-for sx, sy, ex, ey in ((0, -10, 0, -12), (10, 0, 12, 0), (-12, 0, -10, 0)): g.rect(sx, sy, ex, ey, 'p')   # the three small gates: a paved step each, ending at a bench alcove
+g.rect(-1, 17, 24, 18, 'p')                                                                     # the sand track east, out of the clearing
+g.claim([(x, y) for x in range(9, 25) for y in (17, 18)], 'track')       # the avenue turns east and runs paved to the clearing's edge, where the route takes it on                           # nothing is planted on it
+for sx, sy, ex, ey in ((-1, -15, 1, -10), (10, -1, 15, 1), (-15, -1, -10, 1)): g.rect(sx, sy, ex, ey, 'p')   # the three small gates: a paved step to a 3 x 3 pad each (a bench court)
 
 # ================================================================ the monument
 g.prop('maTowerOct', 0, -1, walk=True)                                                          # the old stone tower
 g.props('statueDog', [(-3, 1), (3, 1), (-4, -3), (4, -3)], walk=True)                          # the stone hounds that guard it
-g.props('rg_pillar', [(-5, -1), (5, -1)], walk=True); g.props('vaseGold', [(-2, 0), (2, 0)], walk=True); g.props('crystalDarkB', [(-5, 3), (5, 3), (-1, 3), (1, 3)], walk=True); g.props('crystalDark', [(-6, 0), (6, 0), (-3, 4), (3, 4)], walk=True)
+g.props('rg_pillar', [(-5, -1), (5, -1)], walk=True); g.props('vaseGold', [(-2, 0), (2, 0)], walk=True); g.props('crystalDarkB', [(-5, 3), (-6, 3)], walk=True); g.props('crystalDark', [(6, 0), (5, 3), (6, 3)], walk=True)
 ring('rg_column', 7.6, 8, phase=math.pi / 8, walk=True, skip=lambda x, y: y > 6 and abs(x) < 3)  # the eight columns round the court
 ring(['rg_lantern_grey', 'rg_lantern'], 8.6, 16, phase=0.0, walk=True, skip=lambda x, y: y > 7 and abs(x) < 3)
 ring('rg_bench_stone', 4.6, 4, phase=math.pi / 4, walk=True)
@@ -50,7 +50,8 @@ ring('rg_bench_stone', 4.6, 4, phase=math.pi / 4, walk=True)
 gate = lambda x, y: (abs(x) <= 2 and abs(y) > 9) or (abs(y) <= 2 and abs(x) > 9)
 ring('hedgeLong', 11.6, 56, skip=gate)
 ring(['flowerBedBlue', 'rg_bed_white'], 10.6, 30, phase=0.05, walk=True, skip=gate)
-for (x, y) in ((0, -13), (13, 0), (-13, 0)): g.prop('rg_bench_stone', x, y, walk=True); g.props('rg_lantern', [(x - 2, y), (x + 2, y)], walk=True)
+for (x, y, bx, by) in ((0, -14, 0, -15), (14, 0, 15, 0), (-14, 0, -15, 0)):
+    g.prop('rg_bench_stone', bx, by, walk=True); g.props('rg_lantern', [(x - 1 if y else x, y - 1 if not y else y), (x + 1 if y else x, y + 1 if not y else y)], walk=True)
 
 # the outer ring of low planting between the hedge and the wood
 ring(['roseBush', 'whiteBlossomBush', 'rg_bush_teal', 'roseBush', 'rg_bush_green'], 12.9, 44, phase=0.02, skip=lambda x, y: gate(x, y) or (y > 8 and abs(x) < 6))
@@ -77,6 +78,19 @@ g.trees(-24, -24, 24, 24, SLIM, dx=3, dy=2, skip=lambda x, y: math.hypot(x, y) <
 for (x, y) in ((-17, -9), (17, -10), (-18, 8), (18, 8), (-10, -18), (10, -18), (-10, 19), (4, 22)): g.prop('rg_boulder_grey', x, y)
 for (x, y) in ((-15, -7), (15, -8), (-16, 6), (16, 6), (-12, -16), (12, -16), (-12, 17), (9, 21)): g.prop('rg_rock_grey_tall', x, y)
 g.groves(-24, -24, 24, 24, DARK, gap=1, min_area=5, styles=[('woods', DARK), ('meadow', LOW)])
+# the open lawns still left: a flower bed with bushes and a small tree in each, so no patch is bare
+op = g.openmask(-24, -24, 24, 24, 1); seen = set(); k = 0
+for c in sorted(op):
+    if c in seen: continue
+    comp, st = [], [c]; seen.add(c)
+    while st:
+        q = st.pop(); comp.append(q)
+        for n in ((q[0] + 1, q[1]), (q[0] - 1, q[1]), (q[0], q[1] + 1), (q[0], q[1] - 1)):
+            if n in op and n not in seen: seen.add(n); st.append(n)
+    if len(comp) < 9: continue
+    mx = sorted(comp)[len(comp) // 2]; k += 1
+    g.prop(['flowerBedBlue', 'flowerBedPink', 'rg_bed_white'][k % 3], mx[0], mx[1], walk=True); g.prop(BUSH[k % 5], mx[0] + 2, mx[1]); g.prop(BUSH[(k + 2) % 5], mx[0] - 2, mx[1]); g.prop(BLOSSOM[k % 3] if k % 2 else 'rg_young_teal0', mx[0] + 1, mx[1] - 2)
+    g.props('rg_rock_grey_small', [(mx[0] - 1, mx[1] + 1)])
 g.garden(-24, -24, 24, 24, every=3)
 g.drift(-24, -24, 24, 24, LOW, every=4)
 g.pp = [q for q in g.pp if math.hypot(q[1], q[2]) <= 25.2]                                       # nothing outside the generator's circle of radius 26
