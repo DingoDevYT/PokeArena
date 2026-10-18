@@ -23,7 +23,7 @@ g.claim([(x, y) for y in range(11, LIM - 1) for x in range(-LIM + 2, LIM - 1) if
 
 PALM = ['rg_palm', 'rg_palm2', 'rg_palm', 'rg_palm2', 'palmTreeBig', 'palmTree']
 PALM2 = ['rg_palm', 'rg_palm2']
-CACTI = ['rg_cacti', 'rg_cacti2', 'rg_cactus', 'cactus', 'organCactus', 'rg_cactus_small', 'cactusFlowering']
+CACTI = ['rg_cacti', 'rg_cacti2', 'rg_cactus', 'organCactus', 'rg_cactus_small', 'cactusFlowering']
 ROCKS = ['rg_boulder_desert', 'rg_rock_desert', 'boulderBrown', 'rockBrown', 'rockBrownB', 'rockBrownC', 'rg_spire_desert', 'rockMoundBrown', 'dirtMound']
 SMALL = ['dryTuft', 'grassBlades', 'pebbles', 'rg_weeds', 'rockBrownSmall', 'rg_bones', 'dryTuft', 'rg_rock_desert', 'dryTuft', 'grassBlades']
 POTS = ('rg_pot_plant', 'rg_pot_red', 'rg_pot_fern', 'flowerPot', 'rg_planter_tall_orange')
@@ -31,6 +31,10 @@ BUSH = ('bush~dune', 'roundBush~dune', 'bushOlive~dune', 'rg_cactus_small', 'cac
 BEDS = ('rg_planter_orange', 'rg_planter_orange')
 EXTRAS = ['rg_barrel', 'rg_barrel_water', 'rg_crates', 'rg_crates2', 'crateWide', 'seedSack', 'rg_basin', 'gemStand', 'vaseGold', 'bowlOrange', 'rg_pot_herb', 'rg_planter_orange', 'barrelOrange', 'crateBox', 'rg_table']
 
+# the world's natural grass reaches into the box here (the green corner in the north-west is the date plantation, plus two bits in the south): no house is ever built on it
+GR = {-48: [(-50, -2)], -47: [(-50, -4)], -46: [(-50, -5)], -45: [(-50, -7)], -44: [(-50, -8)], -43: [(-50, -9)], -42: [(-50, -10)], -41: [(-50, -13)], -40: [(-50, -16)], -39: [(-50, -40)]}
+GR.update({y: [(-50, -44 + (y - 42) // 2)] for y in range(42, 49)}); GR[48] = GR[48] + [(20, 25)]
+def grass(x, y): return any(a - 1 <= x <= b + 1 for a, b in GR.get(y, ()))
 # ================================================================ roads: 2 wide sand dirt; lanes 1 wide
 g.lane([(6, -48), (6, -2)], 2, 'd')                                                                # the north road
 g.lane([(48, -14), (23, -14), (23, 3), (16, 3)], 2, 'd')                                           # the coast road from the east gate into the square
@@ -39,7 +43,7 @@ g.lane([(10, 8), (10, 37)], 2, 'd')                                             
 g.exit(6, -48, 'N'); g.exit(48, -14, 'E'); g.exit(-36, 48, 'S')
 # the bazaar square: cobbled, irregular, a tan heart
 g.blob(9, 3, ["...###########...", ".###############.", "#################", "#################", "#################", "#################",
-              "#################", ".###############.", "...###########..."], 'c')
+              "#################", ".###############.", "...###########..."], 't')
 g.blob(9, 3, ["..#########..", "#############", "#############", "#############", "..#########.."], 't')
 
 # ================================================================ lanes (1 wide); every one ends on a road, another lane, a plaza or a door
@@ -73,7 +77,9 @@ def base_cells(name, x, y, wide=0):
     d = kit.plan.PROPS[name]; x0 = ((x + .5) * 32 - d['door'][0] - d['ax']) / 32; x1 = x0 + d['sw'] / 32
     return [(cx, cy) for cy in (y - 2, y - 1) for cx in range(int(x0 + .5) - wide, int(x1 - .5) + 1 + wide)]
 def fits(name, x, y):
-    cells = g.box(name, x, y, bld=True); base = base_cells(name, x, y, 1)      # the base rows, a tile wider each side: a neighbour's walk never brushes the wall
+    cells = g.box(name, x, y, bld=True); base = base_cells(name, x, y, 1)
+    if any(grass(cx, cy) for cx, cy in cells + base): return False                # never on the green
+    # the base rows, a tile wider each side: a neighbour's walk never brushes the wall
     if (x, y - 1) in BASE or (x, y - 2) in BASE or (x, y) in BASE: return False
     return g.free(cells) and all(g.get(cx, cy) == '.' for cx, cy in cells + base if (cx, cy) != (x, y - 1)) and not any(c in BASE for c in base_cells(name, x, y))
 def lot(name, x, y, **k):
@@ -136,7 +142,7 @@ g.props('rg_planter_orange', [(1, -3), (13, -3)]); g.props('rg_lamp', [(5, -3), 
 
 # ================================================================ the gym yard: the caravanserai's hay, crates, barrels, torches at the gate
 g.props('torchPost', [(35, -15), (41, -15)], walk=True); g.props('rg_planter_orange', [(34, -16), (42, -16)])
-g.props('maHayBales', [(44, -19), (46, -18)]); g.props('maHayPile', [(43, -17)]); g.props('rg_crates', [(33, -18)]); g.props('barrelOrange', [(32, -17), (44, -16)])
+g.props('maHayBales', [(44, -10), (46, -8)]); g.props('maHayPile', [(42, -9)]); g.props('rg_crates', [(33, -18)]); g.props('barrelOrange', [(32, -17), (44, -16)])
 g.props('rg_barrel_water', [(31, -16)]); g.props('rg_lamp', [(32, -15), (44, -15)], walk=True)
 g.props('palmHammock', [(40, -22)]); g.props('rg_palm', [(31, -19), (47, -19)])
 
@@ -149,7 +155,7 @@ g.props('tipi', [(6, 41), (18, 41), (9, 46)], walk=True); g.props('tentPair', [(
 for x, y in ((2, 41), (22, 41), (2, 46), (23, 46), (12, 48)): g.prop('tipi', x, y)
 g.props('tentPair', [(24, 43), (1, 43)]); g.props('palmHammock', [(8, 37), (16, 36)]); g.props('maHayBales', [(26, 45), (28, 41)]); g.props('maHayPile', [(25, 47)])
 g.rect(-14, 43, -4, 46, 't'); g.rect(-3, 44, 5, 44, 'd'); g.lot('pyramidTemple', -9, 43, beds=None)
-g.props('rg_column', [(-14, 41), (-4, 41)]); g.props('torchPost', [(-12, 44), (-6, 44), (-13, 46), (-5, 46)], walk=True); g.props('rg_bench_stone', [(-11, 45), (-7, 45)], walk=True)
+g.props('torchPost', [(-12, 44), (-6, 44), (-13, 46), (-5, 46)], walk=True); g.props('rg_bench_stone', [(-11, 45), (-7, 45)], walk=True)
 # the foot of the ash mountain: boulders and mounds along the rim, quicksand where the ground is soft
 for y in range(13, 47, 3): g.prop(('rg_boulder_desert', 'rockMoundBrown', 'jRocks', 'boulderBrown')[y // 3 % 4], MT[y] - 3, y)
 for x, y in ((30, 41), (21, 33), (40, 15), (36, 29)): g.prop('rg_quicksand_mid' if (x + y) % 2 else 'rg_quicksand', x, y)
@@ -198,10 +204,13 @@ def plot(region, w, h, crop, seed, every=2, tries=80, hedge=True):
     r = random.Random(seed); x0, y0, x1, y1 = region
     for _ in range(tries):
         x, y = r.randint(x0, x1 - w), r.randint(y0, y1 - h)
-        if all(g.get(cx, cy) == '.' and (cx, cy) not in g.occ and not mtn(cx, cy, 3) for cx in range(x - 1, x + w + 1) for cy in range(y - 2, y + h + 2)):
+        if all(g.get(cx, cy) == '.' and (cx, cy) not in g.occ and not mtn(cx, cy, 3) and not grass(cx, cy) for cx in range(x - 2, x + w + 2) for cy in range(y - 2, y + h + 2)):
             g.field(x, y, x + w - 1, y + h - 1, crop, every)
-            if hedge:
-                for hx in range(x, x + w, 2): g.prop('mHedgeLongAmber', hx, y - 1); g.prop('mHedgeLongAmber', hx, y + h + 1)
+            if hedge:                                                                   # a hedged compound: rows top and bottom (a gate gap in the middle of the bottom), round shrubs down the sides
+                for hx in range(x, x + w, 2):
+                    g.prop('mHedgeLongAmber', hx, y - 1)
+                    if abs(hx - (x + w // 2)) > 1: g.prop('mHedgeLongAmber', hx, y + h + 1)
+                for hy in range(y, y + h + 1): g.prop('mHedgeRoundAmber', x - 1, hy); g.prop('mHedgeRoundAmber', x + w, hy)
             if r.random() < .5: g.prop('rg_scarecrow', x - 1 if r.random() < .5 else x + w, y + h // 2)        # beside the field, never among the crops
             return True
     return False
@@ -212,18 +221,25 @@ for k, (w, h) in enumerate([(8, 3), (7, 3), (9, 4), (6, 3), (8, 4), (7, 4), (9, 
 def lamps(pts, every=9):
     for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
         if ya == yb:
-            for x in range(min(xa, xb) + 4, max(xa, xb) - 1, every): g.prop('rg_lamp', x, ya + 1)
+            for x in range(min(xa, xb) + 4, max(xa, xb) - 1, every): g.prop('rg_lamp', x, ya + 2)
         else:
             for y in range(min(ya, yb) + 4, max(ya, yb) - 1, every): g.prop('rg_lamp', xa + 1, y)
 for pts in LANES: lamps(pts)
 for pts in ([(8, -48), (8, -3)], [(24, -14), (47, -14)], [(25, -12), (25, 3)], [(12, 9), (12, 36)], [(-35, 24), (-13, 24)], [(-34, 23), (-34, 47)], [(-13, 8), (-13, 21)]): lamps(pts, 8)
 
 # ================================================================ the green strip and the desert past the houses
-g.trees(-48, -48, -11, -39, PALM, dx=3, dy=2, seed=1)                                   # the date plantation on the north-west green
-g.trees(-48, -22, -44, 47, PALM, dx=2, dy=2, seed=7)                                    # the palm belt along the west edge
-g.trees(12, -48, 48, -43, PALM, dx=3, dy=2, seed=8)                                     # the north gate's palms
-g.trees(44, -42, 48, 12, ROCKS + CACTI, dx=3, dy=3, seed=9)                             # rocks and cacti along the east edge
-g.trees(-34, 46, 30, 48, CACTI + ROCKS + PALM2, dx=3, dy=2, seed=10)                    # and the south edge
+def scatter(x0, y0, x1, y1, kinds, step, seed, skip=.15, jit=1):
+    """a loose planting: a jittered lattice with random gaps, so no rigid rows"""
+    r = random.Random(seed)
+    for y in range(y0, y1 + 1, step):
+        for x in range(x0, x1 + 1, step):
+            if r.random() < skip: continue
+            g.prop(r.choice(kinds), x + r.randint(-jit, jit) + (step // 2 if (y - y0) // step % 2 else 0), y + r.randint(-jit, jit))
+scatter(-48, -48, -11, -43, PALM, 3, 1)                                                  # the date plantation on the north-west green
+scatter(-48, -22, -44, 47, PALM, 3, 7)                                                   # the palm belt along the west edge
+scatter(12, -48, 48, -43, PALM, 3, 8)                                                    # the north gate's palms
+scatter(44, -42, 48, 12, ROCKS + CACTI, 4, 9)                                            # rocks and cacti along the east edge
+scatter(-34, 46, 30, 48, CACTI + ROCKS + PALM2, 4, 10)                                   # and the south edge
 
 def clumps(x0, y0, x1, y1, step, kinds, seed, n=(2, 5), rad=2, every=1.0):
     """desert scatter in clumps: cluster centres on a jittered grid, 2-5 plants and rocks round each (never on paving, buildings or other props)"""
@@ -233,7 +249,7 @@ def clumps(x0, y0, x1, y1, step, kinds, seed, n=(2, 5), rad=2, every=1.0):
             if r.random() > every: continue
             mx, my = cx + r.randint(-2, 2), cy + r.randint(-2, 2)
             for _ in range(r.randint(*n)): g.prop(r.choice(kinds), mx + r.randint(-rad, rad), my + r.randint(-rad, rad))
-CLUMP = ['rg_cacti', 'rg_cacti2', 'rg_cactus', 'cactus', 'organCactus', 'cactusFlowering'] + ROCKS + ['rg_boulder_desert', 'rg_cactus', 'cactus']
+CLUMP = ['rg_cacti', 'rg_cacti2', 'rg_cactus', 'organCactus', 'cactusFlowering'] + ROCKS + ['rg_boulder_desert', 'rg_cactus']
 
 def dgarden(x0, y0, x1, y1, every=4, seed=12):
     """desert scatter near paths: a cactus, a rock, a tuft or a few bones about every `every` tiles, kept off the walking line"""
@@ -273,11 +289,12 @@ for ch, x, y in g.pp:
     n = INV[ch]; rc = rect(n, x, y); bad = False
     if solid(n):
         for bn, br, bx, by in BR:
-            if hit(rc, br, .25) or (abs(x - bx) <= 1 and by <= y <= by + 2 and not n.startswith(DECAL)): bad = True; break   # over a wall, or on a doorstep
+            if hit(rc, (br[0] - 10, br[1], br[2] + 10, br[3]), .04) or (abs(x - bx) <= 1 and by <= y <= by + 2): bad = True; break   # over or against a wall, or on a doorstep
         if not bad and g.get(x, y) == 'd': bad = True                                                         # standing on a lane
+        if not bad and n.startswith(TREE[:2]) and any(g.get(x + i, y + j) in ('c', 't') for i in (-1, 0, 1) for j in (-1, 0, 1)): bad = True   # a palm never leans over paving
     if not bad and solid(n):
         for ch2, x2, y2, n2, rc2 in [k for i in range(x - 4, x + 5) for j in range(y - 4, y + 5) for k in GRID.get((i, j), ())]:
-            if solid(n2) and not (n.startswith(TREE) and n2.startswith(TREE)) and hit(rc, rc2, .3): bad = True; break
+            if solid(n2) and not (n.startswith(TREE) and n2.startswith(TREE)) and hit(rc, rc2, .04): bad = True; break
     if bad: dropped += 1; continue
     keep.append((ch, x, y, n, rc)); GRID.setdefault((x, y), []).append(keep[-1])
 g.pp[:] = [(c, x, y) for c, x, y, n, rc in keep]

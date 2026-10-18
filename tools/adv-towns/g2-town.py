@@ -26,8 +26,8 @@ g.rect(3, -42, 5, -40, 'd'); g.lane([(4, -35), (4, -40)], 1, 'd')               
 g.exit(15, -48, 'N'); g.exit(14, 48, 'S'); g.exit(-48, 0, 'W')
 
 # ================================================================ the Center and the Mart on the square; the gym and the sawmill on the yard
-g.building('pokeCenterWhite', -12, -1, 'center'); g.rect(-12, -2, -12, 0, 'd')
-g.building('martWhite', -5, -1); g.rect(-5, -2, -5, 0, 'd')
+g.building('pokeCenterWhite', -12, -1, 'center'); g.rect(-12, -2, -12, -1, 'd')
+g.building('martWhite', -5, -1); g.rect(-5, -2, -5, -1, 'd')
 g.lot('gymTealTall', 26, -5, street_y=-4, beds=None)
 g.lot('sSilverWarehouse', 20, -5, street_y=-4, beds=None)
 g.lot('tavern', -29, -1, street_y=0, beds=None); g.lot('inn', -38, -1, street_y=0, beds=None); g.lot('cabinGreenWide', -20, -1, street_y=0)
@@ -77,12 +77,12 @@ d22 = row(g, 21, 22, -15, 12, MIX, seed=15, skip=[(-14, -7)], **G); g.lane([(13,
 lamps(g, [(-24, -20), (-24, 28)], seed=3)
 
 # ================================================================ Mill Square
-g.prop('rg_fountain_dry', -8, 6, walk=True); g.prop('jWell', -14, 6, walk=True); g.props('rg_young_green_snow0', [(-15, 3)], walk=True)
+g.prop('rg_fountain_dry', -8, 6, walk=True); g.prop('jWell', -14, 6, walk=True); 
 for k, x in enumerate((-14, -10, -6, -2)): g.prop('rg_stall_rug' if k % 2 else 'rg_stall', x, 10, walk=True)
 g.props('rg_lamp', [(-15, 2), (-1, 2), (-15, 8), (-1, 8), (-8, 2)], walk=True)
 g.props('rg_bench', [(-12, 4), (-4, 4), (-11, 8), (-5, 8)], walk=True)
 g.props('rg_planter_snow', [(-14, 0), (-10, 0), (-7, 0), (-3, 0)], walk=True)
-g.props('rg_crates', [(-16, 9), (-8, 10)], walk=True); g.props('rg_barrel', [(-12, 10), (-4, 10)], walk=True); g.props('rg_woodpile', [(-15, 5), (-1, 5)], walk=True)
+g.props('rg_crates', [(-16, 9), (-8, 10)], walk=True); g.props('rg_barrel', [(-12, 10), (-4, 10)], walk=True); g.props('rg_woodpile', [(-16, 3), (-1, 5)], walk=True)
 g.props('rg_planter_tall_blue', [(-10, 4), (-6, 4), (-10, 8), (-6, 9)], walk=True); g.props('rg_pot_snow', [(-13, 7), (-2, 4)], walk=True); g.prop('noticeBoard', -9, 2, walk=True)
 
 # ================================================================ the mill yard: log decks, the dozer, trucks, stacks
@@ -93,27 +93,28 @@ g.prop('bulldozer', 15, 7, walk=True); g.prop('vanGrey', 18, 9, walk=True); g.pr
 g.props('rg_barrel_water', [(13, 5), (19, 9)], walk=True); g.props('rg_snowpile', [(21, 10), (13, 9)], walk=True)
 g.props('rg_crates', [(26, 9), (9, 3)], walk=True); g.props('rg_barrel', [(27, 8), (17, 3)], walk=True); g.prop('waterTank', 27, 5, walk=True)
 g.props('torchPost', [(8, -3), (27, -3), (8, 9), (27, 9)], walk=True)
-g.props('rg_planter_snow', [(18, -4), (22, -4), (24, -4), (28, -4)], walk=True); g.props('rg_lamp', [(23, -4), (29, -4)], walk=True)
+g.props('rg_planter_snow', [(18, -4), (21, -4), (25, -4), (28, -4)], walk=True); g.props('rg_lamp', [(23, -4), (29, -4)], walk=True)
 g.props('rg_sign_board', [(-45, 3), (17, -46), (12, 45)]); g.props('wSignBoard', [(-45, -1), (14, -46)])
 
 # ================================================================ yards: the mill woodyard, the east woodyard, the nursery, the camp, the graveyard
 pen(g, -6, -21, 10, -17, gate=('N', 2), floor='d'); yard_stacks(g, -6, -21, 10, -17, seed=4, aisle=2); g.lane([(2, -24), (2, -21)], 1, 'd')
 pen(g, 28, 20, 38, 23, gate=('N', 30), floor='d'); yard_stacks(g, 28, 20, 38, 23, seed=5, aisle=30)
-pen(g, 19, -34, 30, -27, 'mPicketFence', gate=('S', 24), floor=None); [g.prop(YOUNG[(x + y) % len(YOUNG)], x, y) for y in (-32, -30, -28) for x in range(20 + (y % 4 == 0), 30, 2) if abs(x - 24) > 1]
-g.lane([(24, -27), (24, -31)], 1, 'd'); g.prop('rg_hut_round', 24, -32, force=True, walk=True); g.props('rg_bench', [(22, -28), (26, -28)], walk=True)
+pen(g, 19, -34, 30, -27, 'mPicketFence', gate=('S', 24), post='hedgeLong~snow'); [g.prop(YOUNG[(x + y) % len(YOUNG)], x, y) for y in (-32, -30) for x in range(21 + (y % 4 == 0), 30, 2) if abs(x - 24) > 2]; g.props('rg_bench', [(21, -28), (27, -28)], walk=True)
+g.lane([(24, -27), (24, -29)], 1, 'd'); g.prop('rg_hut_round', 24, -29, force=True, walk=True); 
 g.props('tipi', [(-1, -43), (8, -43), (-5, -41)]); g.props('tentPair', [(0, -39), (8, -39), (-3, -38)], walk=True); g.props('rg_hut_round', [(10, -41)], walk=True)
 g.props('rg_logs', [(2, -38), (6, -38), (-1, -40)], walk=True); g.props('rg_crates', [(1, -37), (7, -37), (9, -45)], walk=True); g.props('rg_barrel', [(-2, -40), (10, -38)], walk=True)
 g.props('frozenLog', [(3, -45), (5, -45), (-4, -44)], walk=True); g.props('torchPost', [(2, -41), (6, -41)], walk=True); g.props('rg_snowpile', [(10, -44), (-6, -44)], walk=True)
-pen(g, -42, 30, -27, 36, 'mPicketFence', gate=('N', -31)); g.lane([(-31, 28), (-31, 33)], 1, 'd')                       # the graveyard: gate, an aisle to the cairn
-g.props('rg_post_stone', [(x, 32) for x in (-40, -37, -34, -28)] + [(x, 35) for x in (-40, -38, -36, -34, -29)], walk=True)
-g.props('rg_cairn', [(-39, 34), (-35, 33), (-29, 33), (-32, 34), (-31, 34)], walk=True); g.props('rg_bed_white', [(-38, 33), (-33, 35), (-29, 31)], walk=True)
+g.claim([(x, y) for x in range(-8, 12) for y in range(-46, -33) if (x, y) not in g.occ], 'camp')                      # the loggers' camp: nothing else is scattered over it
+pen(g, -42, 30, -27, 36, 'mPicketFence', gate=('N', -31), post='hedgeLong~snow'); g.lane([(-31, 28), (-31, 33)], 1, 'd')       # the graveyard: a gate, an aisle to the cairn
+g.props('rg_post_stone', [(x, y) for x in (-40, -36, -28) for y in (32, 35)], walk=True)
+g.props('rg_bed_white', [(-38, 33), (-34, 33), (-34, 35)], walk=True); g.props('rg_cairn', [(-31, 34)], walk=True); g.props('rg_young_teal_snow0', [(-29, 33), (-41, 34)], walk=True)
 
 # ================================================================ frozen ponds (props: the generator's pond needs grass)
-skate_pond(g, 0, 34, 6, 3); skate_pond(g, -12, 16, 4, 2)
+skate_pond(g, -1, 34, 8, 4); skate_pond(g, -13, 16, 5, 3)
 g.props('rg_bench', [(0, 32), (6, 32)], walk=True); g.props('rg_lamp', [(-2, 33), (7, 33)], walk=True); g.props('frozenLog', [(-1, 37), (8, 36)], walk=True)
 g.props('rg_bench', [(-13, 19)], walk=True)
 
-pond_ring(g, 2, 35, 3, 2, WOOD); pond_ring(g, -10, 17, 2, 1, WOOD)
+pond_ring(g, 3, 36, 4, 2, WOOD); pond_ring(g, -10, 17, 2, 1, WOOD)
 g.dress(trees=PINE, bushes=BUSH, pots=POTS); finish(g)
 g.trees(-48, -48, 48, -41, WOOD); g.trees(-48, 42, 48, 48, WOOD); g.trees(-48, -48, -45, 48, WOOD); g.trees(45, -48, 48, 48, WOOD)
 g.groves(-47, -47, 47, 47, WOOD, gap=1, min_area=6, styles=[('woods', WOOD), ('woods', PINE), ('woods', TALL + ROUND), ('woods', WOOD), ('woods', PINE + YOUNG)])

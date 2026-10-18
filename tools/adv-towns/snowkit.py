@@ -29,6 +29,11 @@ def level_cells(code, lim):
 class SnowTown(kit.Town):
     def __init__(s, N, code, lim=None):
         super().__init__(N, code); s.keep = set(); s.level = level_cells(code, lim or N + 2)
+    def trees(s, x0, y0, x1, y1, kinds, dx=2, dy=1, skip=None, seed=3):
+        """kit.Town.trees, but a tree is also refused when paving lies within three rows above it (the tall crowns of the snow spruces reach that far over a lane)"""
+        near = lambda x, y: any((s.get(x + i, y + k) or 'Z') in 'dpct' for i in (-1, 0, 1) for k in (-3, -2, -1))
+        sk = (lambda x, y: skip(x, y) or near(x, y)) if skip else near
+        super().trees(x0, y0, x1, y1, kinds, dx=dx, dy=dy, skip=sk, seed=seed)
     def lv(s, x, y): return s.level is None or (x, y) in s.level
     def fits(s, name, xd, yd):
         """a building with door walkway (xd, yd) stands on level ground: the three rows of its base across its width, and its walk row"""
@@ -79,9 +84,9 @@ def row(g, door_y, street_y, x0, x1, pool, seed=1, gap=(3, 5), skip=(), beds=BED
         g.lot(name, xd, door_y, street_y=street_y, beds=beds, **kw); out.append(xd); cur = rr + r.randint(*gap)
     return out
 
-def pen(g, x0, y0, x1, y1, fence='wLogFence', gate=None, post='wLogPost', floor=None):
-    """a fenced yard: rails along the north and south sides, a post at every tile on the west and east sides (a rail sprite is horizontal, so a vertical run of rails reads as
-    broken bars); gate = (side, k) leaves one gap on that side ('N' 'S': at x = k, 'W' 'E': at y = k) so a path can enter; floor: ground character laid inside (packed dirt)"""
+def pen(g, x0, y0, x1, y1, fence='wLogFence', gate=None, post='rg_woodpile', floor=None):
+    """a fenced yard: rails along the north and south sides, a stack (default a woodpile, or a snow hedge) at every tile on the west and east sides (a rail sprite is horizontal, so a vertical run of rails reads as
+    broken bars and bare posts read as unfinished); gate = (side, k) leaves one gap on that side ('N' 'S': at x = k, 'W' 'E': at y = k) so a path can enter; floor: ground character laid inside (packed dirt)"""
     gs, gk = gate or (None, None)
     if floor: g.rect(x0, y0, x1, y1, floor)
     for x in range(x0, x1 + 1):
@@ -94,19 +99,18 @@ def pen(g, x0, y0, x1, y1, fence='wLogFence', gate=None, post='wLogPost', floor=
 def yard_stacks(g, x0, y0, x1, y1, seed=1, aisle=None):
     """woodpiles in the yard inside a pen (x0..x1, y0..y1 are the pen's rails): one row against the south rail, one against the north rail, an aisle left open at x = aisle"""
     r = random.Random(seed)
-    for x in range(x0 + 1, x1, 2):
+    for x in range(x0 + 2, x1 - 1, 2):
         if aisle is not None and abs(x - aisle) <= 1: continue
-        for y in (y1 - 1, y0 + 2):
-            if y0 + 2 <= y <= y1 - 1 and (y1 - y0) >= 3: g.prop(r.choice(['rg_woodpile', 'rg_woodpile', 'rg_logs']), x, y, walk=True)
+        for y in ((y1 - 1,) if y1 - y0 < 6 else (y1 - 1, y0 + 2)): g.prop(r.choice(['rg_woodpile', 'rg_woodpile', 'rg_logs']), x, y, walk=True)
 
 def skate_pond(g, x, y, w, h):
-    """a frozen pool drawn with the lab's small pond sprite (rg_pond, 1.5 tiles): sprites one tile apart (they overlap into one pool), the corners left out so it is round-ish, with ice stones on its bank. (The generator's own pond only cuts into grass or sand, never snow, so a snow town draws its water as props.) Its ground is claimed."""
-    for j in range(h):
-        for i in range(w):
-            if (j == 0 or j == h - 1) and (i == 0 or i == w - 1): continue
-            g.prop('rg_pond', x + i, y + j, force=True, walk=True)
+    """a frozen pool drawn with the lab's small pond sprite (rg_pond, 1.5 tiles): sprites one tile apart (they overlap into one pool) in an irregular outline (rows of different
+    width, shifted), with ice stones on its bank. (The generator's own pond only cuts into grass or sand, never snow, so a snow town draws its water as props.) Its ground is claimed."""
+    rows = [(1, w - 2)] + [(0 if j % 2 == 0 else 1, w - 1 if j % 2 == 0 else w) for j in range(1, h - 1)] + [(2, w - 1)]
+    for j, (a, b) in enumerate(rows[:h]):
+        for i in range(a, b): g.prop('rg_pond', x + i, y + j, force=True, walk=True)
     g.claim([(cx, cy) for cy in range(y - 2, y + h + 1) for cx in range(x - 1, x + w + 2)], 'pond')
-    for dx, dy in ((0, h), (w, 0), (w // 2, -1)): g.prop('rg_ice_pebble2', x + dx, y + dy, force=True, walk=True)
+    for dx, dy in ((0, h), (w, 0), (w // 2, -1), (w - 1, h)): g.prop('rg_ice_pebble2', x + dx, y + dy, force=True, walk=True)
 
 def cap(g, x, y, dx=1, bench=True):
     """the end of a footpath: a small paved turning space with a lamp and a bench, so no lane just stops (dx: the side the lane comes from, 1 west of it, -1 east of it)"""
