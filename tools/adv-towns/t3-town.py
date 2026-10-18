@@ -40,6 +40,7 @@ def bp(name, x, y):
     for c in cells: g.occ[c] = name
     g.pp.append((g.char(name), x, y)); return True
 WOOD = ['rg_round_green0', 'rg_tall_green0', 'rg_round_teal0', 'rg_round_green1', 'rg_pine_green0', 'rg_tall_green1', 'rg_round_teal1', 'rg_tall_teal0', 'rg_pine_teal0']
+ORCH = ['rg_round_pink0', 'rg_round_orange0', 'rg_round_green1', 'rg_young_green0', 'rg_round_red0', 'rg_young_teal0', 'rg_round_orange1', 'rg_round_teal1', 'rg_round_pink1']
 FRUIT = ['rg_round_pink0', 'rg_round_orange0', 'rg_round_red0', 'rg_round_pink1', 'rg_round_orange1']
 SMALL = ['rg_tiny_white', 'rg_tiny_pink', 'rg_tiny_blue2', 'rg_clover', 'rg_flower_pink', 'rg_flower_yellow', 'rg_tiny_white2', 'rg_clump_green', 'rg_flower_white', 'rg_clover2']
 BEDS = ['rg_bed_pink', 'rg_bed_yellow', 'rg_bed_white']
@@ -48,7 +49,9 @@ GREEN = ['cottageGreen', 'cottageTeal', 'cottageGreenWide', 'houseGreenFlat', 'c
 TIMBER = ['rg_house_wood_d', 'rg_house_wood_c', 'rg_house_wood_b']
 def home(k, x, y, **kw):
     kw.setdefault('beds', (BEDS[k % 3], BEDS[(k + 1) % 3]))
-    g.lot(THATCH[k % len(THATCH)] if k % 3 != 2 else (GREEN[(k // 3) % len(GREEN)] if k % 6 != 5 else TIMBER[(k // 6) % 3]), x, y, **kw)
+    n = THATCH[k % len(THATCH)] if k % 3 != 2 else (GREEN[(k // 3) % len(GREEN)] if k % 6 != 5 else TIMBER[(k // 6) % 3])
+    if n == 'rg_straw' and kw.get('street_x') is not None and kw['street_x'] > x: x -= 2       # its body runs right of its door, so on the west side of a lane it stands one step further back
+    g.lot(n, x, y, **kw)
 def rr(x0, y0, x1, y1, ch, r=2):
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
@@ -99,17 +102,17 @@ g.lot('thatchBarn', 40, 2, street_y=3, beds=None, extras=[('maHayBales', -5, 0),
 for k, x in enumerate((-14, -19)): home(k + 8, x, -1, street_y=0)
 for k, y in enumerate((-9, -17, -25)): home(k + 10, -21, y, street_x=-24)
 for k, x in enumerate((-15, -9, -3, 3)): home(k + 13, x, -31, street_y=-30)
-for k, y in enumerate((-9, -19, -27)): home(k + 17, -27, y, street_x=-24)
+for k, y in enumerate((-6, -19, -27)): home(k + 17, -27, y, street_x=-24)
 g.lot('thatchBarn', -33, -13, street_y=-12, beds=None, extras=[('maHayBales', 5, -1), ('rg_barrel_water', -3, 0)])
 home(20, -35, -4, street_x=-38); home(21, -41, -4, street_x=-38)
-home(22, -21, -39, street_x=-24); home(23, -27, -36, street_x=-24); home(24, -27, -41, street_x=-24)
+home(22, -21, -39, street_x=-24); home(23, -27, -36, street_x=-24); home(24, -27, -42, street_x=-24)
 # ================================================================ the north road, Chapel Lane
 for k, y in enumerate((-40, -33)): home(k + 25, 8, y, street_x=11)
 for k, y in enumerate((-41, -35)): home(k + 27, 15, y, street_x=12)
 for k, y in enumerate((-16, -23)): home(k + 29, 4, y, street_x=7); home(k + 31, 10, y + 2, street_x=7)
 for k, y in enumerate((-27, -19)): home(k + 33, 19, y, street_x=16)
 # ================================================================ the coast lane, north-east
-home(36, 23, -16, street_x=26); home(36, 30, -14, street_x=27); home(37, 30, -8, street_x=27); home(38, 30, -21, street_y=-20)
+home(38, 23, -16, street_x=26); home(36, 30, -14, street_x=27); home(37, 30, -8, street_x=27); home(38, 30, -21, street_y=-20)
 for k, y in enumerate((-26, -33, -38)): home(k + 39, 33, y, street_x=36)
 for k, y in enumerate((-26, -33)): home(k + 42, 40, y, street_x=37)
 # ================================================================ the south lane and the headland
@@ -123,24 +126,25 @@ for k, y in enumerate((9, 16)): home(k + 60, 40, y, street_x=37)
 g.lot('thatchBarn', 30, 22, street_y=22, beds=None, extras=[('maHayBales', -5, 0)])
 # ================================================================ the mill and the bridge
 g.building('maLogCabin', -27, 23, 'house'); g.props('rg_woodpile', [(-23, 21), (-31, 22)]); g.props('rg_barrel', [(-24, 22)]); g.props('rg_crates', [(-23, 24)]); g.props('rg_logs', [(-30, 22)])
-for k, x in enumerate((-40, -33, -27)): home(k + 49, x, 43, street_y=44)
+for k, x in enumerate((-40, -33, -27)): home(k + 49, x, 42, street_y=44)
+g.trees(-46, 46, -24, 48, WOOD, seed=47)
 home(52, -24, 19, street_x=-21); home(53, -17, 21, street_x=-20); home(54, -17, 28, street_x=-20)
 # ================================================================ hay meadows, cabbage plots, orchards between the lanes
 g.plot(-25, 4, 4, 4, 0); g.plot(28, 24, 4, 3, 1); g.plot(-39, -29, 8, 5, 1); g.plot(-45, -22, 7, 5, 1); g.plot(21, -45, 9, 5, 1); g.plot(22, -35, 8, 4, 1); g.plot(38, -17, 8, 6, 1); g.plot(18, 12, 9, 6, 1); g.plot(27, 6, 4, 4, 0); g.plot(-44, 0, 7, 3, 0); g.plot(30, -3, 8, 3, 0) if False else None
-g.trees(-3, -27, 1, -13, FRUIT, dx=3, dy=3, seed=3); g.trees(-20, -45, -9, -34, FRUIT, dx=3, dy=3, seed=9); g.trees(-8, -46, 4, -34, FRUIT, dx=3, dy=3, seed=10)
-g.trees(-44, 4, -28, 16, FRUIT, dx=3, dy=3, seed=7); g.trees(22, -40, 30, -37, FRUIT, dx=3, dy=3, seed=11); g.trees(-8, 29, 12, 38, FRUIT, dx=3, dy=3, seed=12); g.trees(25, -30, 34, -23, FRUIT, dx=3, dy=3, seed=13); g.trees(20, 28, 27, 36, FRUIT, dx=3, dy=3, seed=16); g.trees(-34, -3, -29, 2, FRUIT, dx=3, dy=3, seed=17); g.trees(34, -11, 40, -6, FRUIT, dx=3, dy=3, seed=18); g.props('standingStoneMint', [(19, 33), (21, 35)]); g.props('standingStoneMintTall', [(20, 37), (23, 39)]); g.trees(-36, -20, -28, -14, FRUIT, dx=3, dy=3, seed=14); g.trees(-46, -12, -40, -3, FRUIT, dx=3, dy=3, seed=15)
+g.trees(-3, -27, 1, -13, ORCH, dx=3, dy=3, seed=3); g.trees(-20, -45, -9, -34, ORCH, dx=3, dy=3, seed=9); g.trees(-8, -46, 4, -34, ORCH, dx=3, dy=3, seed=10)
+g.trees(-44, 4, -28, 16, ORCH, dx=3, dy=3, seed=7); g.trees(22, -40, 30, -37, ORCH, dx=3, dy=3, seed=11); g.trees(-8, 29, 12, 38, ORCH, dx=3, dy=3, seed=12); g.trees(25, -30, 34, -23, ORCH, dx=3, dy=3, seed=13); g.trees(20, 28, 27, 36, ORCH, dx=3, dy=3, seed=16); g.trees(-34, -3, -29, 2, ORCH, dx=3, dy=3, seed=17); g.trees(34, -11, 40, -6, ORCH, dx=3, dy=3, seed=18); g.props('rg_bush_green', [(19, 33), (21, 35)]); g.props('rg_young_teal0', [(20, 37), (23, 39)]); g.trees(-36, -20, -28, -14, ORCH, dx=3, dy=3, seed=14); g.trees(-46, -12, -40, -3, ORCH, dx=3, dy=3, seed=15)
 g.pond(-11, -21, 4, 3); g.props('rg_bench', [(-15, -17), (-7, -17)])
 # ---- the market green by the Center and the wash green on the south-west lane
-rr(8, -12, 14, -7, 't', 2); pps('rg_stall', [(10, -9), (13, -9)]); pps('rg_crates', [(9, -11)]); pps('rg_barrel', [(14, -11)]); pps('rg_pumpkin', [(11, -8), (12, -8)]); pps('rg_bench', [(11, -11)]); pps('rg_lamp', [(8, -12)])
+rr(8, -12, 14, -7, 't', 2); pps('rg_stall', [(10, -9), (13, -9)]); pps('rg_pumpkin', [(11, -8), (12, -8)]); pps('rg_bench', [(11, -11)]); pps('rg_lamp', [(8, -12)])
 rr(-19, 8, -15, 12, 't', 2); pps('jWell', [(-17, 10)]); pps('rg_bench', [(-18, 12)]); pps('rg_lamp', [(-19, 8)]); g.props('rg_planter_pink', [(-16, 8)])
 # ---- paddocks, wells, scarecrows, hay by the plots
-paddock(38, -3, 45, 0, 41); g.props('maHayBales', [(40, -2)]); paddock(21, 22, 26, 25, 23); g.props('maHayPile', [(23, 24)])
+g.props('maHayBales', [(37, -1), (43, -1)]); g.props('maHayPile', [(23, 24)])
 g.props('jWell', [(12, 8), (-23, 12)]); g.props('rg_scarecrow', [(-36, -22), (-41, -29), (24, -42), (24, -36), (42, -11), (33, 12), (22, 18), (-41, 4)])
-g.props('maHayBales', [(-39, -30), (-31, -27), (20, -44), (46, -16), (21, 11), (37, 11)]); g.props('rg_sunflowers', [(-8, 30), (-6, 30), (-4, 30), (16, 33), (18, 33)])
+g.props('maHayBales', [(-39, -30), (-31, -27), (20, -44), (46, -16), (21, 11), (37, 11)])
 g.props('rg_barrel_water', [(-24, 12), (-9, -8), (13, -3)]); g.props('rg_lamp', [(-8, -8), (5, -8), (-12, 0), (14, 4), (-1, 8), (36, 4), (-22, 15)])
 # ---- the lake shore by the mill: a jetty, rafts, reeds; the beach: shells and stones
 for x, y in ((-31, 26), (-34, 24)): g.pp.append((g.char('rg_raft'), x, y))
-g.pond(-38, -37, 5, 3); g.props('rg_bench', [(-43, -35), (-33, -35)]); g.props('standingStoneMintTall', [(-45, -32), (-30, -41)])
+g.pond(-41, -36, 5, 3); g.props('rg_bench', [(-46, -34), (-36, -34)]); g.props('rg_bush_green', [(-45, -32), (-30, -41)])
 import random as _r; _rs = _r.Random(66)
 for (x, y) in sorted(BEACH):
     if _rs.random() < .08: bp(_rs.choice(['rg_shells', 'rg_sea_stone', 'rg_sea_pebble', 'shell', 'rg_shells']), x, y)
@@ -152,9 +156,14 @@ for (x, y) in sorted(WET):
 # ---- tree belts
 g.trees(-46, -46, 46, -44, WOOD, seed=41); g.trees(-46, -46, -42, 20, WOOD, seed=42); g.trees(43, -46, 46, 20, WOOD, seed=43); g.trees(-46, 36, -40, 42, WOOD, seed=44)
 # ---- the arch on the hill track, standing stones on the pastures
-pp('rg_arch_wood', -12, -43); g.props('standingStoneMint', [(-20, -46), (-8, -40), (-31, -43)]); g.props('standingStoneMintTall', [(-34, -40)])
+pp('rg_sign_board', -11, -44); pps('rg_bench', [(-13, -45)]); g.props('rg_bush_green', [(-10, -46), (-10, -43)]); g.props('rg_bed_white', [(-14, -43)], walk=True)     # the hill track ends at a signpost and a bench
+# ---- garden corners in the lawns that were left bare
+def nook(x, y, bench=False):
+    g.prop('rg_young_teal0' if (x + y) % 2 else 'rg_young_green0', x, y); g.prop('rg_bush_pink' if x % 2 else 'rg_bush_olive', x + 2, y + 1); g.prop(BEDS[(x + y) % 3], x - 2, y + 2, walk=True); g.prop('rg_clump_green', x + 1, y + 3, walk=True)
+    if bench: g.prop('rg_bench', x + 1, y + 2)
+for x, y, b in ((19, -13, True), (-14, 3, True), (21, 8, False), (8, 23, False), (-44, 32, False)): nook(x, y, b)
 g.dress()
 g.groves(-46, -46, 46, 46, WOOD, gap=1, min_area=8, styles=[('woods', WOOD), ('meadow', SMALL), ('woods', WOOD), ('meadow', SMALL), ('woods', WOOD)])
 g.garden(-46, -46, 46, 46, every=3)
 g.drift(-46, -46, 46, 46, SMALL, every=6)
-g.done(dict(lim=48, hide_site_paths=True, boards=[[-21, 32, -20, 36], [-29, 24, -27, 25]]))
+g.done(dict(lim=48, hide_site_paths=True, boards=[[-21, 32, -20, 36]]))

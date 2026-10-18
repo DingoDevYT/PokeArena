@@ -17,7 +17,22 @@ TUFT = ['rg_cone_green_snow', 'rg_cone_teal_snow', 'rg_slim_green_snow', 'rg_sli
 POTS = ['rg_pot_snow', 'rg_planter_snow']
 BEDS = ('rg_planter_snow', 'rg_planter_snow')
 
+def level_cells(code, lim):
+    """the cells (plan coordinates) of the town box that lie at the town's own height in the generated world: the plateau a house may stand on. The generator leaves the rest
+    (hills, cliffs, the rim) as it finds it, so buildings and pens belong on these cells only. Read from snow-levels.py (dumped once from the generated world); None for other towns."""
+    import importlib.util
+    sp = importlib.util.spec_from_file_location('snow_levels', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snow-levels.py')); m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m)
+    rows = m.LEVELS.get(code)
+    if not rows: return None
+    return {(x, int(y)) for y, runs in rows.items() for x0, x1 in runs for x in range(x0, x1 + 1)}
+
 class SnowTown(kit.Town):
+    def __init__(s, N, code, lim=None):
+        super().__init__(N, code); s.keep = set(); s.level = level_cells(code, lim or N + 2)
+    def lv(s, x, y): return s.level is None or (x, y) in s.level
+    def fits(s, name, xd, yd):
+        """a building with door walkway (xd, yd) stands on level ground: the three rows of its base across its width, and its walk row"""
+        l, r = extent(name, xd); return all(s.lv(x, y) for y in (yd - 2, yd - 1, yd) for x in range(math.floor(l + .3), math.ceil(r - .3)))
     def openmask(s, x0, y0, x1, y1, gap):
         """kit.Town.openmask with snow ('Z') counting as open ground"""
         pav = {(x, y) for y in range(-s.N, s.N + 1) for x in range(-s.N, s.N + 1) if s.get(x, y) not in ('.', 'a', 'Z')}
@@ -48,7 +63,7 @@ def finish(g, seed=3):
         other = [px for px in sides if px not in placed]
         for px in other:
             if r.random() < .75: g.prop(r.choice(['rg_barrel', 'rg_barrel_water', 'rg_crates', 'rg_crates2', 'rg_snowpile', 'rg_snowpile', 'rg_crate', 'rg_logs']), px, y - 1)
-        if r.random() < .5: g.prop('mailbox', x + 2, y + 1, walk=True)
+        if r.random() < .5: g.prop('mailbox', x + 3, y, walk=True)
 
 def row(g, door_y, street_y, x0, x1, pool, seed=1, gap=(3, 5), skip=(), beds=BEDS, **kw):
     """houses side by side from x0 to x1 on a lane: each lot's door walkway on row door_y, its walk down to street_y; the sprites keep `gap` tiles (random in the range)
@@ -60,18 +75,38 @@ def row(g, door_y, street_y, x0, x1, pool, seed=1, gap=(3, 5), skip=(), beds=BED
         if rr > x1: break
         hit = [b for a, b in skip if l < b + 1 and rr > a - 1]
         if hit: cur = max(hit) + 2; continue
+        if hasattr(g, 'fits') and not g.fits(name, xd, door_y): cur += 1; continue
         g.lot(name, xd, door_y, street_y=street_y, beds=beds, **kw); out.append(xd); cur = rr + r.randint(*gap)
     return out
 
-def pen(g, x0, y0, x1, y1, fence='wLogFence', gate=None):
-    """a fenced yard: the fence round the rectangle; gate = (side, k) leaves one gap on that side ('N' 'S': at x = k, 'W' 'E': at y = k) so a path can enter"""
+def pen(g, x0, y0, x1, y1, fence='wLogFence', gate=None, post='wLogPost', floor=None):
+    """a fenced yard: rails along the north and south sides, a post at every tile on the west and east sides (a rail sprite is horizontal, so a vertical run of rails reads as
+    broken bars); gate = (side, k) leaves one gap on that side ('N' 'S': at x = k, 'W' 'E': at y = k) so a path can enter; floor: ground character laid inside (packed dirt)"""
     gs, gk = gate or (None, None)
+    if floor: g.rect(x0, y0, x1, y1, floor)
     for x in range(x0, x1 + 1):
-        if not (gs == 'N' and x == gk): g.prop(fence, x, y0)
-        if not (gs == 'S' and x == gk): g.prop(fence, x, y1)
+        if not (gs == 'N' and x == gk): g.prop(fence, x, y0, walk=True)
+        if not (gs == 'S' and x == gk): g.prop(fence, x, y1, walk=True)
     for y in range(y0 + 1, y1):
-        if not (gs == 'W' and y == gk): g.prop(fence, x0, y)
-        if not (gs == 'E' and y == gk): g.prop(fence, x1, y)
+        if not (gs == 'W' and y == gk): g.prop(post, x0, y, walk=True)
+        if not (gs == 'E' and y == gk): g.prop(post, x1, y, walk=True)
+
+def yard_stacks(g, x0, y0, x1, y1, seed=1, aisle=None):
+    """woodpiles in the yard inside a pen (x0..x1, y0..y1 are the pen's rails): one row against the south rail, one against the north rail, an aisle left open at x = aisle"""
+    r = random.Random(seed)
+    for x in range(x0 + 1, x1, 2):
+        if aisle is not None and abs(x - aisle) <= 1: continue
+        for y in (y1 - 1, y0 + 2):
+            if y0 + 2 <= y <= y1 - 1 and (y1 - y0) >= 3: g.prop(r.choice(['rg_woodpile', 'rg_woodpile', 'rg_logs']), x, y, walk=True)
+
+def skate_pond(g, x, y, w, h):
+    """a frozen pool drawn with the lab's small pond sprite (rg_pond, 1.5 tiles): sprites one tile apart (they overlap into one pool), the corners left out so it is round-ish, with ice stones on its bank. (The generator's own pond only cuts into grass or sand, never snow, so a snow town draws its water as props.) Its ground is claimed."""
+    for j in range(h):
+        for i in range(w):
+            if (j == 0 or j == h - 1) and (i == 0 or i == w - 1): continue
+            g.prop('rg_pond', x + i, y + j, force=True, walk=True)
+    g.claim([(cx, cy) for cy in range(y - 2, y + h + 1) for cx in range(x - 1, x + w + 2)], 'pond')
+    for dx, dy in ((0, h), (w, 0), (w // 2, -1)): g.prop('rg_ice_pebble2', x + dx, y + dy, force=True, walk=True)
 
 def cap(g, x, y, dx=1, bench=True):
     """the end of a footpath: a small paved turning space with a lamp and a bench, so no lane just stops (dx: the side the lane comes from, 1 west of it, -1 east of it)"""
@@ -124,6 +159,7 @@ def col(g, lx, y0, y1, side, pool, seed=1, gap=(1, 2), skip=(), beds=BEDS, **kw)
         if yd + 1 > y1: break
         hit = [b for a, b in skip if cur - .5 < b + 1 and yd + 1 > a - 1]
         if hit: cur = max(hit) + 2; continue
+        if hasattr(g, 'fits') and not g.fits(name, xd, yd): cur += 1; continue
         g.lot(name, xd, yd, street_x=lx, beds=beds, **kw); out.append(yd); cur = yd + 2 + r.randint(*gap)
     return out
 
@@ -137,3 +173,41 @@ def lane_row(g, y, xj, xf, pool, far_junction=False, seed=1, gap=(2, 3), margin=
     if extra_end is not None and not far_junction: end = max(end, extra_end) if d > 0 else min(end, extra_end)
     if end != xj: g.lane([(xj, y), (end, y)], 1, 'd')
     return doors
+
+def glade(g, cx, cy, r, props=(), seed=1):
+    """a clearing in a wood: every tree whose foot lies within r tiles of (cx, cy) is taken out (after the woods are planted) and the given props (name, dx, dy) are set in it, so a
+    forest is not one unbroken lattice"""
+    names = {g.legend.get(n) for n in WOOD + TALL + ROUND + PINE + YOUNG}
+    keep = []
+    for ch, x, y in g.pp:
+        if ch in names and math.hypot(x - cx, y - cy) <= r:
+            for c in [k for k, v in g.occ.items() if v in set(WOOD + YOUNG) and abs(k[0] - x) <= 2 and abs(k[1] - y) <= 2]: del g.occ[c]
+        else: keep.append((ch, x, y))
+    g.pp[:] = keep
+    for n, dx, dy in props: g.prop(n, cx + dx, cy + dy, walk=True)
+
+def trail(g, pts, pool, seed=1, gap=(1, 2), vside=(-1,), vtrim=2, hmargin=2, skip=(), **kw):
+    """a footpath drawn as a polyline (with its bends) and its houses: on every east-west leg a row on the north side facing it (kept hmargin off the bends), on every north-south
+    leg a column on the sides in vside (-1 west, 1 east; the doors face south and walk across to the lane; vtrim off the ends). skip: (leg, a, b) ranges (x for east-west legs,
+    y for north-south legs)."""
+    g.lane(pts, 1, 'd')
+    for i, ((xa, ya), (xb, yb)) in enumerate(zip(pts, pts[1:])):
+        sk = [(a, b) for (lg, a, b) in skip if lg == i]
+        if ya == yb:
+            row(g, ya - 1, ya, min(xa, xb) + hmargin, max(xa, xb) - hmargin, pool, seed=seed * 7 + i, gap=gap, skip=sk, **kw)
+        else:
+            for sd in vside: col(g, xa, min(ya, yb) + vtrim, max(ya, yb) - 1, sd, pool, seed=seed * 7 + i + sd * 3, gap=gap, skip=sk, **kw)
+
+def prune(g, chars='d'):
+    """trim every lane back to its last door walk: a dead-end path cell ('d', one open neighbour among path cells) that is not at a door (a building's walkway or the rows
+    just above it) and not on the town's edge (an exit) is returned to snow, repeatedly, so no lane ends in nothing"""
+    doors = {(b[1], b[2] + k) for b in g.blds for k in (-2, -1, 0, 1)}
+    P = 'dpct'
+    while True:
+        cut = []
+        for y in range(-g.N + 1, g.N):
+            for x in range(-g.N + 1, g.N):
+                if g.get(x, y) in chars and (x, y) not in doors and (x, y) not in g.keep:
+                    if sum((g.get(x + dx, y + dy) or ' ') in P for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))) <= 1: cut.append((x, y))
+        if not cut: return
+        for x, y in cut: g.put(x, y, 'Z')

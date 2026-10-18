@@ -30,18 +30,18 @@ def hrow(door_y, street_y, x, kinds, gap=2, beds=True):
 
 # ================================================================ roads
 g.lane([(-48, 41), (-30, 41), (-30, 3)], 2, 'd')                                                 # the Timber Road, in from the south-west
-g.lane([(-30, 1), (40, 1)], 2, 'p')                                                              # Tradeway, the main street, to the cave mouth
+g.lane([(-30, 1), (42, 1)], 2, 'p')                                                              # Tradeway, the main street, to the cave mouth
 g.rect(-4, -2, 5, 5, 'p'); g.rect(-2, 0, 3, 3, 't')                                              # the crossroads square
 g.lane([(0, -3), (0, -30)], 2, 'd'); g.lane([(0, 6), (0, 39)], 2, 'd')                           # the freight road north, the spoil road south
 g.lane([(-41, -9), (-1, -9)], 1, 'd'); g.lane([(2, -14), (19, -14)], 1, 'd')                     # the two north lanes, one either side of the freight road
-g.lane([(-41, -21), (-1, -21)], 1, 'd'); g.lane([(2, -26), (12, -26), (12, -29), (32, -29)], 1, 'd')
+g.lane([(-41, -21), (-1, -21)], 1, 'd'); g.lane([(2, -26), (12, -26), (12, -29), (36, -29)], 1, 'd')
 g.lane([(-29, 12), (-1, 12)], 1, 'd'); g.lane([(2, 19), (40, 19)], 1, 'd')                       # the south lanes
 g.lane([(-29, 24), (-14, 24), (-14, 28), (-1, 28)], 1, 'd'); g.lane([(2, 30), (40, 30)], 1, 'd')
 g.lane([(-28, 36), (-8, 36)], 1, 'd'); g.lane([(-42, 27), (-31, 27)], 1, 'd'); g.lane([(-42, 36), (-31, 36)], 1, 'd')   # the west lanes, below the depot
-g.lane([(36, 0), (36, -30)], 1, 'd')                                                             # the orchard cut
-g.rect(-7, -35, 8, -31, 't'); g.rect(-7, 34, 8, 40, 't')                                         # the carters' yard and the spoil yard
+g.lane([(36, 0), (36, -30)], 1, 'd'); g.lane([(-41, -21), (-41, -3)], 1, 'd'); g.lane([(40, 13), (40, 30)], 1, 'd')                                                             # the orchard cut
+g.rect(-7, -35, 6, -31, 't'); g.rect(-7, 34, 8, 40, 't')                                         # the carters' yard and the spoil yard
 g.rect(15, 3, 40, 12, 't'); g.rect(16, -12, 34, 0, 't')                                          # the market ground, south of the street and north of it
-g.rect(-45, -4, -31, 6, 't'); g.rect(-45, 8, -31, 18, 'd')                                                                     # the timber yard, where the Timber Road meets the street
+g.rect(-45, -3, -31, 6, 't'); g.rect(-45, 8, -31, 18, 'd')                                                                     # the timber yard, where the Timber Road meets the street
 g.exit(-48, 41, 'W')
 
 # ================================================================ the seven buildings with rooms (ids and footprints as built)
@@ -51,7 +51,7 @@ g.lot('chaletRedChimney', -18, -10, street_y=-9, role=['t4-h1', FP4(1)])
 g.lot('tavern', -6, -10, street_y=-9, role=['t4-h2', FP4(1)])
 g.lot('hall', 6, -15, street_y=-14, role=['t4-h3', FP4(1)])
 g.lot('hotelBlue', 17, -15, street_y=-14, role=['t4-h4', FP4(1)])
-g.lot('maHallGrey', 25, -12, beds=None)
+g.lot('maHallGrey', 26, -12, beds=None)
 for x, n in ((-27, 'mRoseStore'), (-22, 'maShopCyan'), (-7, 'mRoseApt')): g.lot(n, x, 1, beds=None)
 g.lot('chaletRedBig', -14, 11, street_y=12, role=['t4-h5', FP4(1)])
 
@@ -66,10 +66,10 @@ def row(door_y, street_y, items):
 row(-10, -9, [('rg_house_wood_b', -38), ('rg_house_red_d', -32), ('rg_house_wood_c', -25), ('rg_house_red_b', -12)])                                              # west north lane (with the Hall's neighbours h1 and the tavern)
 row(-22, -21, [('rg_house_wood_a', -38), ('rg_house_red_b', -32), ('rg_house_red_a', -25), ('rg_house_wood_b', -18), ('rg_house_red_d', -12), ('maStoneHouse', -6)])
 row(-15, -14, [('rg_house_wood_d', 11)])                                               # east north lane (with the Hall and the hotel)
-row(-27, -26, [('rg_house_wood_a', 7)]); row(-30, -29, [('rg_house_red_a', 16), ('rg_house_wood_b', 23), ('rg_house_red_d', 29)])
+row(-27, -26, [('rg_house_wood_a', 9)]); row(-30, -29, [('rg_house_red_a', 16), ('rg_house_wood_b', 23), ('rg_house_red_d', 29)])
 row(11, 12, [('chaletRedB', -27), ('chaletRed', -22), ('chaletPink', -7)])                                      # west first south lane (with h5)
 row(18, 19, [('rg_house_wood_b', 5), ('rg_house_red_d', 10), ('inn', 16), ('rg_house_wood_c', 22), ('rg_house_red_b', 28), ('rg_house_wood_a', 35)])
-row(23, 24, [('rg_house_red_c', -26), ('rg_house_wood_d', -20)]); row(27, 28, [('chaletPink', -13), ('chaletRed', -8), ('cabinGreenWide', -3)])
+row(23, 24, [('rg_house_red_c', -26), ('rg_house_wood_d', -20)]); row(27, 28, [('chaletPink', -11), ('chaletRed', -7), ('cabinGreenWide', -3)])
 row(29, 30, [('rg_house_red_a', 5), ('rg_house_wood_d', 12), ('rg_house_wood_a', 18), ('rg_house_red_c', 25), ('rg_house_wood_b', 31), ('rg_house_red_d', 37)])
 row(35, 36, [('chaletRedB', -24), ('cabinGreenWide', -19), ('chaletPink', -14)])
 g.lot('thatchBarn', 36, -30, beds=None)
@@ -99,14 +99,15 @@ g.props('rg_pumpkin', [(22, -3), (27, -3), (24, 7), (29, 7), (25, 11), (35, 11),
 g.props('rg_crates2', [(24, -3), (36, 11), (28, -6)], walk=True); g.props('tentPair', [(38, 11), (16, 11), (22, -6), (33, -6)], walk=True); g.props('rg_table', [(30, 11), (27, 7), (26, -6)], walk=True)
 g.props('rg_lamp', [(15, 4), (40, 4), (15, 11), (40, 11), (21, 8), (33, 8), (16, -4), (34, -4), (24, 4), (30, 4), (16, -12), (34, -12), (25, -5), (20, -5)], walk=True)
 g.props('rg_bench', [(20, 3), (28, 3), (36, 3), (25, -4), (30, -5), (19, -5)], walk=True); g.props('fenceRail', [(23, -6), (29, -6)], walk=True)
-g.props('torchPost', [(38, 0), (38, 3)], force=True); g.props('crystalBlue', [(37, -1), (36, -3)], force=True); g.props('rockGrey', [(36, -4), (37, -4)], force=True); g.props('boulderGrey', [(35, -5)])
-g.props('rg_round_pink0', [(14, -6), (14, -9)]); g.props('rg_rock_grey', [(40, -8), (42, -10), (37, -5), (41, -12), (43, -11), (39, -10)], force=True); g.props('rg_boulder_grey', [(41, -8), (36, -6)], force=True); g.props('rg_tall_green0', [(37, -8), (40, -11)]); g.props('rg_young_green0', [(36, -7), (36, -10)])
+g.props('torchPost', [(39, -1), (39, 4)], force=True); g.props('crystalBlue', [(38, -2), (34, -4)], force=True); g.props('rockGrey', [(37, -4), (37, -5)], force=True); g.props('boulderGrey', [(34, -6)])
+g.props('rg_round_pink0', [(14, -6), (14, -9)]); g.props('rg_rock_grey', [(40, -8), (42, -10), (37, -5), (41, -12), (43, -11), (39, -10)], force=True); g.props('rg_boulder_grey', [(41, -8), (38, -7)], force=True); g.props('rg_tall_green0', [(38, -9), (40, -11)]); g.props('rg_young_green0', [(34, -7), (34, -10)])
 
 # ================================================================ the timber yard at the Timber Road's corner, and the depot down the road
-g.lot('maLogCabin', -38, -4, beds=None)
+g.lot('maLogCabin', -38, -3, beds=None)
 for k, x in enumerate((-43, -41, -39, -37, -35, -33)): g.prop('rg_woodpile', x, -1, walk=True); g.prop('rg_logs', x, 3, walk=True)
 g.props('rg_crates', [(-44, 5), (-33, 5)], walk=True); g.props('rg_logs', [(-43, 1), (-39, 1), (-35, 1)], walk=True); g.props('rg_stall', [(-44, -3)], walk=True); g.props('rg_barrel_water', [(-35, 5), (-40, 5)], walk=True); g.props('rg_log', [(-36, 1), (-40, 1), (-34, 1)], walk=True)
-g.props('rg_lamp', [(-45, -3), (-32, -3), (-45, 5), (-32, 5)], walk=True); g.props('maHayBales', [(-33, -3)])
+g.props('rg_lamp', [(-45, -3), (-32, -3), (-45, 5), (-32, 5)], walk=True)
+g.props('rg_crates', [(-41, 1), (-37, 1), (-33, 1)], walk=True); g.props('rg_barrel', [(-42, 1), (-36, 1), (-32, 5)], walk=True); g.props('rg_stall', [(-40, 5), (-36, 5)], walk=True); g.props('rg_crates2', [(-43, 5), (-34, 3)], walk=True); g.props('maHayBales', [(-33, -3)])
 for y0 in (9, 11, 15, 17):
     for k, x in enumerate(list(range(-44, -39, 2)) + list(range(-36, -31, 2))):
         g.prop('rg_woodpile' if (k + y0) % 3 else 'rg_logs', x, y0, walk=True)
@@ -123,11 +124,24 @@ g.field(-44, 29, -38, 31, 'leafPlantB'); g.field(-36, 29, -33, 31, 'rg_sunflower
 g.props('rg_round_pink0', [(-44, 21), (-40, 21), (-36, 21), (-32, 21), (-45, 24)]); g.props('rg_young_green0', [(-34, 23), (-38, 23)]); g.props('rg_bush_pink', [(-33, 25), (-44, 25)])
 g.props('rg_lamp', [(-43, 26), (-32, 26), (-43, 35), (-32, 35)]); g.props('rg_bench', [(-43, 28), (-43, 37)])
 
-# ================================================================ the carters' yard (freight north) and the spoil yard (south)
-g.props('rg_crates', [(-6, -33), (-6, -31), (7, -33), (6, -31)], walk=True); g.props('rg_barrel', [(-5, -33), (7, -32), (-4, -31)], walk=True)
-g.props('maHayBales', [(-9, -34), (10, -34)]); g.props('rg_woodpile', [(-2, -33), (3, -33)], walk=True); g.props('rg_lamp', [(-7, -31), (8, -31), (-7, -35), (8, -35)], walk=True)
-g.props('rg_boulder', [(-5, 36), (5, 36), (-3, 39), (4, 39)], walk=True); g.props('rg_rock', [(-6, 38), (7, 38), (2, 37), (-2, 35)], walk=True); g.props('rg_mound', [(-4, 37), (6, 35), (0, 41)], walk=True)
-g.props('bigRockGrey', [(-6, 35), (7, 39)], walk=True); g.props('rg_crates', [(-6, 40), (7, 36)], walk=True); g.props('rg_lamp', [(-7, 34), (8, 34), (-7, 40), (8, 40)], walk=True); g.props('rg_hut_round', [(-9, 33), (10, 33)])
+# ================================================================ the carters' yard (freight north): rows of crates, hay and barrels under a stall roof, inside a rail
+g.props('rg_crates', [(-6, -34), (-4, -34), (-2, -34), (3, -34), (5, -34), (-6, -32), (-3, -32), (4, -32), (6, -32)], walk=True)
+g.props('rg_barrel', [(-5, -34), (-3, -34), (6, -34), (-5, -32), (5, -32), (-1, -32), (2, -32)], walk=True)
+g.props('rg_stall', [(-3, -35), (4, -35)], walk=True); g.props('rg_woodpile', [(-6, -33), (6, -33), (-1, -34), (1, -34)], walk=True); g.props('rg_crates2', [(-4, -33), (5, -33)], walk=True)
+g.props('maHayBales', [(-9, -34), (9, -34), (-9, -31)]); g.props('rg_barrel_water', [(5, -35), (-7, -32)], walk=True); g.props('rg_table', [(1, -32)], walk=True)
+g.props('rg_lamp', [(-7, -31), (7, -31), (-7, -35), (7, -35)], walk=True)
+for x in range(-8, 8, 2):
+    if abs(x - 0.5) > 1.6: g.prop('fenceRail', x, -36)
+# the spoil yard (south): heaps in two clusters, a loading rail, crates and carts' stalls in the middle, a plank fence
+g.props('rg_mound', [(-5, 36), (-3, 36), (-4, 38)], walk=True); g.props('rg_boulder', [(-6, 37), (-2, 37), (-5, 39), (-3, 39)], walk=True); g.props('bigRockGrey', [(-4, 40)], walk=True)
+g.props('rg_mound', [(5, 36), (7, 36), (6, 38)], walk=True); g.props('rg_boulder', [(4, 37), (7, 39), (5, 39)], walk=True); g.props('bigRockGrey', [(6, 40)], walk=True)
+g.props('rg_stall', [(-1, 36), (3, 36)], walk=True); g.props('rg_crates', [(-1, 38), (1, 38), (3, 38), (-1, 40), (3, 40)], walk=True); g.props('rg_barrel', [(0, 38), (2, 38)], walk=True)
+g.props('rg_woodpile', [(-7, 35), (8, 35)], walk=True); g.props('rg_table', [(1, 36)], walk=True)
+g.props('rg_lamp', [(-7, 34), (8, 34), (-7, 40), (8, 40)], walk=True)
+for x in range(-8, 10):
+    if abs(x - 0.5) > 1.6: g.prop('mWoodFence', x, 41)
+for y in range(35, 41): g.prop('mWoodFence', -8, y); g.prop('mWoodFence', 9, y)
+g.props('rg_hut_round', [(-3, 31), (14, 34)])
 
 # ================================================================ the horse pond and the orchards
 g.pond(-38, -37, 5, 3)
@@ -137,11 +151,11 @@ g.props('maHayBales', [(33, -31), (39, -31)]); g.props('maHayPile', [(33, -33)])
 
 # ================================================================ kitchen gardens, allotments and the lane ends
 g.field(-26, 14, -19, 16, 'leafPlantB'); g.field(-12, 14, -4, 16, 'rg_sunflowers', every=2); g.field(5, 21, 12, 23, 'leafPlantB'); g.field(16, 21, 22, 23, 'rg_pumpkin', every=2); g.field(25, 21, 30, 23, 'leafPlantB')
-g.field(-26, 18, -20, 20, 'leafPlantB'); g.field(-12, 30, -5, 32, 'leafPlantB'); g.field(5, 32, 12, 34, 'rg_sunflowers', every=2); g.field(16, 32, 29, 34, 'leafPlantB')
+g.field(-10, 30, -5, 32, 'leafPlantB'); g.field(5, 32, 12, 34, 'rg_sunflowers', every=2); g.field(16, 32, 29, 34, 'leafPlantB')
 g.props('rg_scarecrow', [(14, 21), (-16, 16), (-8, 31)]); g.props('rg_round_green0', [(-14, 17), (-17, 17), (-13, 20), (-10, 18)]); g.props('rg_bush_pink', [(-12, 16), (-15, 15)])
-for x, y in ((-41, -21), (-41, -9), (19, -14), (40, 19), (40, 30), (-28, 36), (32, -29)):                         # a lane ends at a seat and a lamp
-    g.prop('rg_bench', x - 1, y + 1, walk=True) if False else None
-    g.props('rg_lamp', [(x, y - 1)]); g.props('rg_bench', [(x - 1, y + 1)])
+for x, y in ((19, -14),):                                                                         # the lane ends in a small sitting place
+    g.rect(x + 1, y - 1, x + 3, y + 1, 't'); g.props('rg_bench', [(x + 2, y)], walk=True); g.props('rg_lamp', [(x + 3, y - 1)], walk=True); g.props('rg_planter_pink', [(x + 1, y + 1)], walk=True)
+for x, y in ((-41, -9), (-41, -21), (40, 19), (40, 30)): g.props('rg_lamp', [(x + (1 if x < 0 else -1), y - 1)])
 
 # ================================================================ the plateau on the east side and the woods round the town
 PLAT = {-14: 49, -13: 46, -12: 45, -11: 44, -10: 44, -9: 44, 3: 44, 4: 44, 5: 44, 6: 44, 7: 44, 8: 44, 9: 44, 10: 45, 11: 45, 12: 47, 13: 49, 14: 50}

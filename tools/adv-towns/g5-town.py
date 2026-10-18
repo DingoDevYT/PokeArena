@@ -108,10 +108,32 @@ def pockets(x0, y0, x1, y1, w, h, n, margin=1, seed=1):
         if all(g.get(i, j) == '.' and (i, j) not in g.occ for j in range(y - margin, y + h + margin) for i in range(x - margin, x + w + margin)): out.append((x, y))
     return out
 def near_door(x, y): return any(abs(x - lx) <= 1 and ly - 3 <= y <= ly + 3 for _, lx, ly, _ in g.lots)
+OUT = {(2, 'y'): 1, (5, 'y'): 6, (9, 'x'): 8, (12, 'x'): 13, (13, 'x'): 12, (16, 'x'): 17}
 def furn(name, pts):
+    """street furniture stands on the lawn just outside the sidewalk, so the tan walk stays clear"""
     for x, y in pts:
+        if y in (2, 5): y = OUT[(y, 'y')]
+        elif x in (9, 12, 13, 16): x = OUT[(x, 'x')]
         if any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED) or near_door(x, y): continue
         g.prop(name, x, y, walk=True)
+
+def grove(x0, y0, x1, y1, kinds, dx=3, dy=2, seed=1, prob=1.0, jit=1):
+    """trees on a loose staggered lattice (the kit's g.trees wants two clear tiles round every trunk, which a city's lawns rarely have): a trunk needs open ground under it
+    and beside it, and open ground under its canopy; nothing stands on a walk"""
+    r = random.Random(seed); n = 0
+    for j, y in enumerate(range(y0, y1 + 1, dy)):
+        for x in range(x0 + (j % 2) * (dx // 2), x1 + 1, dx):
+            if r.random() > prob: continue
+            x_, y_ = x + r.randint(-jit, jit), y + r.randint(0, 1 if jit else 0)
+            if near_door(x_, y_) or (x_, y_) in g.occ: continue
+            if any(g.get(x_ + i, y_ + k) not in ('.', 'g') or (x_ + i, y_ + k) in g.occ for i, k in ((0, 1), (-1, 0), (1, 0), (-1, 1), (1, 1))): continue
+            if any(g.get(x_ + i, y_ + k) not in ('.', 'g') for i in (-1, 0, 1) for k in (-2, -1)): continue
+            nm = r.choice(kinds)
+            if any(c in g.occ and g.occ[c] not in g.treeset for c in g.box(nm, x_, y_)): continue
+            if any(b[0] - .3 < x_ + .5 < b[2] + .3 and b[1] - 1.5 < y_ + 1 < b[3] + .3 for b in BX): continue          # nowhere near a building's walls and roof
+            g.pp.append((g.char(nm), x_, y_)); g.occ[(x_, y_)] = nm; g.treeset.add(nm); n += 1
+            for c in g.box(nm, x_, y_): g.occ.setdefault(c, nm)
+    return n
 
 # ================================================================ streets
 for y in (2, 5): st(-44, y, 46, y, 't')                                                   # the avenue's sidewalks
@@ -128,7 +150,7 @@ for x in (-20, -6, 31): st(x, -48, x + 1, 48)                                   
 st(45, -30, 46, 48)
 g.exit(10, -50, 'N'); g.exit(14, 50, 'S'); g.exit(-45, 50, 'S')
 # the Grand Plaza island: cobbled edge, tan paths, lawns in the north corners
-st(7, -2, 19, 10, 'c'); st(8, -1, 18, 9, 't')
+st(7, -2, 19, 10, 'p'); st(8, -1, 18, 9, 't')
 for (a, b, c_, d) in ((8, -1, 11, 2), (15, -1, 18, 2), (8, 6, 10, 9), (16, 6, 18, 9)): st(a, b, c_, d, 'g')
 # the old town: the avenue and the two long cross streets run on west as 'the old high street' and 'chandlers row'; between them 1 wide stone lanes, houses back to back
 for y in (-14, 20): st(-44, y, -20, y + 1)
@@ -136,7 +158,7 @@ OT = (-41, -35, -29, -23, -6, 11, 27, 33, 39, 45)
 for y in OT: st(-43, y, -21, y)
 CON = [(-38, -41, -35), (-27, -35, -29), (-34, -29, -23), (-24, -29, -23), (-40, -23, -15), (-26, -12, -6), (-30, -22, -15), (-33, -6, 2), (-36, 5, 11), (-29, 12, 19), (-38, 22, 27), (-30, 27, 33), (-36, 33, 39), (-27, 39, 45), (-41, 27, 33), (-40, 39, 45)]
 for x, y0, y1 in CON: st(x, y0, x, y1)
-st(-38, -12, -33, -8, 'c'); st(-37, -11, -34, -9, 't')                                     # the old square, with its well
+st(-38, -12, -33, -8, 'p'); st(-37, -11, -34, -9, 't')                                     # the old square, with its well
 
 # ================================================================ civic buildings (doors face the avenue and the ring road; every walk is paved)
 lot('maHallGrey', -12, 1, street_y=2, walk='t', beds=PL)                                  # the museum hall
@@ -152,7 +174,7 @@ lot('stadium', 39, 19, street_y=19, walk='t', beds=PL)                          
 
 # ================================================================ the park (north-east), the market square and the garden square (south), the freight yards (south-east)
 st(33, -35, 47, -35, 't'); st(46, -36, 48, -34, 't'); st(38, -34, 38, -32, 't')                  # the park: a path from the avenue along the pond's south bank to a pavilion court, and its gate path to the cross street
-g.pond(43, -43, 3.5, 2.5)
+g.pond(42, -43, 5, 3)
 st(17, 39, 30, 46, 't')                                                                    # the market square
 st(-4, 42, 12, 42, 't'); st(4, 39, 4, 46, 't')                                             # the garden square: two crossing paths, each ending in a street
 
@@ -201,16 +223,24 @@ for y in range(-45, -5, 8): furn('rg_lamp', [(9, y)]); furn('rg_lamp', [(12, y +
 for y in range(15, 46, 8): furn('rg_lamp', [(13, y)]); furn('rg_lamp', [(16, y + 4)]); furn(STREET_TREES[(y // 8) % 4], [(16, y)]); furn(STREET_TREES[(y // 8 + 2) % 4], [(13, y + 4)])
 
 # ================================================================ tree lines along the avenues between the blocks
+RT = random.Random(44)
+MIXT = SLIM + ['rg_young_green0', 'rg_young_teal0', 'rg_young_pink0', 'rg_bush_green', 'rg_bush_teal', 'rg_bed_pink', 'rg_bed_white']
 for x in (-20, -6, 31, 45):
-    for y in range(-46, 47, 3):
-        for xx in (x - 1, x + 2):
-            if not near_door(xx, y) and g.get(xx, y) == '.': g.prop(SLIM[(y // 3 + xx) % len(SLIM)], xx, y)
+    for xx in (x - 1, x + 2):
+        y = -46
+        while y < 47:
+            if not near_door(xx, y) and g.get(xx, y) == '.': g.prop(RT.choice(MIXT), xx, y, walk=True) if RT.random() < .3 else g.prop(RT.choice(SLIM + SLIM[:2] + ['rg_young_green0']), xx, y)
+            y += RT.choice((2, 3, 3, 4, 5))
 
 # ================================================================ the park
 g.prop('rg_arch_white', 38, -33, walk=True); g.props('rg_lamp', [(37, -35), (40, -35), (44, -35), (33, -35), (38, -34), (46, -36), (48, -36), (46, -34), (48, -34)], walk=True)
 g.props('rg_bench', [(35, -35), (42, -35), (34, -33), (42, -33), (47, -36), (47, -34)], walk=True); g.prop('rg_fountain', 47, -35, walk=True)
 for i, (x, y) in enumerate(((34, -34), (45, -34), (34, -32), (45, -32), (36, -34), (40, -34), (49, -34), (49, -36))): g.prop(BEDS[i % 3], x, y, walk=True)
-g.trees(33, -49, 49, -37, BLOSSOM + WOOD[:4], dx=3, dy=2, seed=4); scatter(BLOSSOM + WOOD[:4], 33, -34, 49, -32, 8, mind=3, seed=4); scatter(SMALL, 33, -49, 49, -32, 40, mind=2, seed=5, walk=True)
+for c in [c for c, n in g.occ.items() if n == 'pond' and (abs(c[0] - 42) > 7 or abs(c[1] + 43) > 5)]: del g.occ[c]     # the pond's claim is a rectangle; the lawn round the water is open again
+grove(33, -49, 49, -35, BLOSSOM + WOOD[:4], dx=3, dy=2, seed=4); scatter(BLOSSOM + WOOD[:4], 33, -34, 49, -32, 8, mind=3, seed=4); scatter(SMALL, 33, -49, 49, -32, 40, mind=2, seed=5, walk=True)
+
+scatter(BLOSSOM + WOOD[:3], 33, -37, 49, -36, 4, mind=3, seed=6); scatter(BLOSSOM + WOOD[:3] + BEDS, 33, -49, 35, -37, 5, mind=3, seed=7, walk=False)
+for i, (x, y) in enumerate(((34, -38), (34, -42), (36, -37), (48, -37), (49, -41))): g.prop(BEDS[i % 3], x, y, walk=True)
 
 # ================================================================ the market square and the garden square
 for i, (nm, x) in enumerate((('pxStallBlue', 19), ('rg_stall_rug', 23), ('pxStallPink', 27))): g.prop(nm, x, 41, walk=True)
@@ -254,7 +284,7 @@ for i, (x, y) in enumerate(((16, -27), (26, -27), (16, -24), (26, -24), (17, -22
 for S in (-31, -14, 20, 37, 47):
     for (x0, x1) in ((-18, -7), (-4, 8), (13, 30), (33, 44)) if S < 0 else ((-18, -7), (-4, 12), (17, 30), (33, 44)):
         if S == -31 and x0 >= 33: continue
-        g.trees(x0 + 1, S + 2, x1 - 1, S + 2, SLIM[:4] + ['rg_young_green0', 'rg_young_teal0'], dx=3, dy=1, seed=S + x0)
+        grove(x0 + 1, S + 4, x1 - 1, S + 4, SLIM[:4] + ['rg_young_green0', 'rg_young_teal0'], dx=3, dy=1, seed=S + x0, jit=0)
 
 # ================================================================ signs and street furniture
 for x, y in ((13, -49), (12, 49), (17, 49), (-43, 49), (-47, 3)): g.prop('wSignBoard', x, y)
@@ -265,8 +295,35 @@ for x in range(-40, 46, 12):
 # ================================================================ woods round the city, then the greenery in what is left
 g.trees(-50, -50, 50, -49, WOOD); g.trees(-50, 49, 50, 50, WOOD); g.trees(-50, -50, -46, 50, WOOD); g.trees(47, -50, 50, 50, WOOD)
 g.dress()
-g.groves(-49, -49, 49, 49, WOOD, gap=1, min_area=6, styles=[('woods', WOOD), ('meadow', SMALL + ['rg_flower_pink', 'rg_flower_yellow']), ('woods', WOOD), ('orchard', BLOSSOM)])
+grove(-45, -46, 46, 46, WOOD[:5] + BLOSSOM + ['rg_young_green0', 'rg_young_teal0', 'rg_young_pink0'], dx=3, dy=2, seed=17, prob=.8)       # the lawns' own trees
 g.garden(-49, -49, 49, 49, every=3)
 g.drift(-50, -50, 50, 50, SMALL, every=5)
+
+# ---- fill what the lawns still lack: beds, bushes and young trees on about every fourth open cell, kept clear of paving and doors
+FILL = ['rg_bush_green', 'rg_bush_teal', 'rg_bush_pink', 'rg_young_green0', 'rg_young_teal0', 'rg_clump_green', 'rg_flower_pink', 'rg_flower_yellow', 'rg_bed_pink', 'rg_bed_yellow', 'rg_bed_white', 'rg_tiny_blue2', 'rg_flower_white', 'rg_young_pink0']
+R2 = random.Random(31)
+for (x, y) in sorted(g.openmask(-49, -49, 49, 49, 1)):
+    if R2.random() < .42 and not near_door(x, y) and not any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED):
+        nm = R2.choice(FILL); g.prop(nm, x, y, walk=nm.startswith(('rg_clump', 'rg_tiny', 'rg_flower', 'rg_bed')))
+# ---- clipped hedges along the lawn edge wherever a block meets a real street (2 wide), with gaps; then a second, lighter fill right up to the kerbs
+HEDGE = ['mHedgeRoundGreen', 'mHedgeRoundTeal', 'mHedgeRoundGreen', 'mHedgeRoundPink']
+R3 = random.Random(9)
+for y in range(-48, 49):
+    for x in range(-48, 49):
+        if g.get(x, y) != '.' or (x, y) in g.occ or near_door(x, y): continue
+        for dx_, dy_ in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+            if g.get(x + dx_, y + dy_) == 'p' and g.get(x + 2 * dx_, y + 2 * dy_) == 'p' and R3.random() < .55:
+                g.prop(HEDGE[(x + y) % 4], x, y); break
+for (x, y) in sorted(g.openmask(-49, -49, 49, 49, 0)):
+    if R2.random() < .25 and not near_door(x, y) and not any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry in RESERVED):
+        nm = R2.choice(FILL); g.prop(nm, x, y, walk=nm.startswith(('rg_clump', 'rg_tiny', 'rg_flower', 'rg_bed')))
+# ---- no tree stands with its foot against a building's roof line (the canopy would read as touching the roof)
+TREEWORDS = ('round', 'tall', 'pine', 'young', 'slim', 'cone', 'mFir', 'poplar', 'mPine')
+ch2n = {c: n for n, c in g.legend.items()}
+def roofed(nm, x, y):
+    for b in BX:
+        if b[0] - 1.0 < x + .5 < b[2] + 1.0 and b[1] - 1.3 <= y + 1 <= b[1] + 1.0: return True
+    return False
+g.pp[:] = [(c, x, y) for c, x, y in g.pp if not (any(w in ch2n[c] for w in TREEWORDS) and roofed(ch2n[c], x, y))]
 
 g.done(dict(lim=LIM, hide_site_paths=True))

@@ -766,7 +766,11 @@ mat[labap & land & ~mount & np.isin(mat, [SNOW, DUNE])] = GRASS
 # water: deep in the middle, shallow near shore, sand shores where a beach is near
 dl = ndi.distance_transform_edt(water)
 sandy = dil(beachc | (mat == DUNE), 3)
-mat[water] = np.where(sandy[water], np.where(dl[water] <= 3, SWAT, SWATD), np.where(dl[water] <= 3, WAT, WATD)).astype(np.uint8)
+deep = water & (dl > 3)
+if K != 1:                                           # plan B: the deep water's edge in straight runs with rounded steps like the shores (no tile-by-tile staircase), never within 2 of land, no specks
+    deep = shore_mask(deep) & water & (dl > 2); _l, _n = ndi.label(deep); _sz = ndi.sum(deep, _l, range(1, _n + 1)); deep &= np.isin(_l, 1 + np.nonzero(_sz >= 24)[0])
+    log('deep water in straight runs', int((water & (dl > 3)).sum()), '->', int(deep.sum()))
+mat[water] = np.where(sandy[water], np.where(~deep[water], SWAT, SWATD), np.where(~deep[water], WAT, WATD)).astype(np.uint8)
 mat[riv & water] = np.where(dl[riv & water] <= 2, WAT, WATD).astype(np.uint8)   # the river has a deep middle and wide shallows
 mat[ford] = FORD
 kind = np.zeros((HP, WP), np.uint8); deck = np.full((HP, WP), -1, np.int8); over = np.zeros((HP, WP), np.uint8)
@@ -1796,7 +1800,7 @@ blkp &= ~doorc & ~roadm
 seen = reach(nowalk | blkp); R_ = (seen[..., 0] > 0) | (seen[..., 1] > 0)
 # repair: open props that wall off walkable ground (clear blocking cells next to a reachable cell and an unreachable one)
 for rnd in range(6):
-    U = land & ~nowalk & ~blkp & ~R_ & (kind != 8) & ~(seen[..., 1] > 0)
+    U = land & ~nowalk & ~blkp & ~R_ & (kind != 8) & ~(seen[..., 1] > 0) & ~BOXALL   # a designed town's closed garden or tree-walled meadow is meant (its plan checks every door is reached)
     if not U.sum(): break
     openers = blkp & dil(U, 1) & dil(R_, 1)
     if not openers.any(): break

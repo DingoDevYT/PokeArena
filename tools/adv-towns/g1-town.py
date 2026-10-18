@@ -202,7 +202,7 @@ def plot(region, w, h, crop, seed, every=2, tries=80, hedge=True):
             g.field(x, y, x + w - 1, y + h - 1, crop, every)
             if hedge:
                 for hx in range(x, x + w, 2): g.prop('mHedgeLongAmber', hx, y - 1); g.prop('mHedgeLongAmber', hx, y + h + 1)
-            if r.random() < .5: g.prop('rg_scarecrow', x + w // 2, y + h // 2, walk=True)
+            if r.random() < .5: g.prop('rg_scarecrow', x - 1 if r.random() < .5 else x + w, y + h // 2)        # beside the field, never among the crops
             return True
     return False
 CROPS = ['rg_pumpkin', 'leafPlantB', 'rg_sunflowers', 'sprout', 'leafPlantC']
@@ -245,8 +245,41 @@ def dgarden(x0, y0, x1, y1, every=4, seed=12):
 
 # ================================================================ finish
 g.dress(trees=PALM2, bushes=BUSH, pots=POTS)
-g.groves(-47, -47, 47, 47, PALM, gap=1, min_area=6, styles=[('orchard', PALM2), ('orchard', PALM2), ('woods', PALM)])
+g.groves(-47, -47, 47, 47, PALM, gap=1, min_area=6, styles=[('orchard', PALM2), ('orchard', PALM2), ('orchard', PALM)])
 clumps(-47, -47, 47, 47, 8, CLUMP, 21, n=(2, 4), every=.8)
 dgarden(-47, -47, 47, 47, every=9)
 g.drift(-48, -48, 48, 48, SMALL, every=7)
+
+# ================================================================ no 3 x 3 patch left bare, then the review clean-up (the game draws sprites whole, so nothing may overlap)
+def fill_gaps(seed=31):
+    r = random.Random(seed)
+    for y in range(-47, 48):
+        for x in range(-47, 48):
+            if g.get(x, y) != '.' or any((x + i, y + j) in g.occ or g.get(x + i, y + j) != '.' for i in (-1, 0, 1) for j in (-1, 0, 1)): continue
+            if r.random() < .55: g.prop(r.choice(CLUMP + PALM2 + ROCKS[:3]), x, y)
+fill_gaps()
+INV = {c: n for n, c in g.legend.items()}
+DECAL = ('rg_tiny', 'rg_clump', 'rg_flower', 'rg_clover', 'dryTuft', 'grassBlades', 'pebbles', 'rg_weeds', 'rg_sprout', 'rg_bones', 'rockBrownSmall', 'rg_rock_desert', 'rg_leaves', 'rg_pot', 'flowerPot', 'bowlOrange', 'vaseGold', 'seedSack', 'tentPair', 'rg_basin', 'gemStand', 'sprout', 'leafPlant', 'rg_pumpkin', 'rg_sunflowers', 'rg_planter', 'flowerBowl')
+TREE = ('rg_palm', 'palmTree', 'rg_cact', 'cactus', 'organCactus', 'cactusFlowering')
+def rect(n, x, y, bld=False):
+    d = kit.plan.PROPS[n]; px = (x + .5) * 32 - (d['door'][0] if bld else 0); py = (y if bld else y + 1) * 32 - 1
+    return px - d['ax'], py - d['ay'], px - d['ax'] + d['sw'], py - d['ay'] + d['sh']
+def hit(a, b, m=0.0):
+    return min(a[2], b[2]) - max(a[0], b[0]) > m * 32 and min(a[3], b[3]) - max(a[1], b[1]) > m * 32
+BR = [(b[0], rect(b[0], b[1], b[2], True), b[1], b[2]) for b in g.blds]
+solid = lambda n: not n.startswith(DECAL)
+keep, dropped, GRID = [], 0, {}
+for ch, x, y in g.pp:
+    n = INV[ch]; rc = rect(n, x, y); bad = False
+    if solid(n):
+        for bn, br, bx, by in BR:
+            if hit(rc, br, .25) or (abs(x - bx) <= 1 and by <= y <= by + 2 and not n.startswith(DECAL)): bad = True; break   # over a wall, or on a doorstep
+        if not bad and g.get(x, y) == 'd': bad = True                                                         # standing on a lane
+    if not bad and solid(n):
+        for ch2, x2, y2, n2, rc2 in [k for i in range(x - 4, x + 5) for j in range(y - 4, y + 5) for k in GRID.get((i, j), ())]:
+            if solid(n2) and not (n.startswith(TREE) and n2.startswith(TREE)) and hit(rc, rc2, .3): bad = True; break
+    if bad: dropped += 1; continue
+    keep.append((ch, x, y, n, rc)); GRID.setdefault((x, y), []).append(keep[-1])
+g.pp[:] = [(c, x, y) for c, x, y, n, rc in keep]
+print('  G1: clean-up dropped', dropped, 'overlapping props')
 g.done(dict(lim=LIM, hide_site_paths=True))

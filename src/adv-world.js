@@ -236,7 +236,14 @@ const ADV = (() => {
       if (m < 0) for (const [a, b] of NB8) { const mm = this.mat(c + a, r + b); if (qm[mm]) { m = mm; break; } }
       if (m < 0) return;
       let base = mi;
-      if (qm[mi]) { base = this.qGrass; for (const [a, b] of NB4) { const mm = this.mat(c + a, r + b); if (mm && !qm[mm] && !(this.wset && this.wset[mm])) { base = mm; break; } } ch.qb[i] = base; }
+      if (qm[mi]) {   // the ground it lies on: the commonest land ground within 2 cells (nearer counts more), so both rows of a road and its inside corners agree
+        base = this.qGrass; const vote = new Map(); let best = 0;
+        for (let b = -2; b <= 2; b++) for (let a = -2; a <= 2; a++) {
+          const mm = this.mat(c + a, r + b); if (!mm || qm[mm] || (this.wset && this.wset[mm])) continue;
+          const v = (vote.get(mm) || 0) + (Math.abs(a) + Math.abs(b) <= 1 ? 3 : 2) - (Math.abs(a) === 2 || Math.abs(b) === 2 ? 1 : 0); vote.set(mm, v); if (v > best) { best = v; base = mm; }
+        }
+        ch.qb[i] = base;
+      }
       const def = this.defOf(this.palette[m]), K = typeof window !== 'undefined' && window.ADV_TILESET_DERIVED?.keys, key = K && K[this.palette[base]];
       const set = (key && def.by && def.by[key] && def.by[key].quad) || def.quad;
       const on = (dc, dr) => { const nc = this.chunkAt(c + dc, r + dr); return (nc ? nc.mat[((r + dr) & 31) * 32 + ((c + dc) & 31)] === m : qm[mi] === 1) ? 1 : 0; };   // an unloaded neighbour continues the cell

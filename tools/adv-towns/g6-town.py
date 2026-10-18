@@ -32,10 +32,10 @@ g.lane([(0, 3), (-36, 3)], 1, 'd')                                              
 g.lane([(8, 18), (-36, 18)], 1, 'd')                                                             # Nursery Lane
 g.lane([(-36, -29), (-36, 28)], 1, 'd')                                                          # the west footpath joins the rows
 g.lane([(8, 28), (-36, 28)], 1, 'd')                                                             # the cross path through the nursery
-g.lane([(-15, 19), (-15, 35)], 1, 'd')                                                           # the nursery walk, down to the keepers' shed
+g.lane([(-15, 19), (-15, 33)], 1, 'd')                                                           # the nursery walk, down to the keepers' shed
 g.lane([(11, -26), (31, -26)], 1, 'd')                                                           # the glade path, out to the ranger's lodge
-g.lane([(11, 24), (38, 24)], 1, 'd')                                                             # Stand Lane
-g.lane([(25, 25), (25, 36)], 1, 'd')                                                             # the footpath down the replanted stand
+g.lane([(11, 24), (36, 24)], 1, 'd')                                                             # Stand Lane
+g.lane([(25, 25), (25, 37)], 1, 'd')                                                             # the footpath down the replanted stand
 g.lane([(21, 24), (21, 16)], 1, 'd')                                                             # the footpath from Stand Lane up to the second landing
 g.rect(22, -5, 37, 4, 'd'); g.rect(20, 8, 37, 15, 'd')                                           # the sawmill yard and the second landing
 g.rect(30, -7, 30, -6, 'd'); g.rect(23, -6, 23, -6, 'd'); g.rect(36, -6, 36, -6, 'd')
@@ -47,11 +47,11 @@ g.building('warehouse', 14, 1, ['g6-mart', {'w': 6, 'd': 3, 'ex': 2}])
 g.prop('totemStump', 4, 6, **W)
 for x, y in ((2, 5), (6, 5), (2, 8), (6, 8)): g.prop(BEDS[(x + y) % 3], x, y, **W)
 g.props('rg_bench', [(7, 3), (4, 9), (13, 3), (16, 3), (4, 12)], **W)
-g.props('rg_lamp', [(1, 2), (8, 2), (11, 2), (18, 2), (1, 10), (8, 10), (11, 10), (18, 10), (1, 13), (6, 13), (11, 13), (18, 13)], **W)
-g.props('rg_planter_tall_pink', [(2, 1), (8, 1), (0, 6)], **W); g.props('rg_planter_tall_orange', [(11, 1), (18, 1), (18, 7)], **W)
+g.props('rg_lamp', [(0, 2), (8, 2), (11, 2), (18, 2), (1, 10), (8, 10), (11, 10), (18, 10), (1, 13), (6, 13), (11, 13), (18, 13)], **W)
+g.props('rg_planter_tall_pink', [(2, 2), (7, 2), (0, 6)], **W); g.props('rg_planter_tall_orange', [(12, 2), (17, 2), (18, 7)], **W)
 g.props('rg_stall', [(13, 10), (16, 10), (3, 12), (6, 12)], **W); g.props('rg_stall_rug', [(14, 13)], **W)
 g.props('rg_woodpile', [(18, 9), (0, 12)], **W); g.props('rg_crates', [(11, 9), (12, 13)], **W); g.props('rg_crates2', [(17, 13)], **W); g.props('rg_barrel', [(17, 4), (7, 13)], **W)
-g.props('noticeBoard', [(12, 4)], **W); g.props('rg_sign_board', [(7, 10)], **W); g.props('rg_pumpkin', [(2, 10), (7, 12)], **W)
+g.props('noticeBoard', [(12, 4)], **W); g.props('rg_sign_board', [(7, 10)], **W); g.props('rg_pumpkin', [(2, 10), (8, 11)], **W)
 g.prop('vanGrey', 15, 8, **W)
 g.props('rg_young_green0', [(0, 4), (0, 9)]); g.props('rg_young_teal0', [(0, 1)])
 
@@ -62,10 +62,12 @@ g.lot('rg_house_wood_d', -5, -13, street_y=-12, beds=None, extras=[('rg_woodpile
 g.lot('chaletRedChimney', -11, -13, street_y=-12, role=['g6-h2', FP4(1)])
 for x, n in ((-17, 'jCabinA'), (-21, 'rg_house_wood_d'), (-29, 'rg_house_wood_b'), (-34, 'jCabinD')):
     g.lot(n, x, -10, street_y=-9, beds=(BEDS[x % 3], BEDS[(x + 1) % 3]) if n[0] == 'j' else None, extras=[('rg_woodpile', 3, 0)] if n[0] == 'j' else [])
-g.props('rg_logs', [(6, -14), (7, -9), (-6, -8)]); g.props('rg_woodpile', [(5, -9), (-13, -8)])
+g.props('rg_logs', [(6, -15), (7, -6)]); g.props('rg_woodpile', [(-13, -8)])
 for x0 in (-10, -5): g.field(x0, -8, x0 + 3, -5, 'pineSapling', every=2)                                  # the office's demonstration beds
 g.props('mNoticeBoard', [(2, -10)]); g.props('rg_barrel_water', [(-1, -10)]); g.props('rg_bench', [(5, -10)])
-g.props('stumpLarge', [(-16, -6)]); g.props('rg_scarecrow', [(-20, -5)])
+g.props('stumpLarge', [(-16, -6)])
+for x in range(-12, -1, 2): g.prop('mHedgeLongGreen', x, -4)
+g.props('rg_scarecrow', [(-20, -5)])
 
 # ================================================================ Upper Row (y -26, then -29)
 for x, n in ((5, 'rg_house_wood_c'), (-1, 'jCabinB'), (-6, 'rg_house_red_d')): g.lot(n, x, -27, street_y=-26, beds=(BEDS[x % 3], BEDS[(x + 2) % 3]) if n[0] == 'j' else None)
@@ -73,13 +75,13 @@ for x, n in ((-15, 'cabinGreen'), (-20, 'rg_house_wood_b'), (-26, 'barnOrange'),
     g.lot(n, x, -30, street_y=-29, beds=(BEDS[x % 3], BEDS[(x + 2) % 3]) if n[0] in 'jc' else None)
 for x0 in (-34, -29): g.field(x0, -25, x0 + 3, -21, 'leafPlantB')                                         # kitchen gardens between the rows
 for x0 in (-22, -18): g.field(x0, -25, x0 + 3, -21, 'rg_pumpkin', every=2)
-g.field(-14, -25, -12, -21, 'rg_sunflowers', every=2)
+g.rect(-14, -26, -12, -26, 's'); g.field(-14, -25, -12, -21, 'rg_sunflowers', every=2)
 g.props('rg_woodpile', [(-1, -22), (-27, -16)]); g.props('rg_barrel_water', [(-13, -19), (-26, -17)]); g.props('rg_scarecrow', [(-8, -17), (-32, -17), (-17, -18)])
 
 # ================================================================ Landing Lane (y 3): the old houses west of the Landing, the mill pond behind
-for x, n in ((-5, 'rg_house_wood_c'), (-11, 'jCabinC'), (-16, 'rg_house_red_b'), (-22, 'jCabinA'), (-27, 'maHutWood'), (-32, 'rg_house_wood_d')):
+for x, n in ((-5, 'rg_house_wood_c'), (-11, 'jCabinC'), (-16, 'rg_house_red_b'), (-22, 'jCabinA'), (-27, 'cabinGreen'), (-32, 'rg_house_wood_d')):
     g.lot(n, x, 2, street_y=3, beds=(BEDS[x % 3], BEDS[(x + 1) % 3]) if n[0] in 'jc' else None, extras=[('rg_woodpile', 3, 0)] if n.startswith('jCab') else ())
-g.pond(-18, 8, 5, 2)
+g.pond(-18, 8, 5, 2); g.claim([(x, y) for y in range(3, 12) for x in range(-26, -9) if (x, y) not in g.occ], 'pondbank')
 g.props('rg_bench', [(-9, 7), (-27, 7)]); g.props('rg_logs', [(-8, 6), (-28, 11)]); g.props('rg_woodpile', [(-6, 9)]); g.props('rg_barrel_water', [(-25, 10)])
 
 # ================================================================ Nursery Lane (y 18): the boarding houses and the keepers' houses; the nursery beds south
@@ -87,15 +89,17 @@ g.lot('tavern', -3, 17, street_y=18, role=['g6-h3', FP4(1)], beds=None, extras=[
 g.lot('hall', -10, 17, street_y=18, role=['g6-h4', FP4(1)])
 g.lot('hotelBlue', -21, 17, street_y=18, role=['g6-h5', FP4(1)])
 g.lot('jCabinD', -27, 17, street_y=18); g.lot('rg_house_red_d', -32, 17, street_y=18)
-for x0, x1, crop in ((-34, -30, 'pineSapling'), (-21, -17, 'pineSaplingTeal'), (-12, -8, 'pineSapling'), (-6, -2, 'saplingTree'), (0, 5, 'pineSaplingTeal')): g.field(x0, 21, x1, 26, crop, every=2)
+for x0, x1, crop in ((-34, -30, 'pineSapling'), (-21, -17, 'pineSaplingTeal'), (-12, -8, 'pineSapling'), (-6, -2, 'saplingTree'), (0, 5, 'pineSaplingTeal')): g.field(x0, 22, x1, 26, crop, every=2)
 g.lot('rg_greenhouse', -26, 27, street_y=28, beds=None)                                                     # the seedling house, facing the cross path
 g.props('planterBoxBrown', [(-29, 27), (-23, 27)])
 for x0, x1, crop in ((-34, -29, 'miniTree'), (-27, -21, 'pineSapling'), (-12, -9, 'pineSaplingTeal'), (-7, -2, 'pineSapling'), (1, 5, 'saplingTree')): g.field(x0, 30, x1, 35, crop, every=2)
-g.field(-20, 31, -17, 35, 'pineSaplingTeal', every=2)
+g.field(-20, 30, -17, 35, 'pineSaplingTeal', every=2)
 g.prop('rg_hut_round', -15, 37)
 g.props('waterTank', [(-17, 22), (-8, 29), (-13, 31)]); g.props('rg_barrel_water', [(-13, 29), (-19, 29), (-24, 29)]); g.props('rg_bench', [(-18, 25), (-13, 25)])
 g.props('rg_woodpile', [(-31, 28), (3, 28)]); g.props('rg_crates', [(-28, 36)]); g.props('rg_barrel', [(-10, 37)])
-for x in range(-34, 6, 2): g.prop('mHedgeLongGreen', x, 20)
+for x in range(-34, 6, 2):
+    if abs(x + 15) > 1: g.prop('mHedgeLongGreen', x, 20)
+for x in range(-34, 6): g.prop(SMALL[x % len(SMALL)], x, 19, walk=True) if x % 2 == 0 and abs(x + 15) > 0 else None
 
 # ================================================================ the sawmill: the gym hall at the head of its yard, sheds either side, vans, stacks and the loader
 Y = dict(walk=True)
@@ -113,7 +117,7 @@ g.props('stumpSmall', [(32, 13)], **Y)
 for x in range(22, 31): g.prop('fallenLog', x, 10, **Y)
 for x in range(31, 36): g.prop('logShort', x, 12, **Y)
 g.props('fallenLog', [(25, 14), (30, 14)], **Y); g.props('logShort', [(37, 14)], **Y); g.props('stumpSmall', [(21, 9), (27, 14)], **Y)
-g.props('barrelOrange', [(21, 14), (33, 9)], **Y); g.props('crateWide', [(22, 12)], **Y); g.props('crateBox', [(37, 9)], **Y); g.props('rg_woodpile', [(31, 13), (21, 11)], **Y); g.props('rg_logs', [(26, 12)], **Y)
+g.props('barrelOrange', [(21, 14), (33, 9)], **Y); g.props('crateWide', [(22, 12)], **Y); g.props('crateBox', [(37, 9)], **Y); g.props('rg_woodpile', [(28, 14), (21, 12)], **Y); g.props('rg_logs', [(26, 12)], **Y)
 for x in range(20, 38): g.prop('wLogFence', x, 17)
 
 # ================================================================ Stand Lane (y 24)
@@ -130,7 +134,7 @@ g.props('rg_woodpile', [(26, 26), (24, 26)]); g.props('noticeBoard', [(26, 37)])
 g.lot('jLodge', 30, -27, street_y=-26)
 for x, n in ((15, 'jCabinA'), (21, 'maLogCabin'), (26, 'cabinGreen')): g.lot(n, x, -27, street_y=-26)
 g.claim([(x, y) for y in range(-27, -22) for x in range(11, 17)], 'glade')
-g.pond(21, -19, 3, 2)
+g.pond(21, -19, 3, 2); g.claim([(x, y) for y in range(-24, -14) for x in range(15, 28) if (x, y) not in g.occ], 'pondbank')
 import random
 rr = random.Random(21)
 for y in range(-25, -14):
@@ -147,7 +151,9 @@ for y in (-34, -20): g.prop('rg_lamp', 11, y) if y != -20 else None
 g.props('rg_logs', [(8, -31), (11, -37)]); g.props('rg_woodpile', [(8, -16)]); g.props('wMailbox', [(8, -23), (8, -9)])
 
 # ================================================================ woods walling the clearing in; flowers in the grass
-g.trees(-44, -44, 44, -38, WOOD); g.trees(-44, 38, 44, 44, WOOD); g.trees(38, -44, 44, 44, WOOD); g.trees(-44, -44, -38, 44, WOOD)
+def ragged(x, y): return ((x * 73856093) ^ (y * 19349663)) % 100 < 24                              # the rim is thinned at random, then refilled on a second lattice, so no row reads as stamped
+for bb in ((-44, -44, 44, -38), (-44, 38, 44, 44), (38, -44, 44, 44), (-44, -44, -38, 44)): g.trees(*bb, WOOD, skip=ragged, seed=3)
+for bb in ((-44, -44, 44, -38), (-44, 38, 44, 44), (38, -44, 44, 44), (-44, -44, -38, 44)): g.trees(*bb, WOOD[::-1], dx=3, dy=2, seed=8)
 g.dress()
 g.groves(-43, -43, 43, 43, WOOD, gap=1, min_area=8, styles=[('woods', WOOD)])
 g.garden(-43, -43, 43, 43, every=3)
