@@ -41,7 +41,7 @@ g.lane([(3, -16), (-14, -16), (-14, -20), (-40, -20), (-40, -29)], 1, 'd'); g.la
 g.lane([(2, 19), (-36, 19)], 1, 'd')                                                            # south lane
 g.lane([(-43, 14), (-36, 14), (-36, 27)], 1, 'd'); g.lane([(-43, 27), (-24, 27), (-24, 41)], 1, 'd')      # the beach lanes, and the lane down the west side of the south rows
 g.lane([(2, 30), (-24, 30)], 1, 'd'); g.lane([(2, 41), (-31, 41)], 1, 'd')
-g.lane([(6, -21), (24, -21), (24, -25), (40, -25)], 1, 'd'); g.rect(41, -26, 43, -24, 't'); g.lane([(24, -26), (24, -38)], 1, 'd')     # north-east row, the orchard lane
+g.lane([(6, -21), (24, -21), (24, -25), (41, -25)], 1, 'd'); g.lane([(24, -26), (24, -38)], 1, 'd')     # north-east row, the orchard lane
 g.lane([(5, 13), (33, 13)], 1, 'd'); g.rect(34, 12, 36, 14, 't')                                      # south-east row, ending at the east green
 g.lane([(41, 27), (41, 37), (5, 37)], 1, 'd')
 g.rect(15, -6, 32, 2, 't'); g.lane([(22, -10), (22, -5)], 1, 'd'); g.lane([(31, -24), (31, -5)], 1, 'd')     # the market, the conservatory walk, the nursery walk
@@ -51,12 +51,12 @@ g.exit(4, -46, 'N'); g.exit(-42, -46, 'N'); g.exit(3, 46, 'S'); g.exit(46, 25, '
 # ================================================================ the park
 for x0, y0, x1, y1 in ((-35, -11, -7, -11), (-35, 11, -7, 11), (-35, -11, -35, 11), (-7, -11, -7, 11), (-35, 0, -7, 0), (-21, -11, -21, 11)): g.rect(x0, y0, x1, y1, 't')
 g.rect(-6, 0, -4, 0, 't'); g.rect(-22, -1, -20, 2, 'p'); g.rect(-21, 12, -21, 18, 't')
-g.pond(-29, -6, 3.5, 2.5); g.pond(-14, 6, 3.5, 2.5)
-g.prop('sWoodPagoda', -21, 1, walk=True); g.props('statueDog', [(-23, 1), (-19, -1)])
+g.pond(-29, -6, 3, 2.5); g.pond(-13, 6, 3, 2.5)
+g.rect(-23, -2, -19, 1, 't'); g.rect(-22, -1, -20, 1, 'p'); g.prop('sWoodPagoda', -21, 1, walk=True); g.props('statueDog', [(-23, 1), (-19, -1)])
 for x in range(-36, -5, 1):                                                                       # the clipped hedge round the lawn, open at the gates
     if abs(x + 21) > 1: g.prop(HEDGE, x, -12); g.prop(HEDGE, x, 12)
 for y in range(-11, 12):
-    if abs(y) > 1: g.prop('mHedgeTallGreen', -36, y); g.prop('mHedgeTallGreen', -6, y)
+    if abs(y) > 1: g.prop('mBushGreen', -36, y); g.prop('mBushGreen', -6, y)
 
 # ================================================================ buildings
 g.building('pokeCenterGrand', -1, -6, 'center'); g.building('martTower', 10, -6)
@@ -66,8 +66,8 @@ g.lot('barnRed', 24, -38, beds=None)
 g.lot('maManorOrange', 38, 24, street_y=25, beds=None)
 g.lot('maLogCabin', -31, 40, street_y=41, beds=None)
 
-hrow(-31, -30, -38, ['rg_house_red_a', 'maHouseOrange', 'rg_house_red_c', 'rg_house_wood_d', 'rg_house_wood_a'])
-hrow(-21, -20, -37, ['maHouseBlueTimber', 'rg_house_red_d', 'maStoneHouse'], gap=2)
+hrow(-31, -30, -38, ['rg_house_red_a', 'rg_house_wood_c', 'rg_house_red_c', 'rg_house_wood_d', 'rg_house_wood_a'])
+hrow(-21, -20, -37, ['rg_house_wood_a', 'rg_house_red_d', 'rg_house_red_a'], gap=2)
 hrow(-17, -16, -12, ['rg_house_red_b', 'rg_house_wood_b'])
 hrow(-22, -21, 8, ['rg_house_wood_a', 'rg_house_red_c'])
 hrow(-26, -25, 27, ['rg_house_red_a', 'rg_house_wood_d', 'rg_house_red_b'], gap=2)
@@ -130,7 +130,7 @@ g.props('rg_lamp', [(43, -4)], walk=True)
 for x in range(15, 30):                                                                           # the conservatory's hedged garden
     if abs(x - 22) > 1: g.prop(HEDGE, x, -8)
     g.prop(HEDGE, x, -18)
-for y in range(-17, -8): g.prop('mHedgeTallGreen', 15, y); g.prop('mHedgeTallGreen', 29, y)
+for y in range(-17, -8): g.prop('mBushGreen', 15, y); g.prop('mBushGreen', 29, y)
 for k, (x, y) in enumerate(((17, -16), (17, -13), (17, -10), (27, -16), (27, -13), (27, -10), (19, -9), (25, -9))): g.prop(BEDS[k % 3], x, y, walk=True)
 g.props('rg_young_green0', [(17, -15), (27, -15), (17, -11), (27, -11)]); g.props('rg_bench', [(18, -12), (26, -12)]); g.props('rg_lamp', [(20, -9), (24, -9)]); g.props('rg_round_pink0', [(19, -16), (25, -16)])
 for y in (-14, -12): g.prop(BEDS[y % 3], 19, y, walk=True); g.prop(BEDS[(y + 1) % 3], 25, y, walk=True)
@@ -157,7 +157,7 @@ g.field(-20, 21, -13, 23, 'leafPlantB'); g.field(-10, 21, -3, 23, 'rg_sunflowers
 g.field(-20, 32, -12, 34, 'leafPlantB'); g.field(-8, 32, 0, 34, 'rg_pumpkin', every=2)
 g.field(8, 40, 14, 42, 'leafPlantB'); g.field(17, 40, 21, 42, 'rg_pumpkin', every=2); g.field(24, 40, 33, 42, 'rg_sunflowers', every=2); g.field(36, 40, 39, 42, 'leafPlantB')
 for x in (11, 19, 29, 37): g.props('rg_hut_round', [(x, 44)])
-g.props('rg_scarecrow', [(16, 16), (-11, 22), (27, 20)])
+g.props('rg_scarecrow', [(7, 16), (-1, 22), (27, 20)])
 
 # ================================================================ the beach: the fishermen's landing
 SAND = [(-8, -50), (-4, -47), (0, -44), (4, -40), (8, -36), (10, -35), (20, -34), (24, -33), (26, -32), (28, -30), (30, -29), (32, -26), (36, -27), (38, -28), (40, -29)]
@@ -167,12 +167,14 @@ def sand_edge(y):
         if y >= yy: e = xx
     return e
 def water(x, y): return (y >= 31 and x <= (-44 if y <= 33 else -42 if y <= 39 else -39 if y <= 42 else -37)) or (y >= 4 and x <= -50)
-g.props('maRowboat', [(-42, 30), (-35, 43)]); g.props('boatWhite', [(-42, 36), (-38, 40)]); g.props('speedboat', [(-33, 44)])
-g.props('rg_crates', [(-42, 17), (-38, 24), (-39, 31)]); g.props('rg_barrel', [(-41, 17), (-37, 24), (-38, 31)]); g.props('rg_logs', [(-39, 19), (-34, 30)])
+for nm, pts in (('maRowboat', [(-42, 30), (-35, 43)]), ('boatWhite', [(-42, 36), (-38, 40)]), ('speedboat', [(-33, 44)])):
+    for x, y in pts:
+        if g.prop(nm, x, y): g.claim([(c[0] + i, c[1] + j) for c in g.box(nm, x, y) for i in (-1, 0, 1) for j in (-1, 0, 1) if (c[0] + i, c[1] + j) not in g.occ], 'boat-clear')
+g.props('rg_crates', [(-42, 17), (-38, 24), (-35, 31)]); g.props('rg_barrel', [(-41, 17), (-37, 24), (-34, 31)]); g.props('rg_logs', [(-39, 19), (-34, 30)])
 g.rect(-35, 20, -31, 24, 't')
 g.props('rg_stall', [(-34, 22), (-32, 22), (-33, 24)], walk=True); g.props('rg_table', [(-35, 24)], walk=True); g.props('rg_crates2', [(-31, 24)], walk=True); g.props('rg_barrel', [(-35, 21), (-31, 21)], walk=True)
 g.props('rg_palm', [(-45, -2), (-42, 3), (-44, 8), (-45, 20), (-45, 23), (-37, 29)])
-g.props('rg_boulder', [(-37, 41), (-38, 37), (-30, 29), (-35, 43), (-45, -6), (-43, 0)]); g.props('rg_rock', [(-28, 29), (-36, 38), (-37, 33), (-31, 36), (-33, 42)]); g.props('rg_logs', [(-39, 30), (-33, 39), (-44, 4)]); g.props('rg_barrel', [(-30, 41), (-33, 41)]); g.props('rg_crates', [(-29, 41)])
+g.props('rg_boulder', [(-36, 41), (-35, 38), (-30, 29), (-35, 43), (-45, -6), (-43, 0)]); g.props('rg_rock', [(-28, 29), (-36, 38), (-37, 33), (-31, 36), (-33, 42)]); g.props('rg_logs', [(-39, 30), (-33, 39), (-44, 4)]); g.props('rg_barrel', [(-30, 41), (-33, 41)]); g.props('rg_crates', [(-29, 41)])
 g.props('rg_wreck', [(-44, 33)]); g.props('rg_raft', [(-45, 24), (-42, 34)], walk=True)
 rb = random.Random(31)
 for y in range(-8, 46):
@@ -202,9 +204,9 @@ g.props('rg_bench', [(-2, -5), (11, -5), (11, 3), (-2, 3)], walk=True); g.props(
 g.props('rg_planter_tall_orange', [(10, -5), (10, 3), (-1, -5), (-1, 3)], walk=True); g.props('rg_lamp', [(13, -1), (-3, -1)], walk=True)
 g.props('rg_bush_pink', [(13, 4), (-4, 4)]); g.props('rg_bush_green', [(14, -7), (-5, -7)])
 # ================================================================ lamps, benches and signs along the lanes
-g.props('rg_lamp', [(-40, -22), (-30, -22), (-20, -22), (-8, -18), (-30, -28), (-20, -28), (-8, -28), (-2, -28), (-12, -23)])
+g.props('rg_lamp', [(-40, -22), (-30, -22), (-20, -22), (-8, -18), (-30, -28), (-20, -28), (-8, -28), (-2, -28)])
 g.props('rg_lamp', [(12, -19), (20, -19), (28, -23), (36, -23), (8, 11), (16, 11), (24, 11), (30, 11), (-30, 21), (-22, 21), (-12, 21), (-4, 21), (-18, 31), (-8, 31), (-18, 42), (-8, 42)])
-g.props('rg_bench', [(-4, -28), (-33, -28), (14, -23), (-16, 20), (-6, 29), (12, 26), (28, 26)]); g.props('rg_bench', [(42, -26)], walk=True); g.props('rg_lamp', [(43, -26), (41, -24)], walk=True)
+g.props('rg_bench', [(-4, -28), (-33, -28), (14, -23), (-16, 20), (-6, 29), (12, 26), (28, 26)]); 
 g.props('rg_sign_board', [(8, -43), (8, 43), (44, 28), (-38, -43), (-12, -27), (43, 29)])
 
 # ================================================================ woods, orchards and flowers to fill what is left
