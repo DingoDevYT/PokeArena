@@ -1,0 +1,9 @@
+{
+  "name": "PokeArena",
+  "short_name": "PokeArena",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#101830"
+}
