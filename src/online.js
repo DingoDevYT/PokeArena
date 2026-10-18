@@ -308,7 +308,7 @@ const OnlineScene = {
     e.preventDefault();
   },
   onPaste(e) { const t = (e.clipboardData?.getData('text') || '').toUpperCase().replace(/.*JOIN=/, '').replace(/[^A-Z0-9]/g, '').slice(0, 5); if (t) { this.code = t; this.typing = true; } },
-  editCode() { if (INPUT.usingPad) { const c = window.prompt('Join code (5 letters/numbers)', this.code); if (c) { this.code = c.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); if (this.code.length === 5) joinGame(this.code); } } else this.typing = true; },
+  editCode() { if (INPUT.usingPad) { const c = window.prompt('Join code (5 letters/numbers)', this.code); if (c) { this.code = c.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); if (this.code.length === 5) joinGame(this.code); } } else { this.typing = true; if (window.TOUCH?.on) TOUCH.kbd(); }  },
   watch() {
     const L = this.lobbies;
     loadLib(ONLINE.MQTT, 'mqtt').then(mqtt => {
@@ -411,7 +411,7 @@ const OnlineScene = {
       uiBtn(this, 'ldn', X(1244), Y(412), L(56), L(28), { label: 'v', size: L(14), disabled: this.lOff >= open.length - rows }, () => lwheel(1));
     }
     if (this.msg) { rrect(X(360), Y(784), L(600), L(36), L(10), '#5a1a1aee', '#ff9a9a', 2); text(this.msg, X(660), Y(802), L(15), '#ffd0d0', 'center', null); }
-    else hint(INPUT.usingPad ? 'D-pad move   A select   B back' : 'Click to select   Esc back');
+    else hint(padUI() ? 'D-pad move   A select   B back' : 'Click to select   Esc back');
   },
 };
 

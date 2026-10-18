@@ -199,13 +199,13 @@ function EditScene(ti) {
       if (backHit() || (lr < 0 && !['level', 'ability', 'nature'].includes(f))) st.col = 0;
     },
     draw() {
-      bgFill('#14283a', '#1b3a2f'); const s = S(), pad = INPUT.usingPad;
+      bgFill('#14283a', '#1b3a2f'); const s = S(), pad = INPUT.usingPad, padW = padUI();
       // header: team name (click to rename)
       ctx.font = `${26 * s}px Bungee, "Arial Black", sans-serif`;
       const nw = ctx.measureText(team.name.toUpperCase()).width;
       text(team.name.toUpperCase(), 150 * s, 34 * s, 26 * s, '#ffde3b', 'left');
       button(160 * s + nw, 20 * s, 110 * s, 28 * s, 'RENAME', scene.rename, { size: 12 * s });
-      iconRow([pad ? 'xbox_y' : 'key_f2'], 278 * s + nw, 34 * s, 32, 12 * s, '#ccd');
+      iconRow([padW ? 'xbox_y' : 'key_f2'], 278 * s + nw, 34 * s, 32, 12 * s, '#ccd');
       // party
       const n = team.mons.length + (team.mons.length < 6 ? 1 : 0), PX = 24 * s, PW = 300 * s, RH = 84 * s;
       for (let i = 0; i < n; i++) {
@@ -281,14 +281,14 @@ function EditScene(ti) {
           if (f === 'item' && set.item) vx += itemIcon(set.item, vx + 12 * s, mid, 24 * s) + 8 * s;
           const val = { species: sp.name, level: String(set.level), ability: set.ability, item: set.item || '(none)', nature: set.nature }[f];
           text(lrRow ? `<  ${val}  >` : val, vx, mid, 16 * s, dk, 'left', null);
-          if (f === 'species' || f === 'item') text(pad ? 'A to change' : 'CLICK TO CHANGE >', FX + FW - 16 * s, mid, 11 * s, sub, 'right', null);
+          if (f === 'species' || f === 'item') text(padW ? 'A to change' : 'CLICK TO CHANGE >', FX + FW - 16 * s, mid, 11 * s, sub, 'right', null);
           if (f === 'nature' && nm?.plus && nm.plus !== nm.minus) text(`+${nm.plus.toUpperCase()} -${nm.minus.toUpperCase()}`, FX + FW - 16 * s, mid, 12 * s, sub, 'right', null);
           if (f === 'level') { button(FX + FW - 140 * s, y + 9 * s, 62 * s, 32 * s, '-10', () => scene.level(-10), { size: 12 * s }); button(FX + FW - 72 * s, y + 9 * s, 62 * s, 32 * s, '+10', () => scene.level(10), { size: 12 * s }); }
         });
         text('MOVES', FX, 66 * s + 5 * gap + 12 * s, 14 * s, '#ffde3b', 'left', null);
-        text(pad ? 'LB/RB move a move up/down' : 'arrows or Q/E reorder', FX + FW, 66 * s + 5 * gap + 12 * s, 11 * s, '#9ab', 'right', null);
+        text(padW ? 'LB/RB move a move up/down' : 'arrows or Q/E reorder', FX + FW, 66 * s + 5 * gap + 12 * s, 11 * s, '#9ab', 'right', null);
       }
-      hint(pad ? (st.col === 0 ? 'A edit   X remove   Y rename   B back (saves)' : 'A choose   left/right change   LB/RB level -10/+10 or reorder moves   B back')
+      hint(padW ? (st.col === 0 ? 'A edit   X remove   Y rename   B back (saves)' : 'A choose   left/right change   LB/RB level -10/+10 or reorder moves   B back')
         : 'Click a field to edit   click either half or scroll to change a value   right-click back');
       backButton(() => { save(); setScene(TeamsScene); });
     },
@@ -335,17 +335,17 @@ function SearchList(o) {
       st.ate = false;
     },
     draw() {
-      bgFill('#14283a', '#1b3a2f'); const s = S(), pad = INPUT.usingPad;
+      bgFill('#14283a', '#1b3a2f'); const s = S(), pad = INPUT.usingPad, padW = padUI();
       const LX = 24 * s, LW = Math.round((VW - 48 * s) * 0.6), SX = LX + LW + 20 * s, SW = VW - SX - 24 * s;
       text(o.title, VW / 2, 32 * s, 26 * s, '#ffde3b', 'center');
       // search + filter
       const by = 60 * s, bh = 34 * s;
-      searchBox(LX, by, LW * 0.6, bh, st.q, pad ? 'Search needs a keyboard' : 'Type to search');
+      searchBox(LX, by, LW * 0.6, bh, st.q, window.TOUCH?.on ? 'Tap to search' : pad ? 'Search needs a keyboard' : 'Type to search');
       text(`${st.list.length} shown`, LX + LW * 0.6 - 10 * s, by + bh / 2 + 1, 11 * s, '#9ab', 'right', null);
       if (o.filters) {
         const v = o.filters[2][st.filt];
         button(LX + LW * 0.6 + 10 * s, by, LW * 0.4 - 10 * s, bh, `${o.filters[0]}: ${v || 'ALL'}`, () => setFilt(1), { size: 13 * s, wheel: d => setFilt(d) });
-        if (pad) iconRow(['xbox_lt', 'xbox_rt'], LX + LW, by - 10 * s, 24, 10 * s, '#ccd', 'right');
+        if (padW) iconRow(['xbox_lt', 'xbox_rt'], LX + LW, by - 10 * s, 24, 10 * s, '#ccd', 'right');
       }
       // sort header
       let y0 = by + bh + 10 * s;
@@ -380,7 +380,7 @@ function SearchList(o) {
       }
       const it = st.list[st.sel];
       if (it) o.drawSide(it, SX, by, SW);
-      hint(pad ? `A pick   B back   LB/RB page${o.sorts ? '   X sort   Y reverse' : ''}${o.filters ? '   LT/RT type' : ''}`
+      hint(padW ? `A pick   B back   LB/RB page${o.sorts ? '   X sort   Y reverse' : ''}${o.filters ? '   LT/RT type' : ''}`
         : 'Type to search   click to pick   scroll to browse   right-click back');
       backButton(() => setScene(o.back));
     },

@@ -55,14 +55,14 @@ function icon(name, x, y, h = 32, align = 'center') {
   return w;
 }
 // Row of icons and text: parts like ['xbox_lb', ' DODGE'] (known icon names draw as icons). Returns width.
-function iconRow(parts, x, y, h, size, color, align = 'left', measureOnly) {
+function iconRow(parts, x, y, h, size, color, align = 'left', measureOnly, onIcon) {   // onIcon(name, x, w): where each icon was drawn
   ctx.font = `${size}px Bungee, "Arial Black", sans-serif`;
   const isIcon = p => window.UI_ICONS && UI_ICONS[p];
   const w = parts.reduce((a, p) => a + (isIcon(p) ? iconW(p, h) + 3 : ctx.measureText(p).width), 0);
   if (measureOnly) return w;
   let cx = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
   for (const p of parts) {
-    if (isIcon(p)) cx += icon(p, cx, y, h, 'left') + 3;
+    if (isIcon(p)) { const iw = icon(p, cx, y, h, 'left'); if (onIcon) onIcon(p, cx, iw); cx += iw + 3; }
     else { text(p, cx, y, size, color, 'left', null); ctx.font = `${size}px Bungee, "Arial Black", sans-serif`; cx += ctx.measureText(p).width; }
   }
   return w;
@@ -141,7 +141,7 @@ const INPUT = {
     for (const k in PAD_BTN) b[k] = pb(PAD_BTN[k]);
     const padActive = Object.values(b).some(Boolean) || [0, 1, 2, 3].some(i => Math.abs(axis(i)) > 0.5);
     if (padActive) { this.usingPad = true; unlockAudio(); }
-    if (window.TOUCH?.on) for (const k in TOUCH.h) if (TOUCH.h[k]) b[k] = true;   // touch.js: on-screen buttons use the pad names
+    if (window.TOUCH?.on) { for (const k in TOUCH.h) if (TOUCH.h[k]) b[k] = true; for (const k in TOUCH.p) b[k] = true; TOUCH.p = {}; if (b.LTRT) b.LT = b.RT = true; }   // touch.js: on-screen buttons use the pad names; p = pressed since the last poll, so a tap shorter than a frame still counts
     // battle actions: pad, or PC layout (LMB / RMB / Q / E, Space dodge, 1-6 swap, F mega)
     b.M1 = b.A || MOUSE.down; b.M2 = b.B || MOUSE.downR; b.M3 = b.X || KEYS.KeyQ; b.M4 = b.Y || KEYS.KeyE;
     b.DODGE = b.LB || KEYS.Space || KEYS.ShiftLeft;
@@ -178,6 +178,9 @@ const INPUT = {
   held(k) { return !!this.cur[k]; },
   released(k) { return !this.cur[k] && this.prev[k]; },
 };
+
+// Prompts name pad buttons on a pad and on a touch screen (touch.js draws A B X Y, LB RB and a d-pad); keyboard and mouse wording otherwise.
+const padUI = () => INPUT.usingPad || !!window.TOUCH?.on;
 
 // ---------- mouse hotspots ----------
 // Draw code calls hot() for clickable rects; the next frame resolves hover/click against them.

@@ -1200,8 +1200,8 @@ function playerIntent(side, dt) {
   I.mega = INPUT.hit('MEGA');
   // PC: number keys swap straight to that party slot
   for (let k = 1; k <= 6; k++) if (INPUT.hit('S' + k)) { if (doSwap(side, k - 1, side.freeSwap > 0)) side.freeSwap = 0; }
-  // Pad: hold RB, point either stick at a mon, release to swap
-  if (INPUT.usingPad && INPUT.held('RB')) {
+  // Pad or touch: hold RB (SWAP on a phone), point either stick at a mon, release to swap
+  if ((INPUT.usingPad || window.TOUCH?.on) && INPUT.held('RB')) {
     if (!side.wheel) side.wheel = { sel: -1 };
     const vx = INPUT.aimActive ? INPUT.ax : INPUT.mx, vy = INPUT.aimActive ? INPUT.ay : INPUT.my;
     if (Math.hypot(vx, vy) > 0.4) { const w = side.wheel, o = wheelOpts(side), k = wheelPick(o.length, Math.atan2(vy, vx)); w.ang = Math.atan2(vy, vx); w.sel = k >= 0 && !side.team[o[k]].fainted ? o[k] : -1; }

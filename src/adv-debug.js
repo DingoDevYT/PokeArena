@@ -105,7 +105,7 @@ const ADVDBG = {
         const id = ids[st.sel];
         if (id) { const sp = DEX.species[id], y = y0 + r * sz + 8 * s; text(`#${sp.num} ${sp.name.toUpperCase()}`, 40, y + 12 * s, 20 * s, '#fff', 'left'); let cx = 60 + 12 * 20 * s * 0.9; for (const t of sp.types) cx += hudChip(cx, y, t.toUpperCase(), TYPE_COLOR[t], 22 * s); }
         else text('No Pokemon match', VW / 2, y0 + 60 * s, 20 * s, '#ccc', 'center');
-        hint(INPUT.usingPad ? 'A give   B back   LT/RT generation' : 'Type to search   Tab generation   arrows or scroll browse   Enter give   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A give   B back   LT/RT generation' : 'Type to search   Tab generation   arrows or scroll browse   Enter give   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -149,7 +149,7 @@ const ADVDBG = {
         text('HOW MANY', bx, by, L(13), '#9aa6c0', 'left', null, 'Silkscreen');
         ADVDBG.COUNTS.forEach((c, i) => { const w = L(62), x = bx + L(140) + i * (w + L(6)), on = c === ADVDBG.count; hot(x, by - L(20), w, L(40), { click: () => { ADVDBG.count = c; uiBlip(700, 0.03); } }); rrect(x, by - L(20), w, L(40), L(10), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2); text('x' + c, x + w / 2, by + 1, L(16), on ? '#111' : '#fff', 'center', null); });
         if (ADVDBG.note.s) text(ADVDBG.note.s, X(975), Y(540), L(16), ADVDBG.note.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A give   left/right how many   LB/RB category   B back' : 'Type to search   Tab category   left/right how many   Enter or click gives   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A give   left/right how many   LB/RB category   B back' : 'Type to search   Tab category   left/right how many   Enter or click gives   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -172,7 +172,7 @@ const ADVDBG = {
           text(t.id[0] === 'G' ? 'GYM CITY' : 'TOWN', X(916), y + (per - 6) / 2, L(13), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
         });
         text('Test tool only: the game itself never teleports.', X(660), Y(700), L(14), '#9aa6c0', 'center', null);
-        hint(INPUT.usingPad ? 'A warp   B back' : 'Click a town to warp   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A warp   B back' : 'Click a town to warp   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -243,9 +243,9 @@ const ADVDBG = {
           ctx.fillStyle = '#000a'; ctx.fillRect(0, 0, VW, VH);
           panel(X(380), Y(260), L(560), L(220), 'SET ' + st.input.label);
           text((st.input.label === 'MONEY' ? '$' : '') + (st.input.s || '') + (Math.floor(performance.now() / 500) % 2 ? '_' : ' '), X(660), Y(360), L(46), '#fff', 'center', null);
-          text(INPUT.usingPad ? 'Use left / right on the row instead' : 'Type digits   Backspace erases', X(660), Y(430), L(15), '#9aa6c0', 'center', null);
+          text(padUI() ? 'Use left / right on the row instead' : 'Type digits   Backspace erases', X(660), Y(430), L(15), '#9aa6c0', 'center', null);
           hint('Enter confirm   Esc cancel');
-        } else hint(INPUT.usingPad ? 'A change   left/right adjust   B back' : 'Click or Enter to use   left/right adjust   F9 or Esc back');
+        } else hint(padUI() ? 'A change   left/right adjust   B back' : 'Click or Enter to use   left/right adjust   F9 or Esc back');
         backButton(() => sc.close());
       },
     };

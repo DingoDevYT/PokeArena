@@ -147,7 +147,7 @@ const AdventureScene = {
   },
   update(dt) {
     this.t += dt; ADVM.tick(dt);
-    const c = !!KEYS.KeyC; this.cHit = c && !this.cPrev; this.cPrev = c;
+    const c = !!KEYS.KeyC || !!INPUT.cur.ITEM; this.cHit = c && !this.cPrev; this.cPrev = c;   // ITEM: touch.js's BAG button
     const fk = !!KEYS.KeyF; this.fHit = fk && !this.fPrev; this.fPrev = fk;
     const vk = !!KEYS.KeyV, rk = !!KEYS.KeyR, gk = !!KEYS.KeyG; this.vHit = vk && !this.vPrev; this.vPrev = vk; this.rHit = rk && !this.rPrev; this.rPrev = rk; this.gHit = gk && !this.gPrev; this.gPrev = gk;
     const sk = !!KEYS.Space; this.spHit = sk && !this.spPrev; this.spPrev = sk;   // Space: the flap / buck press while mounted (adv-mount.js)
@@ -1224,7 +1224,7 @@ const AdventureScene = {
       items.push(...this.wildItems(), ...this.npcItems(), ...this.remoteItems(), ...this.castItems(), ...this.courseItems());
       if (this.heal && this.room?.d.mach) items.push({ x: this.room.d.mach.x, y: this.room.d.mach.y + 2, z: 0, f: () => this.drawHeal() });
       ADVR.draw(this.cam, items, this.t);
-      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(INPUT.usingPad ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? 'Select ' + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? 'Select ' + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + 'tap B menu' : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu'); }
+      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(padUI() ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + (window.TOUCH?.on ? 'tap B or MENU for the menu' : 'tap B menu') : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu'); }
     }
   },
 };

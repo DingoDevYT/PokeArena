@@ -20,7 +20,7 @@ Object.assign(ADVUI, {
         drawMenu(items(), st, VW / 2, 190 * s, 520 * s, 64);
         const hintS = ['Joins the fullest server with room, or starts one', 'Pick a server and see who is on it', 'Type a friend\'s trainer name to find their server', 'No network, just you'][st.sel];
         if (hintS) text(hintS, VW / 2, 190 * s + 5 * 64 * s + 20 * s, 15 * s, '#9aa6c0', 'center', null);
-        hint(INPUT.usingPad ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -46,7 +46,7 @@ Object.assign(ADVUI, {
           text(e.players.slice(0, 5).join(', ') + (e.players.length > 5 ? '...' : ''), X(204), y + L(53), L(12), on ? '#333' : '#9aa6c0', 'left', null, 'Silkscreen');
           text(`${e.n} / ${e.max}`, X(1116), y + L(35), L(24), e.n >= e.max ? '#ff8a8a' : on ? '#1a1a2a' : '#7be07b', 'right', null);
         });
-        hint(INPUT.usingPad ? 'A join   B back' : 'Click a server   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A join   B back' : 'Click a server   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -70,7 +70,7 @@ Object.assign(ADVUI, {
         searchBox(X(410), Y(190), L(500), L(54), st.q, 'Trainer name');
         text(sv.status || `${sv.list().length} servers listed`, X(660), Y(290), L(14), '#9aa6c0', 'center', null, 'Silkscreen');
         if (note.s) text(note.s, X(660), Y(340), L(18), '#ff9a9a', 'center', null);
-        hint(INPUT.usingPad ? 'A find   B back' : 'Type a name   Enter find   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A find   B back' : 'Type a name   Enter find   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -99,7 +99,7 @@ Object.assign(ADVUI, {
         ctx.fillStyle = '#000b'; ctx.fillRect(0, 0, VW, VH); const { X, Y, L } = layout(), p = r() || {};
         text((p.name || '').toUpperCase(), VW / 2, Y(90), L(40), '#ffde3b', 'center', '#1a2a6c');
         drawMenu(items(), st, VW / 2, Y(150), L(460), 62);
-        hint(INPUT.usingPad ? 'A select   B back' : 'Click to select   Esc back');
+        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back');
       },
     };
   },
@@ -114,7 +114,7 @@ Object.assign(ADVUI, {
         text(p.name || '?', X(590), Y(250), L(30), '#fff', 'left', null);
         text(`${p.b | 0} badges`, X(590), Y(292), L(18), '#ffde3b', 'left', null);
         const sp = DEX.species[p.lead]; if (sp) { text('Leads with ' + sp.name, X(590), Y(330), L(15), '#9aa6c0', 'left', null); const im = portrait(sp.id); if (im) ctx.drawImage(im, X(590), Y(350), L(100), L(100)); }
-        hint(INPUT.usingPad ? 'A / B back' : 'Enter / Esc back');
+        hint(padUI() ? 'A / B back' : 'Enter / Esc back');
       },
     };
   },
@@ -169,7 +169,7 @@ Object.assign(ADVUI, {
         text(line, X(975), Y(620), L(20), '#fff', 'center', null);
         text(tr.mine && t ? `${ADVP.name(P()[tr.mine.i])}  for  ${DEX.species[t.species]?.name || t.species}` : '', X(975), Y(670), L(16), '#ffde3b', 'center', null);
         text('Changing an offer cancels both confirmations.', X(975), Y(705), L(12), '#9aa6c0', 'center', null, 'Silkscreen');
-        hint(INPUT.usingPad ? 'A pick / confirm   B cancel' : 'Click or Enter   Esc cancel');
+        hint(padUI() ? 'A pick / confirm   B cancel' : 'Click or Enter   Esc cancel');
       },
     };
   },

@@ -130,7 +130,7 @@ const ADVMAP = {
           });
         }
         if (st.nt > 0) text(st.note, VW / 2, by - 14, Math.max(14, L(17)), '#9f9', 'center', '#101428');
-        hint(INPUT.usingPad ? 'stick pan   LB/RB zoom   A waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
+        hint(padUI() ? (window.TOUCH?.on ? 'd-pad pan' : 'stick pan') + '   LB/RB zoom   ' + (window.TOUCH?.on ? 'tap or A' : 'A') + ' waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
         backButton(() => sc.close());
       },
     };

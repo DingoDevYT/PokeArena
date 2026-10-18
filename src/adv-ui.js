@@ -161,7 +161,7 @@ const ADVUI = {
           const ps = Math.min(34 * s, (w - (tx - x) - p - 5 * 5 * s) / 6); slot.party.forEach((m, i) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, tx + i * (ps + 5 * s), y + h - p - ps, ps, ps); });
         }
         if (note.s) text(note.s, VW / 2, VH - 70 * s, 16 * s, note.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => setScene(MenuScene));
+        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => setScene(MenuScene));
       },
     };
   },
@@ -210,7 +210,7 @@ const ADVUI = {
           text(profileName(), X(640), Y(220), L(30), '#fff', 'left', null); text((avatarById(profileAvatar())?.name || '').toUpperCase(), X(640), Y(262), L(15), '#9aa6c0', 'left', null);
           text('Your name and portrait come from the Profile.', X(410), Y(380), L(13), '#9aa6c0', 'left', null);
           drawMenu(dlgItems(), st, X(660), Y(450), L(560), 62);
-          hint(INPUT.usingPad ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
+          hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
         } else if (st.stage === 1) {
           text('CHOOSE YOUR HOMETOWN', X(660), Y(50), L(36), '#ffde3b', 'center', '#1a2a6c');
           const rows = 10, per = L(54); ADVUI.scroll(st, towns.length, rows);
@@ -222,12 +222,12 @@ const ADVUI = {
             text(t.id[0] === 'G' ? 'GYM CITY' : 'TOWN', X(916), y + (per - 6) / 2, L(13), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
           });
           text('You wake at its Pokemon Center after a blackout.', X(660), Y(700), L(14), '#9aa6c0', 'center', null);
-          hint(INPUT.usingPad ? 'A pick   B back' : 'Click a town   Esc back'); backButton(back);
+          hint(padUI() ? 'A pick   B back' : 'Click a town   Esc back'); backButton(back);
         } else if (st.stage === 2) {
           const sz = 84 * s, ids = st.list, c = cols(), r = rows(), y0 = 150 * s;
           text('CHOOSE YOUR STARTER', VW / 2, 34 * s, 30 * s, '#ffde3b', 'center');
           text(`Hometown: ${ADVS.town(st.home).name}   Level 5`, VW / 2, 70 * s, 14 * s, '#9aa6c0', 'center', null);
-          searchBox(VW / 2 - 300 * s, 92 * s, 600 * s, 36 * s, st.q, 'Type a name to search'); text(`${ids.length} shown`, VW / 2 + 286 * s, 110 * s, 12 * s, '#9ab', 'right', null);
+          searchBox(VW / 2 - 300 * s, 92 * s, 600 * s, 36 * s, st.q, window.TOUCH?.on ? 'Tap to search' : 'Type a name to search'); text(`${ids.length} shown`, VW / 2 + 286 * s, 110 * s, 12 * s, '#9ab', 'right', null);
           const row = Math.floor(st.sel / c); st.off = clamp(row < (st.off | 0) ? row : row >= (st.off | 0) + r ? row - r + 1 : (st.off | 0), 0, Math.max(0, Math.ceil(ids.length / c) - r));
           hot(40, y0, c * sz, r * sz, { wheel: d => st.off = clamp(st.off + d, 0, Math.max(0, Math.ceil(ids.length / c) - r)) });
           for (let i = st.off * c; i < Math.min(ids.length, (st.off + r) * c); i++) {
@@ -235,7 +235,7 @@ const ADVUI = {
             hot(x, y, sz - 6, sz - 6, { hover: () => st.sel = i, click: () => { st.sel = i; stage3(); } });
             rrect(x, y, sz - 6, sz - 6, 10 * s, on ? '#ffde3b' : '#ffffff12');
             const im = portrait(ids[i]); if (im) ctx.drawImage(im, x + 12 * s, y + 2 * s, sz - 30 * s, sz - 30 * s);
-            text(sp.name.length > 11 ? sp.name.slice(0, 10) + '.' : sp.name, x + (sz - 6) / 2, y + sz - 17 * s, 10 * s, on ? '#111' : '#dde', 'center', null, 'Silkscreen');
+            if (10 * s >= 7) text(sp.name.length > 11 ? sp.name.slice(0, 10) + '.' : sp.name, x + (sz - 6) / 2, y + sz - 17 * s, 10 * s, on ? '#111' : '#dde', 'center', null, 'Silkscreen');   // too small to read on a phone (the minimum text size would spill it over the next cell): the picked one is named below
           }
           const id = ids[st.sel];
           if (id) {
@@ -243,7 +243,7 @@ const ADVUI = {
             text(`#${sp.num} ${sp.name.toUpperCase()}`, 40, y + 12 * s, 20 * s, '#fff', 'left'); let cx = 60 + 12 * 20 * s * 0.9; for (const t of sp.types) cx += hudChip(cx, y, t.toUpperCase(), TYPE_COLOR[t], 22 * s);
             text(mv.map(m => DEX.moves[m].name).join('   ') || 'default moves', 40, y + 40 * s, 14 * s, '#9aa6c0', 'left', null);
           } else text('No Pokemon match', VW / 2, y0 + 60 * s, 20 * s, '#ccc', 'center');
-          hint(INPUT.usingPad ? 'A pick   B back' : 'Type to search   arrows or scroll browse   Enter pick   Esc back'); backButton(back);
+          hint(padUI() ? 'A pick   B back' : 'Type to search   arrows or scroll browse   Enter pick   Esc back'); backButton(back);
         } else {
           const id = st.list[st.sel], sp = DEX.species[id];
           panel(X(380), Y(180), L(560), L(300), 'START YOUR ADVENTURE?');
@@ -290,7 +290,7 @@ const ADVUI = {
           const cols = k === 'skin' ? D.skins[o.skin] : D.ramps[o[k]], on = i === st.sel, yy = y0 + i * rowH * s, sw = 22 * s;
           cols.forEach((c, j) => { const xx = x + w / 2 - 70 * s - (cols.length - j) * (sw + 2 * s); rrect(xx, yy + (rowH - 8) * s / 2 - sw / 2, sw, sw, 4 * s, '#' + c, on ? '#1a1a2a' : '#ffffff55', 2); });
         });
-        hint(INPUT.usingPad ? 'A change   B cancel   left/right change' : 'Up/down pick a row   left/right change   Enter confirm   Esc cancel'); backButton(() => sc.close());
+        hint(padUI() ? 'A change   B cancel   left/right change' : 'Up/down pick a row   left/right change   Enter confirm   Esc cancel'); backButton(() => sc.close());
       },
     };
   },
@@ -303,7 +303,7 @@ const ADVUI = {
       draw() {
         ctx.fillStyle = '#000c'; ctx.fillRect(0, 0, VW, VH); const { X, Y, L } = layout();
         text('SETTINGS', X(660), Y(50), L(40), '#ffde3b', 'center', '#1a2a6c'); drawMenu(settingsItems(), st, X(660), Y(130), L(560), 62);
-        hint(INPUT.usingPad ? 'B back   left/right change' : 'Left/right or scroll to change   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'B back   left/right change' : 'Left/right or scroll to change   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -338,7 +338,7 @@ const ADVUI = {
         const ps = L(48), gap = (cw - 2 * pad - 6 * ps) / 5; sv.party.forEach((m, i) => { const im = portrait(toId(m.species)), x = cx + pad + i * (ps + gap), y = Y(top + H - 72); rrect(x, y, ps, ps, L(8), '#00000066', '#ffffff33', 1); if (im) { ctx.globalAlpha = ADVP.fainted(m) ? 0.35 : 1; ctx.drawImage(im, x, y, ps, ps); ctx.globalAlpha = 1; } });
         drawMenu(its, st, X(870), Y(top), L(500), rowH);
         if (note.s) text(note.s, X(870), Y(top + H + 24), L(15), note.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A select   B resume' : 'Click to select   Esc resume');
+        hint(padUI() ? 'A select   B resume' : 'Click to select   Esc resume');
       },
     };
   },
@@ -362,7 +362,7 @@ const ADVUI = {
         for (let i = 0; i < S_.need; i++) { ctx.beginPath(); ctx.arc(X(660) + (i - (S_.need - 1) / 2) * l(40), Y(470), l(13), 0, 6.283); ctx.fillStyle = i < S_.hits ? '#4cd964' : '#ffffff30'; ctx.fill(); }
         text('Misses: ' + S_.miss + ' / ' + ADVP.MISSES, X(660), Y(530), l(18), S_.miss ? '#ff9a9a' : '#9aa6c0', 'center', null);
         text(S_.done === 'won' ? 'You passed!' : S_.done === 'lost' ? 'Too many misses.' : 'Stop the marker inside the green.', X(660), Y(590), l(26), S_.done === 'won' ? '#9f9' : S_.done === 'lost' ? '#ff9a9a' : '#fff', 'center', null);
-        hint(S_.done ? (INPUT.usingPad ? 'A continue' : 'Enter or click to continue') : INPUT.usingPad ? 'A stop the marker   B give up' : 'Enter, Space or click to stop the marker   Esc give up');
+        hint(S_.done ? (padUI() ? 'A continue' : 'Enter or click to continue') : padUI() ? 'A stop the marker   B give up' : 'Enter, Space or click to stop the marker   Esc give up');
       },
     };
   },
@@ -424,7 +424,7 @@ const ADVUI = {
           panel(X(300), Y(220), L(420), L(60 + its.length * 62), ADVP.name(p[st.sel]).toUpperCase()); drawMenu(its, st.act, X(510), Y(270), L(360), 58);
         }
         if (st.note) text(st.note, X(300), Y(748), L(15), '#9f9', 'center', null);
-        hint(pick ? 'A use on this one   B back' : INPUT.usingPad ? 'A actions   B back' : st.mv >= 0 ? 'Pick where to move it   Esc cancel' : 'Click or Enter for actions   Esc back');
+        hint(pick ? 'A use on this one   B back' : padUI() ? 'A actions   B back' : st.mv >= 0 ? 'Pick where to move it   Esc cancel' : 'Click or Enter for actions   Esc back');
         backButton(() => { if (pick || st.mv < 0) sc.close(); else st.mv = -1; });
       },
     };
@@ -464,7 +464,7 @@ const ADVUI = {
         panel(X(670), Y(140), L(610), L(300));
         const id = l[st.sel]; if (id) { const it = ADVP.item(id); ADVUI.icon(id, X(740), Y(230), L(44)); text(it.name, X(810), Y(206), L(26), '#fff', 'left', null); text('Owned: ' + B_()[id], X(810), Y(244), L(15), '#ffde3b', 'left', null); wrapText(it.info, X(700), Y(310), L(550), L(17), '#dde'); }
         if (st.note) text(st.note, X(975), Y(480), L(16), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A use   LB/RB tab   B back' : 'Click or Enter to use   Q / E tab   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A use   LB/RB tab   B back' : 'Click or Enter to use   Q / E tab   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -493,7 +493,7 @@ const ADVUI = {
         if (!b.length) { panel(X(30), Y(90), L(520), L(150)); wrapText('The box is empty. Caught Pokemon go here when your party is full.', X(54), Y(150), L(472), L(17), '#9aa6c0'); }
         else ADVUI.summary(b[st.sel], X(580), Y(90), L(710), L(640));
         if (st.note) text(st.note, X(300), Y(740), L(15), '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A take into party   B back' : 'Click or Enter to take into the party   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A take into party   B back' : 'Click or Enter to take into the party   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -550,7 +550,7 @@ const ADVUI = {
         }
         if (e.t !== 'forget' && e.t !== 'lv') {
           ADVUI.say(ADVUI.pages(st.txt)[0], 1e4, null, e.t !== 'evo');
-          if (e.t === 'evo' && st.t < 3) ADVUI.notice(INPUT.usingPad ? 'B stops it' : 'Esc stops it');
+          if (e.t === 'evo' && st.t < 3) ADVUI.notice(padUI() ? 'B stops it' : 'Esc stops it');
         } else if (e.t === 'forget') ADVUI.say(ADVUI.pages(st.txt)[0], 1e4);
         else if (Math.floor(performance.now() / 400) % 2) text('>', X(1010), Y(420), L(22), '#ffde3b', 'center', null);
       },
@@ -579,7 +579,7 @@ const ADVUI = {
       draw() {
         bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout();
         text(mk ? 'TRADEWAY MARKET' : 'POKEMON MART', X(660), Y(46), L(36), '#ffde3b', 'center', mk ? '#5a2a10' : '#1a2a6c'); text(ADVUI.money(sv().money), X(1280), Y(46), L(24), '#ffde3b', 'right', null);
-        if (!st.mode) { panel(X(380), Y(110), L(560), L(104)); wrapText(mk ? 'What are you after today? Mind, it will not be here next week.' : 'Welcome! What can I do for you?', X(410), mk ? Y(148) : Y(162), L(500), L(20), '#fff'); drawMenu(top, st, X(660), Y(250), L(560), 62); hint(INPUT.usingPad ? 'A select   B leave' : 'Click to select   Esc leave'); backButton(() => sc.close()); return; }
+        if (!st.mode) { panel(X(380), Y(110), L(560), L(104)); wrapText(mk ? 'What are you after today? Mind, it will not be here next week.' : 'Welcome! What can I do for you?', X(410), mk ? Y(148) : Y(162), L(500), L(20), '#fff'); drawMenu(top, st, X(660), Y(250), L(560), 62); hint(padUI() ? 'A select   B leave' : 'Click to select   Esc leave'); backButton(() => sc.close()); return; }
         const l = list(), rows = 9; ADVUI.scroll(st, l.length, rows);
         text(st.mode === 1 ? 'BUY' : 'SELL', X(40), Y(100), L(22), '#9aa6c0', 'left', null);
         l.slice(st.off, st.off + rows).forEach((id, j) => {
@@ -599,7 +599,7 @@ const ADVUI = {
         if (st.mode === 1 && mk) text('Stock and prices change every day.', X(975), Y(450), L(13), '#9aa6c0', 'center', null);
         else if (st.mode === 1 && sv().badges < 7) text(`Better stock arrives with more badges (you have ${sv().badges}).`, X(975), Y(450), L(13), '#9aa6c0', 'center', null);
         if (st.note) text(st.note, X(975), Y(490), L(16), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A do it   left / right amount   B back' : 'Enter or click to do it   left / right amount   Esc back'); backButton(() => pick(0));
+        hint(padUI() ? 'A do it   left / right amount   B back' : 'Enter or click to do it   left / right amount   Esc back'); backButton(() => pick(0));
       },
     };
   },
@@ -622,7 +622,7 @@ const ADVUI = {
           ADVUI.icon(t, X(760), y + L(48), L(24)); text(`${ADVP.item(t).name} x${tn}`, X(805), y + L(48), L(22), fg, 'left', null);
         });
         if (st.note) text(st.note, X(660), Y(520), L(18), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(INPUT.usingPad ? 'A swap   B leave' : 'Enter or click to swap   Esc leave'); backButton(() => sc.close());
+        hint(padUI() ? 'A swap   B leave' : 'Enter or click to swap   Esc leave'); backButton(() => sc.close());
       },
     };
   },
@@ -644,7 +644,7 @@ const ADVUI = {
         text('VS', X(660), Y(365), L(76 + (1 - e) * 40), '#fff', 'center', '#1a2a6c');
         text(sc.save.name.toUpperCase(), X(390 - (1 - e) * 800), Y(530), L(24), '#fff', 'center', null);
         ctx.globalAlpha = e; text(t.cls.toUpperCase(), X(930), Y(530), L(18), lead ? '#ffde3b' : '#9aa6c0', 'center', null); text(who, X(930), Y(566), L(34), '#fff', 'center', '#1a2a6c'); ctx.globalAlpha = 1;
-        if (st.t > 0.8) hint(INPUT.usingPad ? 'A skip' : 'Enter or click to skip');
+        if (st.t > 0.8) hint(padUI() ? 'A skip' : 'Enter or click to skip');
       },
     };
   },
@@ -678,6 +678,6 @@ const ADVUI = {
     const sel = its[w.sel]; if (sel) {
       const it = ADVP.item(sel); text(it.name, cx, cy - L(18), L(24), '#fff', 'center'); text(cd ? `Ready in ${Math.ceil(sc.itemCd)}` : it.info, cx, cy + L(16), L(13), cd ? '#ff9a9a' : '#9aa6c0', 'center', null);
     }
-    hint(INPUT.usingPad ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close');
+    hint(padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close');
   },
 };

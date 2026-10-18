@@ -3,10 +3,14 @@
 // (run straight from the touch handler so file pickers and the keyboard may open), swipes scroll lists, and a hidden <input> brings up the phone keyboard for text fields.
 'use strict';
 const TOUCH = window.TOUCH = (() => {
-  const T = { on: false, h: {}, sx: 0, sy: 0 }, R = 52, SENT = String.fromCharCode(0x200b), tps = new Map(), down = {};
-  const BTN = [   // key (INPUT name), label, size, centre from right, centre from bottom, when shown
+  const T = { on: false, h: {}, p: {}, sx: 0, sy: 0 }, R = 52, SENT = String.fromCharCode(0x200b), tps = new Map(), down = {};
+  // key (INPUT name), label, size, centre from right (or from left when negative), centre from bottom (0 = top row), when shown, colour, label in menus
+  // when: all | play (walking or fighting) | fight | chat | ride | bag (an Adventure fight with items to use) | menu (a screen, not the world: the d-pad)
+  const BTN = [
     ['A', 'A', 64, 92, 56, 'all', '#5ad26b'], ['B', 'B', 56, 32, 118, 'all', '#e8554e'], ['X', 'X', 56, 152, 118, 'play', '#4aa3ff'], ['Y', 'Y', 56, 92, 180, 'play', '#ffde3b'],
-    ['LB', 'DODGE', 54, 214, 48, 'fight', '#c58bff'], ['START', 'MENU', 46, 36, 0, 'play', '#ffffff'], ['CHAT', 'CHAT', 46, 90, 0, 'chat', '#ffffff'], ['BACK', 'RIDE', 46, 144, 0, 'ride', '#ffffff'],
+    ['LB', 'DODGE', 54, 214, 100, 'fight', '#c58bff', 'LB'], ['RB', 'SWAP', 50, 214, 166, 'fight', '#ff9f43', 'RB'], ['LTRT', 'MEGA', 46, 276, 134, 'fight', '#ff5fd2'],   // clear of the move bar along the bottom
+    ['START', 'MENU', 46, 36, 0, 'play', '#ffffff'], ['CHAT', 'CHAT', 46, 90, 0, 'chat', '#ffffff'], ['BACK', 'RIDE', 46, 144, 0, 'ride', '#ffffff'], ['ITEM', 'BAG', 46, 90, 0, 'bag', '#ffffff'],
+    ['UP', '\u25B2', 46, -78, 140, 'menu', '#cfd8ff'], ['DOWN', '\u25BC', 46, -78, 44, 'menu', '#cfd8ff'], ['LEFT', '\u25C0', 46, -30, 92, 'menu', '#cfd8ff'], ['RIGHT', '\u25B6', 46, -126, 92, 'menu', '#cfd8ff'],
   ];
   const css = document.createElement('style');
   css.textContent = `html,body{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -17,16 +21,23 @@ const TOUCH = window.TOUCH = (() => {
 #touch .st{position:absolute;border-radius:50%;box-sizing:border-box;pointer-events:none;border:3px solid rgba(255,255,255,.55);background:rgba(18,26,56,.3);opacity:.25}
 #touch .st.on{opacity:.8}
 #touch .kn{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(255,255,255,.7);border:3px solid #fff;box-sizing:border-box}
+#trot{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;background:#101830;color:#ffde3b;font:700 20px Bungee,\"Arial Black\",sans-serif}
+#touch.menu .tb{opacity:.6}
+#touch.fight .tb.top{top:calc(env(safe-area-inset-top,0px) + 64px)!important}
 #tkbd{position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;z-index:-1}`;
   document.head.appendChild(css);
   const root = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'touch' }));
   const base = root.appendChild(Object.assign(document.createElement('div'), { className: 'st' })), knob = base.appendChild(Object.assign(document.createElement('div'), { className: 'kn' }));
   base.style.cssText = 'width:' + R * 2 + 'px;height:' + R * 2 + 'px;display:none';
   const els = {};
-  for (const [k, label, sz, r, b, when, col] of BTN) {
+  for (const [k, label, sz, r, b, when, col, ml] of BTN) {
     const e = els[k] = root.appendChild(Object.assign(document.createElement('div'), { className: 'tb' + (label.length > 1 ? ' sm' : ''), textContent: label }));
-    e.dataset.k = k; e.dataset.when = when; e.style.cssText = `width:${sz}px;height:${sz}px;border-color:${col};` + (b ? `right:calc(env(safe-area-inset-right,0px) + ${r - sz / 2}px);bottom:calc(env(safe-area-inset-bottom,0px) + ${b - sz / 2}px)` : `right:calc(env(safe-area-inset-right,0px) + ${r - sz / 2}px);top:calc(env(safe-area-inset-top,0px) + 10px)`);
+    const side = r < 0 ? `left:calc(env(safe-area-inset-left,0px) + ${-r - sz / 2}px);` : `right:calc(env(safe-area-inset-right,0px) + ${r - sz / 2}px);`;
+    e.dataset.k = k; e.dataset.when = when; e.dataset.l = label; e.dataset.ml = ml || label; if (!b) e.classList.add('top');
+    e.style.cssText = `width:${sz}px;height:${sz}px;border-color:${col};` + side + (b ? `bottom:calc(env(safe-area-inset-bottom,0px) + ${b - sz / 2}px)` : 'top:calc(env(safe-area-inset-top,0px) + 10px)');
   }
+  // turn the phone: every screen is laid out for landscape
+  const rot = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'trot', textContent: 'Turn your phone sideways to play' }));
   // ---------- phone keyboard: a hidden input whose edits are replayed as keydown events, so every existing text field just works ----------
   const inp = document.body.appendChild(Object.assign(document.createElement('input'), { id: 'tkbd', type: 'text', value: SENT }));
   for (const [a, v] of [['autocomplete', 'off'], ['autocapitalize', 'off'], ['autocorrect', 'off'], ['spellcheck', 'false'], ['enterkeyhint', 'done'], ['aria-hidden', 'true']]) inp.setAttribute(a, v);
@@ -50,14 +61,23 @@ const TOUCH = window.TOUCH = (() => {
   T.kbd = () => { shown = ''; comp = false; inp.value = SENT; inp.blur(); inp.focus(); };
   // ---------- where the thumbs may steer ----------
   const adv = () => typeof AdventureScene !== 'undefined' && SCENE === AdventureScene;
-  const play = () => adv() ? !!(SCENE.save && SCENE.ready && !SCENE.uis.length) : !!(SCENE && SCENE.battle);
-  const fight = () => adv() ? SCENE.mode === 'battle' || SCENE.mode === 'pvp' : !!(SCENE && SCENE.battle);
+  const arena = () => !!(SCENE && SCENE.battle && typeof B !== 'undefined' && B && !B.paused && !B.over && !B.choose);   // the Battle / Online fight, while it is being fought
+  const play = () => adv() ? !!(SCENE.save && SCENE.ready && !SCENE.uis.length) : arena();
+  const fight = () => adv() ? SCENE.mode === 'battle' || SCENE.mode === 'pvp' : arena();
   const stickOK = () => play() && (!adv() || (!SCENE.wh && (SCENE.mode === 'walk' || SCENE.mode === 'battle' || SCENE.mode === 'pvp')));
   setInterval(() => {
     if (!T.on) return;
     const p = play(), f = fight(), c = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && SCENE.chatOn && SCENE.chatOn();
     const r = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && !!SCENE.save && (!!SCENE.mount || !!ADVP.mountKind(SCENE.save, SCENE.save.party[SCENE.leadIdx()]));   // the mount button: anything to get on, or off
-    for (const k in els) { const w = els[k].dataset.when; els[k].style.display = w === 'all' || (w === 'play' && p) || (w === 'fight' && p && f) || (w === 'chat' && c) || (w === 'ride' && r) ? 'flex' : 'none'; }
+    const bag = adv() && SCENE.mode === 'battle' && !SCENE.wh && !!B && !B.over && typeof ADVUI !== 'undefined' && ADVUI.wheelItems(SCENE).length > 0;   // the item wheel (C on a keyboard)
+    const m = !stickOK() && !(typeof TitleScene !== 'undefined' && SCENE === TitleScene);   // a screen, not the world: the d-pad, A and B (the other buttons are the icons in its hint, ui.js)
+    root.classList.toggle('menu', m); root.classList.toggle('fight', f);
+    rot.style.display = innerHeight > innerWidth * 1.1 ? 'flex' : 'none';
+    for (const k in els) {
+      const e = els[k], w = e.dataset.when, on = (w === 'bag' && bag) || w === 'all' || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m);
+      e.style.display = on ? 'flex' : 'none';
+      const l = m ? e.dataset.ml : e.dataset.l; if (e.textContent !== l) { e.textContent = l; e.classList.toggle('sm', l.length > 1); }
+    }
     base.classList.toggle('on', sid !== null); if (sid === null) { const ok = stickOK(); base.style.display = ok ? 'block' : 'none'; base.style.left = '28px'; base.style.top = innerHeight - 64 - R * 2 + 'px'; }
   }, 120);
   // ---------- touches ----------
@@ -73,18 +93,18 @@ const TOUCH = window.TOUCH = (() => {
     let onField = false;
     for (let i = HOT.length - 1; i >= 0; i--) {
       const h = HOT[i]; if (x < h.x || x > h.x + h.w || y < h.y || y > h.y + h.h) continue;
-      if (h.hover) h.hover();
       if (h.field) { onField = true; T.kbd(); }
-      if (h.click) { h.click((x - h.x) / h.w); MOUSE.hit = false; if (!onField && document.activeElement === inp) inp.blur(); return; }
+      if (h.click) { h.click((x - h.x) / h.w); if (h.hover) h.hover(); MOUSE.hit = false; if (!onField && document.activeElement === inp) inp.blur(); return; }   // hover after the click: a tap is not a hover first (a menu row's first tap only selects it)
+      if (h.hover) h.hover();
       break;
     }
     if (!onField && document.activeElement === inp) inp.blur();
     MOUSE.hit = true;
   }
-  const hold = (k, d) => { down[k] = (down[k] | 0) + d; T.h[k] = down[k] > 0; els[k] && els[k].classList.toggle('dn', down[k] > 0); };
+  const hold = (k, d) => { down[k] = (down[k] | 0) + d; T.h[k] = down[k] > 0; if (d > 0) T.p[k] = true; els[k] && els[k].classList.toggle('dn', down[k] > 0); };
   const opt = { passive: false, capture: true };
   document.addEventListener('touchstart', e => {
-    if (!T.on) { T.on = true; root.style.display = 'block'; }
+    if (!T.on) { T.on = true; root.style.display = 'block'; const d = document.documentElement; try { (d.requestFullscreen || d.webkitRequestFullscreen)?.call(d, { navigationUI: 'hide' })?.catch?.(() => {}); } catch {} }
     e.preventDefault(); unlockAudio(); INPUT.usingPad = false;
     for (const t of e.changedTouches) {
       const b = t.target.closest && t.target.closest('[data-k]'), o = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, t0: performance.now(), acc: 0, swipe: false };

@@ -822,7 +822,7 @@ function drawHUD() {
   if (B.field.terrain) fieldPill(`${B.field.terrain.toUpperCase()} TERRAIN ${Math.ceil(B.field.terrainT)}s`, { electric: '#a8870a', grassy: '#378a37', psychic: '#a63a93', misty: '#b85f9c' }[B.field.terrain] || '#555');
   B.callouts.filter(c => c.side === -1).forEach((c, i) => { ctx.globalAlpha = clamp((1.6 - c.t) * 3, 0, 1); text(c.s, VW / 2, fy + 10 * S + i * 22 * S, 16 * S, '#fff', 'center'); ctx.globalAlpha = 1; });
   const me = B.sides[meIdx()]; if (!me) return;
-  const m = activeMon(me), W = 210 * S, H = 46 * S, gap = 10 * S, total = 4 * W + 3 * gap, pad = INPUT.usingPad;
+  const m = activeMon(me), W = 210 * S, H = 46 * S, gap = 10 * S, total = 4 * W + 3 * gap, pad = padUI();
   const y = VH - H - 18 * S; let x = VW / 2 - total / 2;
   m.moves.forEach((mv, i) => {
     const ready = canUse(me, i), cd = m.cds[i], tc = TYPE_COLOR[mv.type] || '#888';

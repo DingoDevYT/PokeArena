@@ -7,10 +7,13 @@ function bgFill(top = '#1b1f3a', bottom = '#3a1f3f') {
   ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
 }
 // Button names in hint strings become Kenney icons.
-const HINT_ICONS = { A: 'xbox_a', B: 'xbox_b', X: 'xbox_x', Y: 'xbox_y', LB: 'xbox_lb', RB: 'xbox_rb', 'left/right': 'xbox_dpad', Delete: 'key_delete', F2: 'key_f2', Enter: 'key_enter', Esc: 'key_esc' };
+const HINT_ICONS = { A: 'xbox_a', B: 'xbox_b', X: 'xbox_x', Y: 'xbox_y', LB: 'xbox_lb', RB: 'xbox_rb', LT: 'xbox_lt', RT: 'xbox_rt', 'left/right': 'xbox_dpad', Delete: 'key_delete', F2: 'key_f2', Enter: 'key_enter', Esc: 'key_esc' };
+const ICON_KEY = { xbox_a: 'A', xbox_b: 'B', xbox_x: 'X', xbox_y: 'Y', xbox_lb: 'LB', xbox_rb: 'RB', xbox_lt: 'LT', xbox_rt: 'RT' };
+// On a touch screen the button icons in the hint are buttons themselves (touch.js only draws A, B and a d-pad on screens), so X / Y / LB / RB / LT / RT stay reachable without covering anything.
 function hint(s, y = VH - 26) {
-  const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
-  iconRow(parts, VW / 2, y, 32, Math.max(12, 14 * S()), '#ccd', 'center');
+  const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|LT|RT|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
+  const tap = window.TOUCH?.on ? (name, ix, iw) => { const k = ICON_KEY[name]; if (k) hot(ix - 8, y - 22, iw + 16, 44, { click: () => { TOUCH.p[k] = true; } }); } : null;
+  iconRow(parts, VW / 2, y, 32, Math.max(12, 14 * S()), '#ccd', 'center', false, tap);
 }
 function backButton(fn) {
   const s = S(), w = 110 * s, h = 36 * s;
@@ -74,7 +77,7 @@ const TitleScene = {
   },
   update(dt) {
     this.t += dt;
-    if (okHit() || INPUT.hit('START') || MOUSE.down) { setScene(MenuScene); return; }
+    if (okHit() || INPUT.hit('START') || MOUSE.down || MOUSE.hit) { setScene(MenuScene); return; }
     if (this.mode === 'load') { if (this.nextReady) this.card(); return; }
     if (this.mode === 'card') { this.cardT += dt; if (this.cardT > CARD_T) this.begin(); return; }
     this.clock += dt; updateBattle(dt);
@@ -123,7 +126,7 @@ const TitleScene = {
     // letterbox + title
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH * 0.14); ctx.fillRect(0, VH * 0.86, VW, VH * 0.14);
     text('POKEARENA', VW / 2, VH * 0.07, 54 * s, '#ffde3b', 'center', '#1a2a6c');
-    if (Math.floor(this.t * 2) % 2 === 0) text(INPUT.pad ? 'PRESS A' : 'PRESS ENTER', VW / 2, VH * 0.93, 26 * s, '#fff', 'center');
+    if (Math.floor(this.t * 2) % 2 === 0) text(window.TOUCH?.on ? 'TAP TO START' : INPUT.pad ? 'PRESS A' : 'PRESS ENTER', VW / 2, VH * 0.93, 26 * s, '#fff', 'center');
     if (this.fade > 0) { ctx.globalAlpha = clamp(this.fade, 0, 1); ctx.fillStyle = this.fadeCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
   },
 };
@@ -140,7 +143,7 @@ function drawMenu(items, state, x, y, w, rowH = 54) {
   const s = S(), sel = state.sel;
   items.forEach((it, i) => {
     const yy = y + i * rowH * s, on = i === sel;
-    hot(x - w / 2, yy, w, (rowH - 8) * s, { hover: () => state.sel = i, click: fx => { state.sel = i; uiBlip(880, 0.05); if (it.act) it.act(); else if (it.cycle) it.cycle(fx < 0.75 ? -1 : 1); }, wheel: d => it.cycle && it.cycle(d) });
+    hot(x - w / 2, yy, w, (rowH - 8) * s, { hover: () => state.sel = i, click: fx => { const tch = window.TOUCH?.on, was = state.sel === i; state.sel = i; uiBlip(880, 0.05); if (it.act) it.act(); else if (it.cycle && (!tch || was)) it.cycle(fx < (tch ? 0.5 : 0.75) ? -1 : 1); }, wheel: d => it.cycle && it.cycle(d) });
     rrect(x - w / 2, yy, w, (rowH - 8) * s, 12 * s, on ? '#ffde3bee' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
     if (it.value !== undefined) {
       text(it.label, x - w / 2 + 26 * s, yy + (rowH - 8) * s / 2, 18 * s, on ? '#1a1a2a' : '#fff', 'left', null);
@@ -163,7 +166,7 @@ const MenuScene = {
     ];
   },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(TitleScene); },
-  draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(INPUT.usingPad ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(TitleScene)); },
+  draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(TitleScene)); },
 };
 
 // ---------- settings: the rows shared by the main menu's Settings screen and the Adventure pause menu ----------
@@ -177,7 +180,7 @@ const SettingsScene = {
   enter() { AUDIO.playMusic(MUSIC.menu); },
   items() { return [{ label: 'Controls', act: () => { ControlsScene.back = SettingsScene; setScene(ControlsScene); } }, ...settingsItems()]; },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(this.back || MenuScene); },
-  draw() { bgFill(); const s = S(); text('SETTINGS', VW / 2, 90 * s, 48 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(INPUT.usingPad ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(this.back || MenuScene)); },
+  draw() { bgFill(); const s = S(); text('SETTINGS', VW / 2, 90 * s, 48 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(this.back || MenuScene)); },
 };
 
 // ---------- profile: trainer name + avatar (shown in battle, the online lobby and the team cards) ----------
@@ -239,7 +242,7 @@ const ProfileScene = {
     const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
     text(this.name ? this.name + caret : 'You' + caret, X(46), Y(517), L(26), this.name ? '#fff' : '#ffffff66', 'left', null);
     text(`${this.name.length} / 12`, X(410), Y(564), L(12), '#9aa6c0', 'right', null, 'Silkscreen');
-    text(INPUT.usingPad ? 'Press X to type a name' : 'Just type. Backspace deletes.', X(30), Y(564), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
+    text(padUI() ? 'Press X to type a name' : 'Just type. Backspace deletes.', X(30), Y(564), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
     rrect(X(30), Y(590), L(380), L(46), L(10), '#ffffff14', '#ffffff55', 2); text('EDIT NAME', X(220), Y(614), L(16), '#fff', 'center', null);
     hot(X(30), Y(590), L(380), L(46), { click: () => this.rename() });
     // ----- right: avatar grid -----
@@ -263,7 +266,7 @@ const ProfileScene = {
       hot(bx - 6, y0, bw + 12, th, { click: () => { st.drag = true; jump(); }, wheel: d => { st.off = clamp(st.off + d, 0, mo); } });
       if (st.drag) { if (MOUSE.down) jump(); else st.drag = false; }
     }
-    hint(INPUT.usingPad ? 'D-pad browse   A pick   X type a name   B back' : 'Click a portrait   arrows or scroll browse   Enter pick   Esc back');
+    hint(padUI() ? 'D-pad browse   A pick   X type a name   B back' : 'Click a portrait   arrows or scroll browse   Enter pick   Esc back');
   },
 };
 
@@ -356,7 +359,7 @@ const SetupScene = {
     text(tr.name.toUpperCase(), x0, oy, 18 * s, '#7fd0e8', 'left');
     const tim = img(tr.sprite); if (tim) ctx.drawImage(tim, x0 + pw - 56 * s, oy - 28 * s, 56 * s, 56 * s);
     tiles(tr.team, oy + 18 * s, -1);
-    hint(INPUT.usingPad ? 'left/right change   A fight   B back' : 'Click a row to change it (left side -, right side +)   scroll also changes'); backButton(() => setScene(MenuScene));
+    hint(padUI() ? 'left/right change   A fight   B back' : 'Click a row to change it (left side -, right side +)   scroll also changes'); backButton(() => setScene(MenuScene));
   },
 };
 
@@ -403,6 +406,7 @@ function LoadingScene(cfg) {
 // ---------- battle ----------
 function BattleScene(cfg) {
   return {
+    battle: true,   // touch.js: the fight controls (stick, A B X Y, dodge, swap, mega) show while it runs
     pause: { sel: 0, arm: -1 }, res: { sel: 0 },
     enter() { AUDIO.playMusic(cfg.music); if (NET.role === 'host') NETSYNC.begin(); else if (NET.role === 'guest') NETSYNC.send({ t: 'ready' }); },
     update(dt) {
@@ -464,7 +468,7 @@ function BattleScene(cfg) {
         text('PAUSED', VW / 2, VH * 0.25, 48 * s, '#ffde3b', 'center');
         if (NET.role && B.pausedBy !== meIdx()) text(`${B.sides[B.pausedBy]?.name || 'Your opponent'} paused the game`, VW / 2, VH * 0.25 + 50 * s, 20 * s, '#fff', 'center');
         drawMenu(this.pauseItems(), this.pause, VW / 2, VH * 0.35, 380 * s, 60);
-        hint(INPUT.usingPad ? 'A select   B resume' : 'Click to select   Esc resume', VH * 0.35 + 4 * 60 * s + 16 * s);
+        hint(padUI() ? 'A select   B resume' : 'Click to select   Esc resume', VH * 0.35 + 4 * 60 * s + 16 * s);
       }
       if (B.over && B.endT > 0.8) {
         const mi = meIdx(), win = B.winner === mi, me = B.sides[mi], foe = B.sides[1 - mi];
@@ -486,7 +490,7 @@ function BattleScene(cfg) {
             rrect(bx, by, bw, bh, 12 * s, i ? '#ffffff22' : '#ffde3b', '#fff', 2); text(l, bx + bw / 2, by + bh / 2 + 1, 18 * s, i ? '#fff' : '#111', 'center', null);
             hot(bx, by, bw, bh, { click: fn });
           });
-          hint(INPUT.usingPad ? 'A rematch    B back to setup' : 'Enter rematch    Esc back to setup');
+          hint(padUI() ? 'A rematch    B back to setup' : 'Enter rematch    Esc back to setup');
         }
       }
     },
@@ -525,7 +529,7 @@ const TeamsScene = {
       if (teams.length > 1) { const bw = 100 * s; dangerButton(rx - bw, yy + (h - 34 * s) / 2, bw, 34 * s, this.st.del === i ? 'SURE?' : 'DELETE', () => { this.st.sel = i; this.del(i); }, this.st.del === i, () => this.st.sel = i); rx -= bw + 14 * s; }
       t.mons.forEach((m, k) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, rx - (t.mons.length - k) * (ps + 3 * s), yy + (h - ps) / 2, ps, ps); });
     });
-    hint(INPUT.usingPad ? 'A edit   X delete team (press twice)   B back' : 'Click a team to edit it   DELETE button or Delete key removes it (press twice)'); backButton(() => setScene(MenuScene));
+    hint(padUI() ? 'A edit   X delete team (press twice)   B back' : 'Click a team to edit it   DELETE button or Delete key removes it (press twice)'); backButton(() => setScene(MenuScene));
   },
 };
 const CopyScene = {
@@ -616,9 +620,9 @@ function SpeciesPicker(edit, slot) {
         text(t ? 'GEN ' + t : 'ALL', x + (tw - 6 * s) / 2, 75 * s, 13 * s, on ? '#111' : '#fff', 'center', null);
       }
       // search box
-      rrect(VW / 2 - 300 * s, 100 * s, 600 * s, 36 * s, 8 * s, '#00000055', st.q ? '#ffde3b' : '#ffffff44', 2);
+      rrect(VW / 2 - 300 * s, 100 * s, 600 * s, 36 * s, 8 * s, '#00000055', st.q ? '#ffde3b' : '#ffffff44', 2); hot(VW / 2 - 300 * s, 100 * s, 600 * s, 36 * s, { field: true });   // touch.js: a tap brings up the phone keyboard
       const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
-      text(st.q ? st.q + caret : (INPUT.usingPad ? 'LT/RT change generation' : 'Type a name to search'), VW / 2 - 286 * s, 118 * s, 16 * s, st.q ? '#fff' : '#889', 'left', null);
+      text(st.q ? st.q + caret : (window.TOUCH?.on ? 'Tap to search by name' : INPUT.usingPad ? 'LT/RT change generation' : 'Type a name to search'), VW / 2 - 286 * s, 118 * s, 16 * s, st.q ? '#fff' : '#889', 'left', null);
       text(`${ids.length} shown`, VW / 2 + 286 * s, 118 * s, 12 * s, '#9ab', 'right', null);
       for (let i = off * c; i < Math.min(ids.length, (off + r) * c); i++) {
         const x = 40 + (i % c) * sz, y = y0 + (Math.floor(i / c) - off) * sz, on = i === st.sel, sp = DEX.species[ids[i]];
@@ -651,7 +655,7 @@ function SpeciesPicker(edit, slot) {
         cx = VW / 2 - (widths.reduce((a, b) => a + b) + gap * (parts.length - 1)) / 2; parts.forEach((p, i) => { text(p[0], cx, VH - 62, fs, p[1], 'left', null); cx += widths[i] + gap; });
       }
       else text('No Pokemon match', VW / 2, y0 + 60 * s, 20 * s, '#ccc', 'center');
-      hint(INPUT.usingPad ? 'A pick   B back   LB/RB page   LT/RT generation' : 'Type to search   Tab generation   arrows or scroll browse   Enter pick   right-click back'); backButton(() => setScene(edit));
+      hint(padUI() ? 'A pick   B back   LB/RB page   LT/RT generation' : 'Type to search   Tab generation   arrows or scroll browse   Enter pick   right-click back'); backButton(() => setScene(edit));
     },
   };
 }

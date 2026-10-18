@@ -33,7 +33,7 @@ const ADVR = {
   sc(zm = this.zm) { return clamp(zm | 0 || this.ZDEF, 1, this.ZMAX) / this.ART; },
   zoomFor() { return this.sc() / DPR; },   // the same in CSS px (what the camera maths uses)
   battleZoom() { return this.zoomFor(); },   // draw() uses the same scale in a fight, so the HUD maths (worldToScreen) must too
-  load() { const o = STORE.get('advZoom3', null); this.zm = o != null ? clamp(o | 0 || this.ZDEF, 1, this.ZMAX) : this.ZDEF; return this.zm; },   // a saved tier keeps its meaning (device px per art px); no save = Normal
+  load() { const o = STORE.get('advZoom3', null), def = Math.min(innerWidth, innerHeight) < 500 ? this.ZDEF - 1 : this.ZDEF; this.zm = o != null ? clamp(o | 0 || def, 1, this.ZMAX) : def; return this.zm; },   // a saved tier keeps its meaning (device px per art px); no save = Normal, one step out on a phone (its short side shows too few tiles at Normal)
   setZoom(z) { z = clamp(z, 1, this.ZMAX); if (z !== this.zm) { this.zm = z; STORE.set('advZoom3', z); } },
   zoomBy(d) { this.setZoom(this.zm + d); },
 
