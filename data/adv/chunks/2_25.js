@@ -1,1 +1,1 @@
-ADV.chunk(2,25,{h:"0x1024",mat:"5x31,7,5x31,7,5x960",over:"0x1024",kind:"0x1024",props:[]});
+ADV.chunk(2,25,{h:"0x1024",mat:"5x31,7,5x31,7,5x960",over:"0x1024",kind:"0x1024",props:[["rg_water_raft",2608,25695],["maRowboat",2288,25887],["rg_water_raft2",2224,26015],["rg_water_rocks",2640,26015]]});

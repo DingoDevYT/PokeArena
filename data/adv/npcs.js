@@ -22,7 +22,7 @@ window.ADV_NPCS = [
     trainer: { cls: 'Lass', name: 'Jenna', sight: 5, money: 24, team: [['bunnelby', 0], ['combee', 1], ['wooloo', 1], ['nickit', 2], ['combee', 2], ['wooloo', 3]], say: 'Hedges on both sides of the road. You cannot sneak past me!', lose: 'Oh no, I lost!' } },
   { id: 'r5-dee', x: 309, y: 658, sprite: 'npc3-cap-girl', face: 2, move: 'still', lines: ['Goldacre trusts everyone. I guess that is why there are no gates.'],
     trainer: { cls: 'Picnicker', name: 'Dee', sight: 5, money: 24, team: [['wooloo', 0], ['miltank', 1], ['bunnelby', 2], ['miltank', 2], ['wooloo', 3], ['miltank', 3]], say: 'The fields are lovely today. Let us battle!', lose: 'That was fun. You win!' } },
-  { id: 'r5-ned', x: 316, y: 660, sprite: 'npc4-brown-haired-boy', face: 4, move: 'still', lines: ['The hedge has gaps every so often. Handy for spotting people.'],
+  { id: 'r5-ned', x: 311, y: 660, sprite: 'npc4-brown-haired-boy', face: 4, move: 'still', lines: ['The hedge has gaps every so often. Handy for spotting people.'],
     trainer: { cls: 'Youngster', name: 'Ned', sight: 5, money: 16, team: [['bunnelby', 0], ['wooloo', 1], ['bouffalant', 2], ['bunnelby', 2], ['tepig', 3], ['bouffalant', 3]], say: 'You can see forever from this road. And I can see you!', lose: 'I should have hidden behind a hedge.' } },
 
   // ---------- Route 21: the Eastern Ridge (map-lab pilot 3; hikers on the roads below the massifs, a hut keeper). Flavour lines only. ----------
@@ -75,7 +75,7 @@ window.ADV_NPCS = [
 
   // ---------- Route 9: the working shore (nets, boats, drying racks; a stranger teaches fishing before you reach town) ----------
   { id: 'r9-teacher', x: 161, y: 641, sprite: 'npc5-old-man', face: 0, move: 'still', script: 'teach', skill: 'fishing', name: 'Fisherman', lines: ['Everyone on this road fishes, and we like to teach. Do you want to learn?', 'Take this rod. Cast it at the water and wait.'], known: ['Face the water and press F to cast. People are fishing the whole length of this road.'] },
-  { id: 'r9-hal', x: 154, y: 630, sprite: 'fishing', face: 0, move: 'still', lines: ['Nets, racks, boats. This is a working shore, not a holiday.'],
+  { id: 'r9-hal', x: 154, y: 632, sprite: 'fishing', face: 0, move: 'still', lines: ['Nets, racks, boats. This is a working shore, not a holiday.'],
     trainer: { cls: 'Fisherman', name: 'Hal', avatar: 'fisherman', sight: 5, money: 20, team: [['magikarp',0],['wimpod',1],['krabby',1],['carvanha',2],['chinchou',2],['marill',3]], say: 'I have fished this shore all my life. Let me show you what bites!', lose: 'The big one got away again.' } },
   { id: 'r9-moss', x: 171, y: 640, sprite: 'npc4-sailor', face: 4, move: 'still', lines: ['People are fishing the whole length of this road. Stop and ask, they will teach you.'],
     trainer: { cls: 'Sailor', name: 'Moss', avatar: 'sailor', sight: 5, money: 20, team: [['wingull',0],['wimpod',1],['wingull',1],['carvanha',2],['wimpod',2],['carvanha',3]], say: 'Salt Bay is a working shore. No tourists, no kiosks, just us!', lose: 'Overboard I go.' } },
@@ -98,9 +98,9 @@ window.ADV_NPCS = [
 
   // ---------- Longshore: the beach resort (ice cream, a lifeguard, hire kiosks; the Sandygast castles and the dock are up the coast on the Route 6 strip) ----------
   { id: 't7-ice', x: 106, y: 765, sprite: 'shopm2', face: 4, move: 'still', lines: ['Ice cream! Best job in Kenora, and I would not swap it.', 'Everything on this boardwalk came down Route 6 from the farms.'] },
-  { id: 't7-guard', x: 91, y: 772, sprite: 'sportsman', face: 6, move: 'still', lines: ['Past the buoys is Sharpedo water. Everyone ignores the signs.', 'Nothing has ever happened, so nobody listens.'] },
+  { id: 't7-guard', x: 90, y: 772, sprite: 'sportsman', face: 6, move: 'still', lines: ['Past the buoys is Sharpedo water. Everyone ignores the signs.', 'Nothing has ever happened, so nobody listens.'] },
   { id: 't7-kid', x: 86, y: 764, sprite: 'npc1-backwards-cap-boy', face: 6, move: 'wander', r: 2, lines: ['The water only comes up to my chest, even way out past the buoys!', 'Mum says that is far enough. I say it is not.'] },
-  { id: 't7-hire', x: 94, y: 776, sprite: 'npc3-pikachu-kid', face: 4, move: 'still', script: 'class', skill: 'surf', name: 'Board hire', fee: 800, lines: ['Hire a board and ride it badly. Everybody shouts, it is great fun.', 'I can show you the basics of surfing. Want a lesson?'], known: ['You can stay on a board now. Salt Bay folk say they teach it properly, too.'] },
+  { id: 't7-hire', x: 93, y: 776, sprite: 'npc3-pikachu-kid', face: 4, move: 'still', script: 'class', skill: 'surf', name: 'Board hire', fee: 800, lines: ['Hire a board and ride it badly. Everybody shouts, it is great fun.', 'I can show you the basics of surfing. Want a lesson?'], known: ['You can stay on a board now. Salt Bay folk say they teach it properly, too.'] },
   { id: 't7-van', x: 101, y: 762, sprite: 'delivery', face: 0, move: 'wander', r: 1, lines: ['Vans down from Goldacre all summer. Fruit, veg, milk, the lot.'] },
   { id: 't7-gran', x: 98, y: 769, sprite: 'npc3-old-woman-cane', face: 6, move: 'still', lines: ['In winter half this town boards up. It is a very different place then.'] },
   { id: 't7-chips', x: 98, y: 779, sprite: 'npc4-bowler-hat-man', face: 6, move: 'wander', r: 1, lines: ['A Wingull stole my chips again! They steal from everyone on the boardwalk.'] },
@@ -136,9 +136,9 @@ window.ADV_NPCS = [
   { id: 't1-fly', x: 435, y: 303, sprite: 'npc1-explorer', face: 6, move: 'still', script: 'class', skill: 'fly', name: 'Flight Hub instructor', fee: 2000, lines: ['This is the Flight Hub. We teach flying to trainers whose lead can learn Fly.', 'Want a lesson?'], known: ['You know how now. Press G to take off, and land on clear outdoor ground.'] },
 
   // ---------- Route 6: the seafront strip (the resort has spilled up the coast and taken the road; the dock and the castles; Lady, Sailor, Lass, Youngster) ----------
-  { id: 'r6-dock', x: 81, y: 735, sprite: 'fishing2', face: 4, move: 'still', lines: ['Nothing out past the breakers is catchable from here. Shore and dock fishing only.', 'For the deep stuff, go to Salt Bay and learn to surf properly.'] },
+  { id: 'r6-dock', x: 84, y: 726, sprite: 'fishing2', face: 4, move: 'still', lines: ['Nothing out past the breakers is catchable from here. Shore and dock fishing only.', 'For the deep stuff, go to Salt Bay and learn to surf properly.'] },
   { id: 'r6-mum', x: 91, y: 727, sprite: 'npc3-apron-woman', face: 6, move: 'still', lines: ['Kids build sandcastles and wander off. Then the castles start dragging things under.', 'Keep well back from them, dear.'] },
-  { id: 'r6-pearl', x: 127, y: 773, sprite: 'npc2-red-jacket-woman', face: 0, move: 'still', lines: ['Do mind my parasol. The sun here is relentless.'],
+  { id: 'r6-pearl', x: 136, y: 777, sprite: 'npc2-red-jacket-woman', face: 0, move: 'still', lines: ['Do mind my parasol. The sun here is relentless.'],
     trainer: { cls: 'Lady', name: 'Pearl', avatar: 'lady', sight: 5, money: 24, team: [['wingull', 0], ['krabby', 1], ['wingull', 1], ['sandygast', 2], ['krabby', 2], ['chinchou', 3]], say: 'The resort has crept all the way up the road. Care for a battle?', lose: 'Oh dear. Pass me my sunscreen.' } },
   { id: 'r6-brine', x: 137, y: 783, sprite: 'npc4-sailor', face: 4, move: 'still', script: 'coach', skill: 'fly', name: 'Brine', coach: ['Gulls and winged Pokemon come in off the water here. I can teach you to fly with one.', 'Pay me, or take the hard lesson.'], known: ['You fly well. Keep an eye out for the gulls.'], lines: ['We put in at Longshore for the ice cream.'],
     trainer: { cls: 'Sailor', name: 'Brine', avatar: 'sailor', sight: 5, money: 20, team: [['wimpod', 0], ['wingull', 1], ['krabby', 1], ['wimpod', 2], ['chinchou', 2], ['wingull', 3]], say: 'Shore leave! Let us make it a short battle.', lose: 'Back to the ship for me.' } },
@@ -206,11 +206,11 @@ window.ADV_NPCS = [
   { id: 'g8-drift', x: 494, y: 790, sprite: 'npc3-apron-woman', face: 0, move: 'wander', r: 2, lines: ['Spores drift. The line holds, but not perfectly. If something glows, word goes up the road.'] },
 
   // ---------- Route 2: the mushroom route (the fungal forest the whole way; damp ground, standing water between the caps, nothing hunts and everything waits) ----------
-  { id: 'r2-wynne', x: 451, y: 786, sprite: 'npc2-pink-top-girl', face: 0, move: 'still', lines: ['The ground is soft and damp out here. It grows everything.'],
+  { id: 'r2-wynne', x: 455, y: 753, sprite: 'npc2-pink-top-girl', face: 0, move: 'still', lines: ['The ground is soft and damp out here. It grows everything.'],
     trainer: { cls: 'Forager', name: 'Wynne', avatar: 'picnicker', sight: 5, money: 24, team: [['foongus',0],['morelull',1],['wooper',1],['foongus',2],['morelull',2],['tangela',3]], say: 'Nothing on this road hunts. Everything waits. So do I, for a challenger!', lose: 'You were worth the wait.' } },
-  { id: 'r2-bram', x: 456, y: 772, sprite: 'fishing2', face: 0, move: 'still', lines: ['Water pools between the caps all the way down this road.'],
+  { id: 'r2-bram', x: 456, y: 753, sprite: 'fishing2', face: 0, move: 'still', lines: ['Water pools between the caps all the way down this road.'],
     trainer: { cls: 'Fisherman', name: 'Bram', avatar: 'fisherman', sight: 5, money: 20, team: [['wooper',0],['wooper',1],['foongus',1],['wooper',2],['tangela',2],['wooper',3]], say: 'Wooper live in the standing water. So do my best catches!', lose: 'My line was never going to hold.' } },
-  { id: 'r2-orlo', x: 456, y: 759, sprite: 'npc1-explorer', face: 0, move: 'still', lines: ['It glows brighter out here at night than the town ever does.'],
+  { id: 'r2-orlo', x: 456, y: 752, sprite: 'npc1-explorer', face: 0, move: 'still', lines: ['It glows brighter out here at night than the town ever does.'],
     trainer: { cls: 'Hiker', name: 'Orlo', avatar: 'hiker', sight: 5, money: 24, team: [['tangela',0],['foongus',1],['morelull',1],['tangela',2],['wooper',2],['foongus',3]], say: 'I have walked this road a hundred times and it still glows new. Battle?', lose: 'A hundred walks did not prepare me for you.' } },
   { id: 'r2-pip', x: 487, y: 738, sprite: 'npc4-vest-boy', face: 0, move: 'still', lines: ['Nothing on the fungal floor chases you. It just waits.'],
     trainer: { cls: 'Bug Catcher', name: 'Pip', avatar: 'bugcatcher', sight: 5, money: 16, team: [['morelull',0],['foongus',1],['morelull',1],['foongus',2],['morelull',2],['foongus',3]], say: 'Foongus and Morelull live under the caps. Want to meet them?', lose: 'My mushrooms wilted!' } },
@@ -218,11 +218,11 @@ window.ADV_NPCS = [
   // ---------- Route 101: the quarantine line (the crews' road; the fungus is cut back along it, thinning toward Duskmoss; it is maintained and not advertised) ----------
   { id: 'r101-sedge', x: 562, y: 804, sprite: 'npc3-bearded-man', face: 0, move: 'still', lines: ['Cut it back, treat the stumps, move on. That is the whole job.'],
     trainer: { cls: 'Warden', name: 'Sedge', avatar: 'hiker', sight: 5, money: 24, team: [['stunky',0],['shroomish',1],['croagunk',1],['toedscool',2],['stunky',2],['shroomish',3]], say: 'We cut the fungus back along this road every week. You are in my section!', lose: 'Clean cut. Well done.' } },
-  { id: 'r101-tamsin', x: 571, y: 806, sprite: 'npc1-explorer', face: 4, move: 'still', lines: ['The glow thins out toward Duskmoss because we make it. Not because it wants to.'],
+  { id: 'r101-tamsin', x: 567, y: 806, sprite: 'npc1-explorer', face: 4, move: 'still', lines: ['The glow thins out toward Duskmoss because we make it. Not because it wants to.'],
     trainer: { cls: 'Warden', name: 'Tamsin', avatar: 'backpacker', sight: 5, money: 24, team: [['croagunk',0],['stunky',1],['shroomish',1],['croagunk',2],['toedscool',2],['stunky',3]], say: 'I patrol this stretch daily. Nothing gets by me. Not even a trainer!', lose: 'I could not hold the line against you.' } },
-  { id: 'r101-flint', x: 586, y: 800, sprite: 'npc1-explorer', face: 0, move: 'still', lines: ['Nobody puts up signs for this road. It does not need advertising.'],
+  { id: 'r101-flint', x: 567, y: 800, sprite: 'npc1-explorer', face: 0, move: 'still', lines: ['Nobody puts up signs for this road. It does not need advertising.'],
     trainer: { cls: 'Hiker', name: 'Flint', avatar: 'hiker', sight: 5, money: 24, team: [['stunky',0],['croagunk',1],['stunky',1],['shroomish',2],['toedscool',2],['croagunk',3]], say: 'Long road, quiet crews. A battle breaks it up nicely.', lose: 'You wore me out.' } },
-  { id: 'r101-ivo', x: 592, y: 806, sprite: 'doctor', face: 4, move: 'still', lines: ['By Duskmoss there is hardly any glow left. That is the point.'],
+  { id: 'r101-ivo', x: 567, y: 807, sprite: 'doctor', face: 4, move: 'still', lines: ['By Duskmoss there is hardly any glow left. That is the point.'],
     trainer: { cls: 'Scientist', name: 'Ivo', avatar: 'scientist', sight: 5, money: 24, team: [['shroomish',0],['toedscool',1],['stunky',1],['croagunk',2],['shroomish',2],['toedscool',3]], say: 'I treat the cut ends so nothing regrows. Mind the slippery bits!', lose: 'Well. That was an unexpected result.' } },
 
   // ---------- Duskmoss: villagers (the town at the end of the road; Sporehaven keeps the line, the town knows what it owes them; the sea side is ordinary; nothing here is story-gated) ----------
@@ -249,20 +249,20 @@ window.ADV_NPCS = [
   { id: 'r103-brin', x: 548, y: 902, sprite: 'npc1-explorer', face: 0, move: 'still', lines: ['Greavard follow you along the sand at night. They never come close.'],
     trainer: { cls: 'Backpacker', name: 'Brin', avatar: 'backpacker', sight: 5, money: 24, team: [['greavard',0],['finneon',1],['greavard',1],['dreepy',2],['staryu',2],['greavard',3]], say: 'It gets lonely on this coast. A battle is company!', lose: 'Thank you for the company.' } },
   // ---------- Route 1: the road south to Quiet Plain (an old paved road, cracked end to end with the grass forced up through it; nobody walks it, one person keeps its waymarker stones legible from the far end; the strays that follow you south; no birds) ----------
-  { id: 'r1-stone9', x: 420, y: 807, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 9. The edges are sharp.','Someone keeps these legible. The chips at the foot are still pale.'] },
-  { id: 'r1-stone8', x: 410, y: 813, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with an 8. No moss on it at all.','Everything else on this road is going green, but not the numerals.'] },
-  { id: 'r1-stone7', x: 422, y: 816, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 7. The cut is deep and clean.','The road is cracked end to end. The stones are not.'] },
-  { id: 'r1-stone6', x: 424, y: 831, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 6. The chips are pale.','Whoever cuts these has been along this road more than once.'] },
-  { id: 'r1-stone5', x: 421, y: 844, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 5. Halfway, near enough.','The numerals are the only thing on this road anyone looks after.'] },
-  { id: 'r1-stone4', x: 408, y: 847, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 4. The edges are crisp.','It counts down, one stone at a time, toward the south.'] },
-  { id: 'r1-stone3', x: 399, y: 853, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 3. Fresh pale chips lie at its foot.','Nobody walks this road, but someone keeps the numbers right.'] },
-  { id: 'r1-stone2', x: 391, y: 863, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 2. The edges are sharp.','You can see the open plain from here.'] },
-  { id: 'r1-stone1', x: 391, y: 870, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 1. The edges are sharp.','The last one. Whoever cuts these is not far off.'] },
+  { id: 'r1-stone9', x: 422, y: 807, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 9. The edges are sharp.','Someone keeps these legible. The chips at the foot are still pale.'] },
+  { id: 'r1-stone8', x: 410, y: 807, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with an 8. No moss on it at all.','Everything else on this road is going green, but not the numerals.'] },
+  { id: 'r1-stone7', x: 418, y: 819, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 7. The cut is deep and clean.','The road is cracked end to end. The stones are not.'] },
+  { id: 'r1-stone6', x: 425, y: 827, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 6. The chips are pale.','Whoever cuts these has been along this road more than once.'] },
+  { id: 'r1-stone5', x: 431, y: 830, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 5. Halfway, near enough.','The numerals are the only thing on this road anyone looks after.'] },
+  { id: 'r1-stone4', x: 425, y: 836, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 4. The edges are crisp.','It counts down, one stone at a time, toward the south.'] },
+  { id: 'r1-stone3', x: 413, y: 844, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 3. Fresh pale chips lie at its foot.','Nobody walks this road, but someone keeps the numbers right.'] },
+  { id: 'r1-stone2', x: 410, y: 845, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 2. The edges are sharp.','You can see the open plain from here.'] },
+  { id: 'r1-stone1', x: 398, y: 853, sprite: null, face: 0, move: 'still', name: 'Waymarker', lines: ['A waymarker stone, cut with a 1. The edges are sharp.','The last one. Whoever cuts these is not far off.'] },
   { id: 'r1-wick', x: 419, y: 804, sprite: 'npc2-red-shirt-boy', face: 2, move: 'still', lines: ['The strays on this road walk south with you. They never walk back.'],
     trainer: { cls: 'Youngster', name: 'Wick', avatar: 'youngster', sight: 5, money: 16, team: [['rattata', 0], ['lillipup', 1], ['rattata', 1], ['lillipup', 2], ['nickit', 2], ['lillipup', 3]], say: 'Mind the cracks. Half this road is held together by weeds!', lose: 'The weeds held up better than I did.' } },
-  { id: 'r1-edie', x: 425, y: 816, sprite: 'npc1-ponytail-girl', face: 6, move: 'still', lines: ['No birds out here. Nothing ever perches on this road.'],
+  { id: 'r1-edie', x: 421, y: 816, sprite: 'npc1-ponytail-girl', face: 6, move: 'still', lines: ['No birds out here. Nothing ever perches on this road.'],
     trainer: { cls: 'Lass', name: 'Edie', avatar: 'lass', sight: 5, money: 24, team: [['oddish', 0], ['oddish', 1], ['gastly', 1], ['oddish', 2], ['gastly', 2], ['duskull', 3]], say: 'It is very quiet on this road. Shall we change that?', lose: 'Quiet again. I should not have spoken.' } },
-  { id: 'r1-corwin', x: 424, y: 834, sprite: 'npc1-explorer', face: 2, move: 'still', lines: ['Somebody built this road to last. Then they stopped coming.'],
+  { id: 'r1-corwin', x: 415, y: 834, sprite: 'npc1-explorer', face: 2, move: 'still', lines: ['Somebody built this road to last. Then they stopped coming.'],
     trainer: { cls: 'Hiker', name: 'Corwin', avatar: 'hiker', sight: 5, money: 24, team: [['nickit', 0], ['lillipup', 1], ['nickit', 1], ['rattata', 2], ['lillipup', 2], ['nickit', 3]], say: 'I walk it end to end every year. The weeds win a little more each time.', lose: 'The weeds always win. So do you.' } },
   { id: 'r1-mabel', x: 391, y: 862, sprite: 'npc4-blonde-girl', face: 6, move: 'still', lines: ['The strays walk you down to the end. Something else waits there.'],
     trainer: { cls: 'Picnicker', name: 'Mabel', avatar: 'picnicker', sight: 5, money: 24, team: [['lillipup', 0], ['lillipup', 1], ['duskull', 1], ['nickit', 2], ['gastly', 2], ['lillipup', 3]], say: 'The strays brought me this far. Want to see what they taught me?', lose: 'Even the strays are impressed.' } },

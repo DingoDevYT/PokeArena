@@ -202,6 +202,8 @@ slug = lambda s: re.sub(r'[^a-z0-9]', '', s.lower())
 # ---------------------------------------------------------------- tileset facts (sizes, doors, solids)
 _ts = open(os.path.join(OUT, 'tileset.js'), encoding='utf8').read()
 PROPS = json.loads(_ts[_ts.index('{'):_ts.rindex('}') + 1])['props']
+_tsd = open(os.path.join(OUT, 'tileset-derived.js'), encoding='utf8').read()
+for _n, _d in json.loads(_tsd[_tsd.index('{'):_tsd.index('};') + 1]).get('props', {}).items(): PROPS.setdefault(_n, _d)   # the derived sheet's props too (ground variants like bush~dune)
 sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops
 LABPROPS = {n: v[4] for n, v in adv_labprops.library().items()}   # the map-lab object library (rg_<name>), exported into the region sheet by tools/adv-region-export.py
 def P(name):
@@ -572,6 +574,7 @@ from scipy.spatial import cKDTree
 disc = np.zeros((HP, WP), bool); tid = np.zeros((HP, WP), np.int16); TL = list(TOWN.values())
 for i, t in enumerate(TL, 1):
     m = ((np.abs(XX - t['tx']) <= EXITS[t['code']].get('lim', 46)) & (np.abs(YY - t['ty']) <= EXITS[t['code']].get('lim', 46))) if t['code'] in EXITS else (XX - t['tx']) ** 2 + (YY - t['ty']) ** 2 <= t['R'] ** 2   # a town drawn with exits owns its square box, no more (the routes are dressed right up to it)
+    if t['code'] in EXITS: m &= ~water                       # its land only: the sea, the bay and the piers over them stay the route's (Longshore's dock is Route 6's fishing spot)
     disc |= m; tid[m & (tid == 0)] = i
 BOXALL = np.zeros((HP, WP), bool)                     # the boxes of the towns drawn with exits: the generic dressing (tall grass, crop fields, scatter) keeps out
 for _c, _j in EXITS.items(): BOXALL |= (np.abs(XX - TOWN[_c]['tx']) <= _j.get('lim', 46)) & (np.abs(YY - TOWN[_c]['ty']) <= _j.get('lim', 46))
@@ -628,7 +631,7 @@ def supply_path(a, b, routes=(24, 23)):
     assert e in best, f'no supply path between {a} and {b} along routes {routes}'
     path = [e]
     while path[-1] != s: path.append(prev[path[-1]])
-    path.reverse(); keep = path[::4] + ([path[-1]] if (len(path) - 1) % 4 else [])
+    path.reverse(); st = max(1, min(4, len(path) // 10)); keep = path[::st] + ([path[-1]] if (len(path) - 1) % st else [])      # plan B: the towns' boxes leave a short path, kept at full detail
     return dict(w=2.6, pts=[[int(x), int(y)] for y, x in keep], ends=[dict(id=c, x=TOWN[c]['tx'], y=TOWN[c]['ty'], r=TOWN[c]['R']) for c in (a, b)])
 SUPPLY = supply_path('T2', 'G5')
 log('supply path', len(SUPPLY['pts']), 'points', int(sum(np.hypot(p[0] - q[0], p[1] - q[1]) for p, q in zip(SUPPLY['pts'], SUPPLY['pts'][1:]))), 'tiles')
@@ -1389,8 +1392,8 @@ SAP = ['pineSapling', 'pineSapling', 'saplingTree', 'miniTree', 'poplarSmall', '
 for y, x in np.argwhere(reg3 & (st3 < 2) & okc):
     k = hq('g6s', int(x), int(y))
     if st3[y, x] == 0:
-        if k < .07: g6put(STUMP[int(hq('g6n', int(x), int(y)) * len(STUMP))], int(x), int(y), 1)
-    elif k < .1: g6put(SAP[int(hq('g6n', int(x), int(y)) * len(SAP))], int(x), int(y), 0)
+        if k < .1: g6put(STUMP[int(hq('g6n', int(x), int(y)) * len(STUMP))], int(x), int(y), 1)
+    elif k < .16: g6put(SAP[int(hq('g6n', int(x), int(y)) * len(SAP))], int(x), int(y), 0)
 for i, b in enumerate(bnd):                                   # a stack of timber at the middle of every other stand (the numbered stand markers were script art: missing art)
     if b < 8: continue
     if i % 2 == 0 and i + 1 < len(bnd):
@@ -1735,11 +1738,11 @@ def r1put(nm, a, off, r=1):
     for da in (0, 1, -1, 2, -2, 3, -3, 4, -4):
         for k in range(6):
             x, y = r1cell(a + da, off + sg * k)
-            if land[y, x] and kind[y, x] == 0 and h[y, x] == 0 and not roadm[y, x] and not water[y, x] and mat[y, x] == GRASS and not occ[y - 1:y + 2, x - r:x + r + 1].any():
+            if land[y, x] and kind[y, x] == 0 and h[y, x] == 0 and not roadm[y, x] and not water[y, x] and mat[y, x] == GRASS and not occ[y - 1:y + 2, x - r:x + r + 1].any() and not BOXALL[y - 1:y + 2, x - 2:x + 3].any():   # never in the memorial's own box
                 props.append([nm, int((x + .5) * T), int((y + 1) * T - 4)]); occ[y - 1:y + 2, x - r:x + r + 1] = True; l4n[nm] += 1; return (x, y, a + da, off + sg * k)
     return None
 for n_ in range(1, 10):                                        # stone 1 is the last before the memorial, stone 9 the first out of the Route 2 junction; every other one on the far side
-    a = R1LEN - 14 - (n_ - 1) * 15.5; sd_ = 1 if n_ % 2 else -1; p = r1put('standingStoneMint', a, sd_ * 3)
+    a = R1LEN - (44 if K != 1 else 14) - (n_ - 1) * (12 if K != 1 else 15.5); sd_ = 1 if n_ % 2 else -1; p = r1put('standingStoneMint', a, sd_ * 3)     # plan B: the memorial's box owns the last 18 tiles of road, so the count starts outside it
     st_ = r1cell(p[2], p[3] - sd_) if p else r1cell(a, sd_ * 2); [npc_set(f'r1-stone{n_}', st_[0], st_[1]) for n0 in NPCS if n0[0] == f'r1-stone{n_}' and (n0[1], n0[2]) != tuple(st_)]        # the unseen reader stands beside its stone, on the road side
     print(f'  WAYMARK {n_}: arc {a:.0f} stone {p} stand {st_} (road cell {r1cell(a, 0)}, side {sd_})')
 r1put('streetSign', 5, 3); r1put('benchTeal', R1LEN * .5, -3); r1put('stoneGrey', R1LEN * .5 + 3, -4); r1put('flowersWhite', R1LEN * .5 - 2, -4)
