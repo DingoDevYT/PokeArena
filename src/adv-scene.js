@@ -111,7 +111,7 @@ const AdventureScene = {
   leadKey() { return DEX.species[toId(this.save.party[this.leadIdx()].species)].sprite; },
   refreshLead() { this.key = this.leadKey(); this.warm(); },
   warm() { preload(assetSrcs({ arena: {}, player: { avatar: this.save.avatar, team: this.save.party }, cpu: { team: [] } })); },
-  grow(ev, done) { this.refreshLead(); this.open(ADVUI.grow(this, ev, done)); },
+  grow(ev, done) { if (!ev?.length) return done?.(); this.refreshLead(); this.open(ADVUI.grow(this, ev, done)); },   // nothing to show (a loss with no EXP): opening the screen anyway left an empty one on top for good
   cx() { return Math.floor(this.cam.x / (ADV.Tp(this.cam.x) * ADV.CH)); },
   cy() { return Math.floor(this.cam.y / (ADV.Tp(this.cam.x) * ADV.CH)); },
   spawn(s) {
