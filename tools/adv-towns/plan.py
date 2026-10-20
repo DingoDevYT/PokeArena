@@ -19,6 +19,8 @@ def _props():
             k = d.get('density') or 1; out.setdefault(n, {key_: d[key_] * k for key_ in ('sw', 'sh', 'ax', 'ay')} | {'door': [v * k for v in d.get('door', [0, -2])]})
     return out
 PROPS = _props()
+_s = open(os.path.join(ROOT, 'data', 'adv', 'tileset-big.js'), encoding='utf8').read()   # the big buildings (tools/adv-build-big.py)
+for _n, _d in json.JSONDecoder().raw_decode(_s, _s.index('{'))[0]['props'].items(): PROPS[_n] = {k_: _d[k_] for k_ in ('sw', 'sh', 'ax', 'ay')} | {'door': _d.get('door', [0, -2])}
 sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops      # the map-lab object library (rg_<name>), the mockups' houses, trees and props
 for _n, _v in adv_labprops.library().items(): _d = _v[4]; PROPS[_n] = {k_: _d[k_] for k_ in ('sw', 'sh', 'ax', 'ay')} | {'door': _d.get('door', [0, -2])}
 

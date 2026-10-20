@@ -204,6 +204,8 @@ _ts = open(os.path.join(OUT, 'tileset.js'), encoding='utf8').read()
 PROPS = json.loads(_ts[_ts.index('{'):_ts.rindex('}') + 1])['props']
 _tsd = open(os.path.join(OUT, 'tileset-derived.js'), encoding='utf8').read()
 for _n, _d in json.loads(_tsd[_tsd.index('{'):_tsd.index('};') + 1]).get('props', {}).items(): PROPS.setdefault(_n, _d)   # the derived sheet's props too (ground variants like bush~dune)
+_tsb = open(os.path.join(ROOT, 'data', 'adv', 'tileset-big.js'), encoding='utf8').read()
+for _n, _d in json.JSONDecoder().raw_decode(_tsb, _tsb.index('{'))[0]['props'].items(): PROPS.setdefault(_n, _d)   # the big buildings (tools/adv-build-big.py)
 sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops
 LABPROPS = {n: v[4] for n, v in adv_labprops.library().items()}   # the map-lab object library (rg_<name>), exported into the region sheet by tools/adv-region-export.py
 def P(name):

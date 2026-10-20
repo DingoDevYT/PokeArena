@@ -234,27 +234,27 @@
  "t5-h2": {
   "floor": "i_home2_floor",
   "walls": "i_home2",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winWide",
-    2,
+    3,
     -0.2562
    ],
    [
     "bedPlain",
-    1,
+    1.335,
     1.3687
    ],
    [
     "sofaBlue",
-    1.25,
+    1.75,
     2.6187
    ],
    [
     "plantA",
-    3.2,
+    5,
     1.2688
    ]
   ],
@@ -267,7 +267,7 @@
     "lines": [
      "Twenty metres from shore the ground is just gone. Nets come up from depths that make no sense."
     ],
-    "dx": 3.25,
+    "dx": 5.25,
     "dy": 2.75
    }
   ]
@@ -275,27 +275,27 @@
  "t5-h3": {
   "floor": "i_home3_floor",
   "walls": "i_home3",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winWide",
-    2,
+    3,
     -0.2562
    ],
    [
     "shelfBooks",
-    1.05,
+    1.415,
     1.1187
    ],
    [
     "bedBlue",
-    3,
+    4.665,
     1.3687
    ],
    [
     "plantB",
-    3.2,
+    5,
     3.4188
    ]
   ],
@@ -308,7 +308,7 @@
     "lines": [
      "Lapras are bred at Sailsport, not here. The bay is too deep, Grandad says."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    }
   ]

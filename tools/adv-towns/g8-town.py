@@ -81,7 +81,7 @@ g.building('warehouse', 10, 1, ['g8-mart', FP(6, 3, 2)]); g.rect(10, 0, 10, 2, '
 g.props('mPlanterPot', [(-13, 1), (-7, 1)]); g.props('mPlanterEmpty', [(7, 1), (14, 1)]); g.prop('signGreenWide', -12, 2); g.prop('streetSign', 15, 2)
 
 # ================================================================ the cap hall and the tavern, off the green way
-home('inn', 8, -13, -12, role=['g8-gym', FP(6, 4, 2)], beds=('mPlanterPot', 'mPlanterPot'))
+home('hotelGym', 8, -13, -12, role=['g8-gym', FP(8, 5, 3)], beds=('mPlanterPot', 'mPlanterPot'))
 home('houseGreenFlat', 15, -13, -12)
 home('tavern', -8, -13, -12, role=['g8-h1', FP(4, 4, 1)]); home('cabinGreen', -3, -13, -12)
 

@@ -104,7 +104,7 @@ for x in range(-34, 6): g.prop(SMALL[x % len(SMALL)], x, 19, walk=True) if x % 2
 
 # ================================================================ the sawmill: the gym hall at the head of its yard, sheds either side, vans, stacks and the loader
 Y = dict(walk=True)
-g.building('inn', 30, -6, ['g6-gym', {'w': 6, 'd': 4, 'ex': 2}])
+g.building('innGym', 30, -6, ['g6-gym', {'w': 8, 'd': 5, 'ex': 3}])
 g.building('thatchBarn', 23, -6); g.building('barnRed', 36, -6)
 g.props('rg_planter_tall_pink', [(27, -6), (33, -6)]); g.props('rg_lamp', [(26, -6), (34, -6)])
 g.props('vanGrey', [(35, 2), (24, 3)], **Y); g.props('stumpLarge', [(26, -5), (33, -1)], **Y)

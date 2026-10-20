@@ -1,16 +1,22 @@
 """Town design kit on top of plan.Grid (docs/REGION-REBUILD.md section 17): every prop and building claims the cells its sprite covers, so nothing is drawn
 on top of anything else; helpers lay the mockup furniture (a house lot with its walk and beds, tree belts, flower drifts, market rows, fences).
 Props are named directly (rg_<lab name> for the map-lab library, or any game prop); the legend is made here. Coordinates are tiles from the town centre."""
-import math, os, sys
+import math, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import plan
 
 T = 32
 def size(name):
     d = plan.PROPS[name]; return d['sw'] / T, d['sh'] / T, d['ax'] / T, d['ay'] / T
 
+# Big buildings (tools/adv-build-big.py): every inn, hall, hotel and mart lot is built as one of the catalog's variants of that family, the biggest that fits
+# the lot (bigger buildings, roomier interiors), its colourway dealt in turn so neighbours differ. Town.varied = False keeps the plain props.
+FAMILY = {f: sorted([n for n in plan.PROPS if re.fullmatch(p + r'\d(-.*)?', n)], key=lambda n: -plan.PROPS[n]['sw'])   # sized variants only (inn4-red-lilac, mart7), not the gyms
+          for f, p in (('inn', 'inn'), ('hall', 'hall'), ('hotelBlue', 'hotel'), ('warehouse', 'mart'))}
+
 class Town(plan.Grid):
+    varied = True
     def __init__(s, N, code):
-        super().__init__(N); s.code = code; s.occ = {}; s.legend = {}; s.chars = iter(chr(c) for c in range(0x100, 0x2000)); s.exits = []; s.deco = []; s.warn = []; s.treeset = set(); s.lots = []
+        super().__init__(N); s.code = code; s.deal = {}; s.occ = {}; s.legend = {}; s.chars = iter(chr(c) for c in range(0x100, 0x2000)); s.exits = []; s.deco = []; s.warn = []; s.treeset = set(); s.lots = []
     # ---- occupancy: the cells a sprite covers (its box, rounded inward a little), a footprint for buildings
     def box(s, name, x, y, bld=False):
         sw, sh, ax, ay = size(name); px = x + .5 - (plan.PROPS[name]['door'][0] / T if bld else 0); py = (y if bld else y + 1) - (1 / T)
@@ -36,8 +42,24 @@ class Town(plan.Grid):
             if any(s.get(cx, cy) not in ('.', 'g', 'a', 'Z') for cx, cy in cells if cy == foot) or s.get(x, y) not in ('.', 'g', 'a', 'Z'): return False
         s.claim(cells, name); s.pp.append((s.char(name), x, y)); return True
     def props(s, name, pts, **k): return sum(s.prop(name, x, y, **k) for x, y in pts)
+    def variant(s, name, x, y, role):
+        """the catalog variant for a plain family prop: the widest that fits the free ground, colourways in turn; the footprint follows its width"""
+        if not s.varied or name not in FAMILY or role == 'center': return name, role
+        fp = role[1] if isinstance(role, list) else None
+        sizes = sorted({n.split('-')[0] for n in FAMILY[name]}, key=lambda t: -plan.PROPS[next(n for n in FAMILY[name] if n.split('-')[0] == t)]['sw'])
+        for t in sizes:
+            ways = [n for n in FAMILY[name] if n.split('-')[0] == t]; k = s.deal.get(t, sum(map(ord, s.code)))
+            n = ways[k % len(ways)]
+            if not s.free(s.box(n, x, y, bld=True), ground_ok=False): continue   # open ground only: a bigger house never takes a lane
+            s.deal[t] = k + 1
+            if fp:
+                d = plan.PROPS[n]; w = max(fp['w'], round(d['sw'] / T)) if name == 'warehouse' else max(3, round(d['sw'] / T))
+                fp = dict(fp, w=w, ex=min(w - 1, max(0, round(d['ax'] / T - 0.5))) if name != 'warehouse' else fp['ex']); role = [role[0], fp]
+            return n, role
+        return name, role
     def building(s, name, x, y, role='house'):
         """a building whose door walkway tile is (x, y); role 'center', 'house' or [id, {w, d, ex}] (an interior)"""
+        name, role = s.variant(name, x, y, role); s.last = name
         cells = s.box(name, x, y, bld=True)
         if not s.free(cells): s.warn.append(f'building {name} at {x},{y} overlaps {[s.occ[c] for c in cells if c in s.occ][:3]}')
         s.claim(cells, name); s.bld(name, x, y, role)
@@ -45,7 +67,7 @@ class Town(plan.Grid):
     # ---- composites
     def lot(s, name, x, y, street_y=None, street_x=None, role='house', beds=('rg_bed_pink', 'rg_bed_yellow'), extras=(), walk='d'):
         """a house lot: the building (door walkway (x, y)), a one tile walk from its door down (or across) to the street, a flower bed each side of the door"""
-        s.building(name, x, y, role); s.rect(x, y - 1, x, y, walk)        # the walk starts under the door row (hidden by the wall), so it meets the door flush
+        s.building(name, x, y, role); name = s.last; s.rect(x, y - 1, x, y, walk)        # the walk starts under the door row (hidden by the wall), so it meets the door flush
         if street_y is not None: s.rect(x, y, x, street_y, walk)
         if street_x is not None: s.rect(x, y, x, y + 1, walk); s.rect(min(x, street_x), y + 1, max(x, street_x), y + 1, walk)   # down off the doorstep, then along to the street
         sw = size(name)[0]; half = int(sw / 2)

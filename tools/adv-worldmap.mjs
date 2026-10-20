@@ -8,7 +8,7 @@ import { PNG } from 'pngjs';
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
 const cx = vm.createContext({ console }); cx.window = cx;
 const run = f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), cx, { filename: f });
-for (const f of ['data/adv/tileset-placeholder.js', 'data/adv/tileset.js', 'data/adv/tileset-derived.js', 'data/adv/tileset-int.js', 'data/adv/world.js', 'src/adv-world.js']) run(f);
+for (const f of ['data/adv/tileset-placeholder.js', 'data/adv/tileset.js', 'data/adv/tileset-derived.js', 'data/adv/tileset-big.js', 'data/adv/tileset-int.js', 'data/adv/world.js', 'src/adv-world.js']) run(f);
 const get = e => vm.runInContext(e, cx);
 const W = cx.ADV_WORLD, CH = 32, PW = W.chunksW * CH, PH = W.chunksH * CH;
 get('ADV.world = window.ADV_WORLD'); get('ADV.palette = window.ADV_WORLD.palette');

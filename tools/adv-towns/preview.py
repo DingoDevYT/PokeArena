@@ -58,6 +58,8 @@ def tile_for(m, rl, c, r):
 
 PROPS = {}
 for n, d in ts['props'].items(): PROPS[n] = (d, EX)
+_s = open(os.path.join(ROOT, 'data/adv/tileset-big.js')).read(); _b = json.JSONDecoder().raw_decode(_s, _s.index('{'))[0]; _bim = Image.open(os.path.join(ROOT, _b['file'])).convert('RGBA')
+for n, d in _b['props'].items(): PROPS[n] = (d, _bim)   # the big buildings (tools/adv-build-big.py)
 for n, d in DV.get('props', {}).items(): PROPS.setdefault(n, (d, DIM))
 sys.path.insert(0, os.path.join(ROOT, 'tools')); import adv_labprops
 LAB = adv_labprops.library()

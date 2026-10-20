@@ -63,7 +63,7 @@ g.building('pokeCenterGrand', -1, -6, 'center'); g.building('martTower', 10, -6)
 g.lot('gymRed', -26, 18, street_y=19, beds=None)
 g.lot('rg_dome_green', 22, -10, beds=None)
 g.lot('barnRed', 24, -38, beds=None)
-g.lot('maManorOrange', 38, 24, street_y=25, beds=None)
+g.lot('innBig', 38, 24, street_y=25, beds=None)
 g.lot('maLogCabin', -31, 40, street_y=41, beds=None)
 
 hrow(-31, -30, -38, ['rg_house_red_a', 'rg_house_wood_c', 'rg_house_red_c', 'rg_house_wood_d', 'rg_house_wood_a'])

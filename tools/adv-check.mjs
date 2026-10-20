@@ -543,7 +543,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 
 // ---------- S1b: rooms and door warps, the Mart, Whitney by band, the badge ----------
 {
-  load('data/adv/tileset.js'); load('data/adv/tileset-derived.js'); load('data/adv/tileset-int.js'); for (const f of fs.readdirSync(new URL('../data/adv/rooms/', import.meta.url))) load('data/adv/rooms/' + f);
+  load('data/adv/tileset.js'); load('data/adv/tileset-derived.js'); load('data/adv/tileset-big.js'); load('data/adv/tileset-int.js'); for (const f of fs.readdirSync(new URL('../data/adv/rooms/', import.meta.url))) load('data/adv/rooms/' + f);
   load('data/trainer-ow8.js'); const W = window.ADV_WORLD, ex = window.ADV_TILESET.props, O8 = window.TRAINER_OW8;
   ADV.reset(); ADV.setWorld(W); ADV.fallback = false;
   const live = Object.entries(ADV.rooms).filter(([, d]) => d.live).map(([id]) => id), lab = Object.keys(ADV.rooms).filter(id => !live.includes(id));
@@ -839,7 +839,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   ok(bo.length >= 14 && tp.length >= 5 && st.length >= 10, `${bo.length} bollards, ${tp.length} crates, ${st.length} logs (cranes, tarps and sawdust are missing art)`);
   ok(!!ADV.propDef('wBollard').solid, 'bollards are solid');
   const craft = of('maRowboat', 'pxYacht').filter(p => ADV.isWater(...cell(p))); ok(craft.length >= 3, craft.length + ' small craft moored on the water of the cove');
-  ok(of('pokeCenterGrand').length === 1 && of('warehouse').length === 1, 'the Center and the dock store (a warehouse) stand in town');
+  ok(of('pokeCenterGrand').length === 1 && of('warehouse', 'mart6', 'mart7', 'mart8').length === 1, 'the Center and the dock store (a warehouse) stand in town');
   // zones: town and wharf are Spindlewood, the Route 111 sign is not an NPC but the road outside is Route 111
   eq(zoneAt(cx, cy), 'spindlewood', 'the town centre is Spindlewood'); eq(zoneAt(cx + 33, cy + 15), 'spindlewood', 'the end of the long wharf is Spindlewood too'); eq(zoneAt(cx - 40, cy + 25), 'route111', 'the road out is Route 111 (a point on it, 11 tiles past the west exit)');
   // fishing from the dock uses Route 111's table (shore and dock only); the bible's town file has none

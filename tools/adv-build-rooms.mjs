@@ -406,9 +406,19 @@ const IN7 = [
       farm('g7-gym-mabel', 'Farmer', 'Mabel', 'cowgirl', 6, 5, 30, [['oddish', 0], ['hoppip', 0], ['sunkern', 1], ['cherubi', 1], ['bounsweet', 2], ['lechonk', 2]], 'The crops do not grow themselves, and neither do trainers. Come on!', 'Well, there goes my harvest.', 8, 2),
       npc('g7-gym-guide', 6, 5, 'gsman2', 0, ['Whitney came all the way from Johto. Her Miltank knows Rollout, so watch for it to build speed.', 'Her ranch hands are in your way. Beat them first.'])] },
 ];
+// Buildings that grew (tools/adv-build-big.py): the town plan (tools/adv-towns/<code>.json, written by its town script) holds each building's footprint, and the floor
+// is (2w - 2) x (2d - 1) of it; furniture and people keep their places in proportion
+const FOOT = code => { const f = new URL(`../tools/adv-towns/${code}.json`, import.meta.url); return fs.existsSync(f) ? Object.fromEntries(JSON.parse(fs.readFileSync(f, 'utf8')).buildings.filter(b => b[4]).map(b => [b[3], b[4]])) : {}; };
+let SIZE = {};
+const grow = s => {
+  const fp = SIZE[s.id], z = fp && [2 * fp.w - 2, 2 * fp.d - 1]; if (!z || (z[0] === s.C && z[1] === s.R)) return s;
+  const [C, R] = z, kx = C / s.C, ky = R / s.R, cx = (C - 1) / (s.C - 1), cy = (R - 1) / (s.R - 1);
+  return { ...s, C, R, items: s.items.map(([n, x, y]) => [n, +(x * kx).toFixed(2), y < 0 ? y : +(y * ky).toFixed(2)]), npcs: s.npcs.map(n => ({ ...n, x: Math.round(n.x * cx), y: Math.round(n.y * cy) })) };
+};
 const emit = (code, list) => {
-  const o = {};
-  for (const s of list) {
+  const o = {}; SIZE = FOOT(code);
+  for (const s0 of list) {
+    const s = grow(s0);
     const f = s.items.filter(([n]) => !INTP.ADV_TILESET_INT.props[x2(n)]); if (f.length) throw new Error(s.id + ': no interior art for ' + f.map(i => i[0]));
     o[s.id] = {
       floor: `i_${s.theme}_floor`, walls: `i_${s.theme}`, C: s.C, R: s.R,

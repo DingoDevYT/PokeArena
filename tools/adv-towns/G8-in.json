@@ -176,47 +176,47 @@
  "g8-lodge": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 8,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.25,
+    1.44,
     -0.2813
    ],
    [
     "winSmall",
-    3.75,
+    4.565,
     -0.2813
    ],
    [
     "boardGreen",
-    2.5,
+    3,
     -0.3312
    ],
    [
     "shelfBooks",
-    1,
+    1.125,
     1.1187
    ],
    [
     "shelfBooksTall",
-    4,
+    4.875,
     1.1687
    ],
    [
     "tableBrownLong",
-    2.5,
+    3,
     2.1688
    ],
    [
     "mapIsland",
-    1.3,
+    1.5,
     3.2687
    ],
    [
     "plantA",
-    4.2,
+    5.125,
     3.4688
    ]
   ],
@@ -230,7 +230,7 @@
     "lines": [
      "Clearing, treating, patrolling. Three jobs, every day, and the forest never runs out of work for us."
     ],
-    "dx": 2.25,
+    "dx": 2.75,
     "dy": 1.25
    },
    {
@@ -241,7 +241,7 @@
     "lines": [
      "We go down to Duskmoss by the east road to hold the line. They are glad to see us."
     ],
-    "dx": 3.75,
+    "dx": 4.75,
     "dy": 2.75
    },
    {
@@ -313,27 +313,27 @@
  "g8-h2": {
   "floor": "i_home2_floor",
   "walls": "i_home2",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.5,
+    2.165,
     -0.2813
    ],
    [
     "shelfGreen",
-    2.9,
+    4.5,
     1.1187
    ],
    [
     "tableBrownSmall",
-    2.7,
+    4.165,
     2.4688
    ],
    [
     "plantC",
-    0.8,
+    1,
     3.4188
    ]
   ],
@@ -346,7 +346,7 @@
     "lines": [
      "I was born here. The forest outside is the only neighbour I have ever needed."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    },
    {
@@ -357,7 +357,7 @@
     "lines": [
      "Eerie? I think it is pretty. It is only eerie if you do not live here."
     ],
-    "dx": 1.25,
+    "dx": 1.75,
     "dy": 2.75
    }
   ]
@@ -365,32 +365,32 @@
  "g8-h3": {
   "floor": "i_home3_floor",
   "walls": "i_home3",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.3,
+    1.835,
     -0.2813
    ],
    [
     "shelfBooks",
-    1.95,
+    2.915,
     1.1187
    ],
    [
     "bedPink",
-    2.95,
+    4.585,
     1.3188
    ],
    [
     "tableBrownSmall",
-    2.7,
+    4.165,
     2.4688
    ],
    [
     "plantB",
-    0.8,
+    1,
     3.4188
    ]
   ],
@@ -403,7 +403,7 @@
     "lines": [
      "Six days on the line, one at home. Nobody thanks a warden, and I still like the job."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    }
   ]
@@ -516,73 +516,73 @@
  "g8-gym": {
   "floor": "i_farm_floor",
   "walls": "i_farm",
-  "C": 10,
-  "R": 7,
+  "C": 14,
+  "R": 9,
   "props": [
    [
     "winArch",
-    1.5,
+    1.9,
     -0.2313
    ],
    [
     "winArch",
-    4.5,
+    6.1,
     -0.2313
    ],
    [
     "boardGreen",
-    3,
+    4,
     -0.3312
    ],
    [
     "mushroomStump2x",
-    1.1,
-    1.0688
+    1.34,
+    1.3838
    ],
    [
     "mushroomStump2x",
-    4.9,
-    1.1687
+    6.66,
+    1.5137
    ],
    [
     "mushroomsOrange2x",
-    2.1,
-    1.0688
+    2.74,
+    1.3838
    ],
    [
     "mushroomsPale2x",
-    3.8,
-    1.1687
+    5.12,
+    1.5137
    ],
    [
     "mushroomsPale2x",
-    0.8,
-    2.3687
+    0.92,
+    3.0537
    ],
    [
     "mushroomsOrange2x",
-    5.2,
-    2.1688
+    7.08,
+    2.7988
    ],
    [
     "mushroomsRed2x",
-    2.2,
-    2.5688
+    2.88,
+    3.3138
    ],
    [
     "mushroomsPale2x",
-    3.7,
-    2.7687
+    4.98,
+    3.5688
    ],
    [
     "plantB",
-    0.9,
-    3.4188
+    1.06,
+    4.4037
    ],
    [
     "plantB",
-    5.1,
-    3.4188
+    6.94,
+    4.4037
    ]
   ],
   "npcs": [
@@ -628,7 +628,7 @@
       "The badge is yours. Go carefully on Route 101. Someone has to keep that line, and it is us."
      ]
     },
-    "dx": 3.25,
+    "dx": 4.25,
     "dy": 0.75
    },
    {
@@ -675,8 +675,8 @@
      "say": "I gather what the forest lets me have. Let us see what you gather!",
      "lose": "You picked the better basket. On you go."
     },
-    "dx": 4.75,
-    "dy": 2.25
+    "dx": 6.75,
+    "dy": 2.75
    },
    {
     "id": "g8-gym-orrin",
@@ -723,7 +723,7 @@
      "lose": "Slow work, and you beat it anyway."
     },
     "dx": 1.25,
-    "dy": 1.75
+    "dy": 2.25
    },
    {
     "id": "g8-gym-fern",
@@ -769,8 +769,8 @@
      "say": "I patrol the boundary, and I do not let things cross. Not even you!",
      "lose": "Nothing crosses my line. Except you, just now."
     },
-    "dx": 4.25,
-    "dy": 1.25
+    "dx": 5.75,
+    "dy": 1.75
    },
    {
     "id": "g8-gym-guide",
@@ -781,8 +781,8 @@
      "Rue is a warden first and a gym leader second, and she does both without complaint.",
      "Her Breloom is the one everybody remembers. I will not say why."
     ],
-    "dx": 3.25,
-    "dy": 3.25
+    "dx": 4.25,
+    "dy": 4.25
    }
   ]
  }

@@ -176,32 +176,32 @@
  "t6-h1": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 6,
+  "C": 8,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.75,
+    2.165,
     -0.2813
    ],
    [
     "stoveRed",
-    1,
+    1.165,
     1.1187
    ],
    [
     "bedPink",
-    3,
+    3.835,
     1.3687
    ],
    [
     "tableBrownSmall",
-    2.7,
+    3.435,
     2.4688
    ],
    [
     "plantA",
-    0.75,
+    0.835,
     3.4188
    ]
   ],
@@ -215,7 +215,7 @@
     "lines": [
      "My husband loads and my daughter ties up. We all go to bed smelling of pine and salt."
     ],
-    "dx": 3.25,
+    "dx": 4.25,
     "dy": 3.25
    },
    {
@@ -226,7 +226,7 @@
     "lines": [
      "I can name every engine in the cove by its sound. Mum says that is not a talent."
     ],
-    "dx": 2.25,
+    "dx": 2.75,
     "dy": 1.75
    }
   ]
@@ -234,27 +234,27 @@
  "t6-h2": {
   "floor": "i_home2_floor",
   "walls": "i_home2",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winWide",
-    2,
+    3,
     -0.2562
    ],
    [
     "bedPlain",
-    1,
+    1.335,
     1.3687
    ],
    [
     "shelfBooks",
-    2.75,
+    4.25,
     1.1187
    ],
    [
     "plantB",
-    3.2,
+    5,
     3.4188
    ]
   ],
@@ -267,7 +267,7 @@
     "lines": [
      "Forty years on this quay. It has been busy every day of them, and I like it that way."
     ],
-    "dx": 3.25,
+    "dx": 5.25,
     "dy": 2.25
    },
    {
@@ -278,7 +278,7 @@
     "lines": [
      "Wimpod live under the boards. When it goes quiet you can hear them scuttling."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    }
   ]

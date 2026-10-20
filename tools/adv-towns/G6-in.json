@@ -176,47 +176,47 @@
  "g6-office": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 8,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.25,
+    1.44,
     -0.2813
    ],
    [
     "winSmall",
-    3.75,
+    4.565,
     -0.2813
    ],
    [
     "boardGreen",
-    2.5,
+    3,
     -0.3312
    ],
    [
     "shelfBooks",
-    1,
+    1.125,
     1.1187
    ],
    [
     "shelfBooksTall",
-    4,
+    4.875,
     1.1687
    ],
    [
     "tableBrownLong",
-    2.5,
+    3,
     2.1688
    ],
    [
     "mapIsland",
-    1.3,
+    1.5,
     3.2687
    ],
    [
     "plantA",
-    4.2,
+    5.125,
     3.4688
    ]
   ],
@@ -230,7 +230,7 @@
     "lines": [
      "Every stand has a number and a date. Felled, replanted, or left alone. It is all written down here."
     ],
-    "dx": 2.25,
+    "dx": 2.75,
     "dy": 1.25
    },
    {
@@ -241,7 +241,7 @@
     "lines": [
      "We plan in decades. A tree planted today is not cut in my lifetime. That is the whole idea."
     ],
-    "dx": 3.75,
+    "dx": 4.75,
     "dy": 2.75
    },
    {
@@ -260,27 +260,27 @@
  "g6-h1": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winWide",
-    2,
+    3,
     -0.2562
    ],
    [
     "bedPlain",
-    1,
+    1.335,
     1.3687
    ],
    [
     "sofaBlue",
-    1.25,
+    1.75,
     2.6187
    ],
    [
     "plantA",
-    3.2,
+    5,
     1.2688
    ]
   ],
@@ -294,7 +294,7 @@
     "lines": [
      "My husband fells and my daughter replants. Between them the forest stays the same size."
     ],
-    "dx": 3.25,
+    "dx": 5.25,
     "dy": 2.75
    },
    {
@@ -305,7 +305,7 @@
     "lines": [
      "Aspen has a Kleavor! Nobody else in Kenora has one."
     ],
-    "dx": 1.75,
+    "dx": 2.75,
     "dy": 1.75
    }
   ]
@@ -411,27 +411,27 @@
  "g6-h4": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 6,
+  "C": 8,
   "R": 7,
   "props": [
    [
     "winWide",
-    2,
+    2.5,
     -0.2562
    ],
    [
     "bedPlain",
-    1,
+    1.165,
     1.3687
    ],
    [
     "shelfBooks",
-    2.75,
+    3.5,
     1.1187
    ],
    [
     "plantB",
-    3.2,
+    4.1,
     3.4188
    ]
   ],
@@ -445,7 +445,7 @@
     "lines": [
      "Read the stand numbers on Route 3 and you know the whole rotation. Fresh cut, replanted, left alone."
     ],
-    "dx": 3.25,
+    "dx": 4.25,
     "dy": 2.25
    },
    {
@@ -456,7 +456,7 @@
     "lines": [
      "Timber from here goes all the way to Sprucevale. Every carved gable up there is ours."
     ],
-    "dx": 2.25,
+    "dx": 2.75,
     "dy": 1.75
    }
   ]
@@ -464,27 +464,27 @@
  "g6-h5": {
   "floor": "i_home2_floor",
   "walls": "i_home2",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.5,
+    2.165,
     -0.2813
    ],
    [
     "shelfGreen",
-    1.9,
+    2.835,
     1.1187
    ],
    [
     "bedBlue",
-    3,
+    4.665,
     1.3687
    ],
    [
     "plantC",
-    3.2,
+    5,
     3.4188
    ]
   ],
@@ -497,7 +497,7 @@
     "lines": [
      "Bonsly stand among the saplings. You cannot tell them from the trees."
     ],
-    "dx": 3.25,
+    "dx": 5.25,
     "dy": 2.25
    },
    {
@@ -516,43 +516,43 @@
  "g6-gym": {
   "floor": "i_barn_floor",
   "walls": "i_barn",
-  "C": 10,
-  "R": 7,
+  "C": 14,
+  "R": 9,
   "props": [
    [
     "winSmall",
-    1.5,
+    1.9,
     -0.2813
    ],
    [
     "winSmall",
-    4.5,
+    6.1,
     -0.2813
    ],
    [
     "boardGreen",
-    3,
+    4,
     -0.3312
    ],
    [
     "fallenLog2x",
-    1.3,
-    1.2688
+    1.62,
+    1.6387
    ],
    [
     "barrelOrange2x",
-    5.15,
-    2.2687
+    7.01,
+    2.9238
    ],
    [
     "crateWide2x",
-    1.1,
-    3.3687
+    1.34,
+    4.3388
    ],
    [
     "fallenLog2x",
-    4.6,
-    3.3687
+    6.24,
+    4.3388
    ]
   ],
   "npcs": [
@@ -598,7 +598,7 @@
       "You earned that the long way, same as everything worth having in Pinegrove."
      ]
     },
-    "dx": 3.25,
+    "dx": 4.25,
     "dy": 0.75
    },
    {
@@ -646,7 +646,7 @@
      "lose": "Clean cut. You fight as well as you fell."
     },
     "dx": 1.25,
-    "dy": 2.25
+    "dy": 2.75
    },
    {
     "id": "g6-gym-cord",
@@ -692,8 +692,8 @@
      "say": "I carry logs all day long. A battle is light work next to that!",
      "lose": "Dropped it. That was a heavy one."
     },
-    "dx": 4.75,
-    "dy": 2.75
+    "dx": 6.75,
+    "dy": 3.75
    },
    {
     "id": "g6-gym-tilly",
@@ -739,8 +739,8 @@
      "say": "My team hauls what the others cut. They never tire, and neither do I.",
      "lose": "Ha! You are stronger than a full load."
     },
-    "dx": 4.75,
-    "dy": 1.25
+    "dx": 6.75,
+    "dy": 1.75
    },
    {
     "id": "g6-gym-guide",
@@ -751,8 +751,8 @@
      "Aspen runs this mill herself, and the whole town loves her for it.",
      "Do not ask her about Claystone. She says it is family, and then she says nothing more."
     ],
-    "dx": 3.25,
-    "dy": 3.25
+    "dx": 4.25,
+    "dy": 4.25
    }
   ]
  }

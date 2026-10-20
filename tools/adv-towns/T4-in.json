@@ -317,27 +317,27 @@
  "t4-h3": {
   "floor": "i_home3_floor",
   "walls": "i_home3",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.5,
+    2.165,
     -0.2813
    ],
    [
     "shelfGreen",
-    2.9,
+    4.5,
     1.1187
    ],
    [
     "tableBrownSmall",
-    2.7,
+    4.165,
     2.4688
    ],
    [
     "plantC",
-    0.8,
+    1,
     3.4188
    ]
   ],
@@ -350,7 +350,7 @@
     "lines": [
      "Goldacre sends its crates up the market road. We pay cash and ask nothing."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    }
   ]
@@ -358,32 +358,32 @@
  "t4-h4": {
   "floor": "i_home1_floor",
   "walls": "i_home1",
-  "C": 6,
+  "C": 10,
   "R": 7,
   "props": [
    [
     "winSmall",
-    1.3,
+    1.835,
     -0.2813
    ],
    [
     "shelfBooks",
-    1.95,
+    2.915,
     1.1187
    ],
    [
     "bedPink",
-    2.95,
+    4.585,
     1.3188
    ],
    [
     "tableBrownSmall",
-    2.7,
+    4.165,
     2.4688
    ],
    [
     "plantB",
-    0.8,
+    1,
     3.4188
    ]
   ],
@@ -397,7 +397,7 @@
     "lines": [
      "Timber comes up from Pinegrove, and tools and supplies go back down."
     ],
-    "dx": 2.25,
+    "dx": 3.25,
     "dy": 1.75
    },
    {

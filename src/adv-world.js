@@ -43,8 +43,8 @@ const ADV = (() => {
     defOf(name) { return this.lookup('mats', name); },
     propDef(name) { return this.lookup('props', name); },
     lookup(group, name) {   // the exterior sheet first, then the interior one (rooms), then the placeholder
-      const w = typeof window !== 'undefined' ? window : {}, ts = this.ts(), it = w.ADV_TILESET_INT, ph = w.ADV_TILESET_PLACEHOLDER, dv = this.fallback ? null : w.ADV_TILESET_DERIVED, rg = this.fallback ? null : w.ADV_TILESET_REGION;   // rg: data/adv/tileset-region.js (tools/adv-region-export.py), the map-lab sheet: baked ground, props, cliffs. dv: data/adv/tileset-derived.js (tools/adv-build-derived.py), its mats and props win over the exterior sheet's
-      for (const s of [rg, dv, ts, it, ph]) { const d = s && s[group] && s[group][name]; if (d) { if (!this.origin.has(d)) this.origin.set(d, s); return d; } }
+      const w = typeof window !== 'undefined' ? window : {}, ts = this.ts(), it = w.ADV_TILESET_INT, ph = w.ADV_TILESET_PLACEHOLDER, dv = this.fallback ? null : w.ADV_TILESET_DERIVED, rg = this.fallback ? null : w.ADV_TILESET_REGION, bg = this.fallback ? null : w.ADV_TILESET_BIG;   // rg: data/adv/tileset-region.js (tools/adv-region-export.py), the map-lab sheet: baked ground, props, cliffs. dv: data/adv/tileset-derived.js (tools/adv-build-derived.py), its mats and props win over the exterior sheet's. bg: data/adv/tileset-big.js (tools/adv-build-big.py), the big buildings
+      for (const s of [bg, rg, dv, ts, it, ph]) { const d = s && s[group] && s[group][name]; if (d) { if (!this.origin.has(d)) this.origin.set(d, s); return d; } }
       return null;
     },
     originOf(d) { return this.origin.get(d); },

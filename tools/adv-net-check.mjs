@@ -21,7 +21,7 @@ function mkCtx(seed, cave) {
   vm.runInContext(`{ let a = ${seed}; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
     var dirFromVec = (x, y) => [2, 1, 0, 7, 6, 5, 4, 3][(Math.round(Math.atan2(y, x) / (Math.PI / 4)) + 8) % 8];
     var DIR_VEC = [[0, 1], [0.707, 0.707], [1, 0], [0.707, -0.707], [0, -1], [-0.707, -0.707], [-1, 0], [-0.707, 0.707]];`, ctx);
-  for (const f of ['data/adv/tileset-placeholder.js', 'data/adv/tileset.js', 'data/adv/tileset-derived.js', 'data/adv/world.js', 'data/adv/zones.js', 'data/adv/encounters.js', 'data/adv/temperament.js', 'data/adv/pokedata.js', 'src/adv-world.js', 'src/adv-wild.js', 'src/adv-net.js']) script(f).runInContext(ctx);
+  for (const f of ['data/adv/tileset-placeholder.js', 'data/adv/tileset.js', 'data/adv/tileset-derived.js', 'data/adv/tileset-big.js', 'data/adv/world.js', 'data/adv/zones.js', 'data/adv/encounters.js', 'data/adv/temperament.js', 'data/adv/pokedata.js', 'src/adv-world.js', 'src/adv-wild.js', 'src/adv-net.js']) script(f).runInContext(ctx);
   if (cave) for (const f of ['data/adv/tileset-int.js', 'data/adv/rooms/t4-cave.js']) script(f).runInContext(ctx);   // the Route 4 cave is a live room: setWorld loads it with the world
   vm.runInContext(`ADV.setWorld(ADV_WORLD); ADVW.rnd = Math.random; this.X = { ADV, ADVW, ADVNET };`, ctx);
   const { ADV } = ctx.X;

@@ -73,7 +73,7 @@ for k, y in enumerate(range(-40, -27, 3)):
     for x in range(6 + (k % 2), 23, 3): g.prop(FRUIT[(x + y) % len(FRUIT)], x, y)
 g.lot('rg_house_red_a', 16, -21, street_y=-20, role=['g7-whitney', FP4(1)])
 g.lot('barnRed', 9, -21, street_y=-20, beds=None); g.props('maHayBales', [(6, -22), (12, -24)]); g.props('maHayPile', [(3, -27)]); g.props('rg_barrel_water', [(21, -21)])
-g.building('maManorOrange', 24, -1, ['g7-gym', {'w': 6, 'd': 4, 'ex': 2}]); g.rect(24, -2, 24, 2, 'd'); g.props('rg_lamp', [(20, 1), (28, 1)])
+g.building('hallGym', 24, -1, ['g7-gym', {'w': 9, 'd': 5, 'ex': 4}]); g.rect(24, -2, 24, 2, 'd'); g.props('rg_lamp', [(20, 1), (28, 1)])
 g.props('rg_planter_pink', [(21, -1), (27, -1)])
 # the pasture between Dairy Row and the market road: the herd's shelter, troughs, hay
 g.lot('thatchBarn', 22, -10, street_x=4, beds=None); g.props('rg_barrel_water', [(17, -11), (27, -9)]); g.props('maHayBales', [(12, -14), (28, -15)]); g.props('maHayPile', [(15, -8)])
