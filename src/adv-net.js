@@ -54,7 +54,7 @@ const ADVNET = (() => {
 
     // ---------- host ----------
     const mkPl = (pid, peer, p = {}) => ({ pid, peer, name: cleanName(p.name), av: cleanId(p.av), lead: cleanId(p.lead), b: ri(p.b, 0, 8), o: cleanO(p.o), x: 0, y: 0, z: 0, fc: 0, mv: 0, room: 0, e: [pid, 0, 0, 0, 0], sig: '', last: now(), sq: 0, say: -1e9,
-      kp: new Map(), kw: new Map(), kf: 0, wt: 0, fightT: -1e9, P: { x: 0, y: 0, z: 0, lv: 0, face: 0, badges: 0, busy: false, view: null } });
+      kp: new Map(), kw: new Map(), kf: 0, wt: 0, fightT: -1e9, P: { x: 0, y: 0, z: 0, lv: 0, face: 0, badges: 0, top: 0, busy: false, view: null } });   // top 0: a peer's party is not known here, so its spawns keep the plain band
     function initHost(o = {}) {
       Object.assign(N, { role: 'host', hostId: env.id, pid: 0, welcomed: true, mig: null, online: !!o.online });
       N.sid = o.sid || N.sid || 'local'; N.name = o.name || N.name || 'Local'; N.epoch = o.epoch ?? N.epoch; N.off = o.off ?? N.off; N.order = ids(o.order).filter(p => p !== env.id);

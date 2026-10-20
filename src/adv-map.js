@@ -106,6 +106,8 @@ const ADVMAP = {
           const g = id[0] === 'G', l = id[0] === 'L';
           A.sq(x, y, g ? 9 : 7, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff'); text(t.name, x, y - 13, 11, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff', 'center', '#101428', 'Silkscreen');
         }
+        for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); if (!on(x, y, 60)) continue; const won = !!sc.save.beat?.[gy.id]; A.sq(x, y, 9, won ? '#888' : '#ff3b30'); text(won ? 'GYM (won)' : 'GYM', x, y + 13, 11, won ? '#bbb' : '#ff9a8a', 'center', '#101428', 'Silkscreen'); }
+        { const G = A.goal(sc); if (G.x !== undefined) { const [x, y] = scr(G.x / T, G.y / T); if (on(x, y)) A.pin(x, y - 6, pk + 0.5); } }   // the NEXT GOAL
         if (N && !sc.room) for (const v of N.vis.values()) { const [x, y] = scr(v.x / T, v.y / T); if (!on(x, y)) continue; A.sq(x, y, 5, '#7be07b'); if (st.zi >= 2) text(N.roster.get(v.pid)?.name || '', x, y - 9, 11, '#7be07b', 'center', '#101428', 'Silkscreen'); }
         for (const p of w) { const [x, y] = scr(p.x / T, p.y / T); if (on(x, y)) { A.pin(x, y, pk); text(p.name, x, y - 12 * pk - 7, 11, '#fff', 'center', '#101428', 'Silkscreen'); } }
         { const [x, y] = scr(me.x / T, me.y / T), q = Math.floor(performance.now() / 350) % 2, v = DIR_VEC[sc.p.face] || [0, 1], n = Math.hypot(v[0], v[1]) || 1;
@@ -141,7 +143,64 @@ const ADVMAP = {
   hud(sc) {
     img(this.FILE);   // starts the load, so the map opens ready
     if (!sc.ready || sc.uis.length || sc.dlg || (sc.mode !== 'walk' && sc.mode !== 'fish')) return;
-    this.pins(sc); this.info(sc); this.party(sc);
+    this.pins(sc); this.info(sc); this.party(sc); this.mini(sc); this.goalBox(sc);
+  },
+
+  // ---------- where to go next: the nearest gym not beaten yet, and what the team needs first ----------
+  // gyms = the buildings whose interior has a Gym Leader (world.js, data px: x OUT for world px); beaten = save.beat[leader npc id]. Returns { x, y, line, sub, done } (world px of the gym door).
+  gyms() {
+    if (this._gy) return this._gy;
+    const W = window.ADV_WORLD; this._gy = [];
+    for (const b of W?.buildings || []) for (const n of b.interior?.npcs || []) if (n.trainer?.leader) this._gy.push({ id: n.id, b: b.id, x: b.x * ADV.OUT, y: b.y * ADV.OUT, town: W.towns[b.town]?.name || b.town, who: n.trainer.name, badge: n.trainer.badge, leader: n.trainer.leader, after: n.trainer.after || [] });
+    return this._gy;
+  },
+  goal(sc) {
+    const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
+    if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
+    const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)) - 2), top = ADVW.partyTop(sv);
+    const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
+    const sub = inGym && left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : top < want ? `Train your team to about Lv ${want} (best: Lv ${top})` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;
+    return { x: g.x, y: g.y, line: `${g.badge}: ${g.town}`, sub, g };
+  },
+  // compass and distance in tiles from you
+  dir(sc, x, y) { const h = this.here(sc), dx = x - h.x, dy = y - h.y, n = Math.round(Math.hypot(dx, dy) / ADV.T); if (n < 2) return 'here'; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360 + 22.5) % 360; return ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'][Math.floor(a / 45)] + ' ' + n + ' tiles'; },
+  // the goal panel beside the minimap: GOAL, the badge and town with its compass bearing, and the next step
+  goalBox(sc) {
+    const G = this.goal(sc), fs = this.fs(), m = this.miniRect(), x = m.x + m.s + Math.round(fs * 0.6), y = m.y, padX = Math.round(fs * 0.8), pitch = Math.round(fs * 1.45);
+    const l1 = G.line + (G.x !== undefined && !(sc.room && G.g && sc.room.id === G.g.b) ? '   ' + this.dir(sc, G.x, G.y) : ''), fs2 = Math.max(10, fs - 2);
+    const w = Math.round(Math.max(this.tw(l1, fs), this.tw(G.sub, fs2), this.tw('NEXT GOAL', fs2)) + 2 * padX), h = Math.round(3 * pitch + fs * 0.5);
+    const maxW = VW - x - 240; if (maxW < 140) return;   // no room beside the clock panel
+    ctx.save(); if (w > maxW) { ctx.beginPath(); ctx.rect(x, y, maxW, h); ctx.clip(); }
+    this.panel(x, y, Math.min(w, maxW), h, Math.round(fs * 0.7));
+    text('NEXT GOAL', x + padX, y + pitch * 0.62, fs2, '#ffde3b', 'left', null);
+    text(l1, x + padX, y + pitch * 1.55, fs, '#fff', 'left', null);
+    text(G.sub, x + padX, y + pitch * 2.45, fs2, G.done ? '#7be07b' : '#7fd0e8', 'left', null);
+    ctx.restore();
+  },
+
+  // ---------- the minimap (top left): the baked map round you, towns, the goal, waypoints and unbeaten trainers near you; a tap opens the map ----------
+  miniRect() { const s = Math.round(clamp(Math.min(VH * 0.26, VW * 0.2), 84, 180)), g = Math.round(this.fs() * 0.6); return { x: g, y: g, s }; },
+  mini(sc) {
+    const im = img(this.FILE); if (!im) return;
+    const { x, y, s } = this.miniRect(), T = ADV.T, h = this.here(sc), span = 96, k = s / span, cx = h.x / T, cy = h.y / T;   // span: cells across
+    const toS = (wx, wy) => [x + s / 2 + (wx / T - cx) * k, y + s / 2 + (wy / T - cy) * k], inS = (px, py) => px > x + 4 && px < x + s - 4 && py > y + 4 && py < y + s - 4;
+    ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, s, s, Math.round(s * 0.12)); ctx.fillStyle = '#0b1020'; ctx.fill(); ctx.clip();
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(im, cx - span / 2, cy - span / 2, span, span, x, y, s, s);
+    const W = window.ADV_WORLD;   // towns are in world px once loaded (ADV.setWorld scales them); buildings stay in data px (x OUT)
+    for (const t of Object.values(W?.towns || {})) { const [px, py] = toS(t.center.x, t.center.y); if (inS(px, py)) this.sq(px, py, Math.max(4, Math.round(k * 4)), '#ffffff'); }
+    for (const n of ADVN.list) { const t = n.def.trainer; if (!t || t.leader || n.def.room || ADVN.beaten(n) || !n.e) continue; const [px, py] = toS(n.e.x, n.e.y); if (inS(px, py)) { ctx.beginPath(); ctx.arc(px, py, Math.max(2, k * 1.6), 0, 6.2832); ctx.fillStyle = '#ff9f43'; ctx.fill(); } }
+    for (const w of this.wps(sc)) { const [px, py] = toS(w.x, w.y); if (inS(px, py)) this.sq(px, py, 5, '#ff3b30'); }
+    const G = this.goal(sc);
+    if (G.x !== undefined) {
+      const [px, py] = toS(G.x, G.y);
+      if (inS(px, py)) this.pin(px, py, Math.max(1.2, s / 70));
+      else { const dx = px - (x + s / 2), dy = py - (y + s / 2), l = Math.hypot(dx, dy), r = s / 2 - 8, ux = dx / l, uy = dy / l; this.arrow(x + s / 2 + ux * r, y + s / 2 + uy * r, ux, uy, Math.max(1.4, s / 60), '#ff3b30'); }
+    }
+    const v = DIR_VEC[sc.p.face] || [0, 1], u = Math.max(1.6, s / 45); this.arrow(x + s / 2 + v[0] * 3.5 * u, y + s / 2 + v[1] * 3.5 * u, v[0], v[1], u, '#ffde3b');   // you, pointing the way you face
+    ctx.restore();
+    rrect(x, y, s, s, Math.round(s * 0.12), null, '#ffffff66', 2);
+    hot(x, y, s, s, { click: () => sc.open(this.ui(sc)) });
   },
   fs: () => clamp(Math.round(VH / 40), 11, 18),   // the HUD's font size
   panel(x, y, w, h, r) { rrect(x, y, w, h, r, '#0b1020ee', '#ffffff40', 2); },
@@ -197,7 +256,7 @@ const ADVMAP = {
   party(sc) {
     const sv = sc.save, lead = sc.leadIdx(), fs = this.fs(), nat = sv.party.map((m, i) => this.emo(sc, m, i)).find(Boolean)?.naturalWidth || 40;
     const pz = Math.round(nat * (VH >= 1500 ? 2 : VH >= 800 ? 1 : 0.5)), bh = Math.max(4, Math.round(pz / 7)), gap = Math.max(4, Math.round(pz / 6)), r = Math.max(4, Math.round(pz / 5)), x = Math.round(fs * 0.6);
-    const slot = pz + bh + 3 + gap, y0 = Math.round((VH - (6 * slot - gap)) / 2), ph = pz + bh + 3;
+    const mr = this.miniRect(), slot = pz + bh + 3 + gap, y0 = Math.max(mr.y + mr.s + gap * 2, Math.round((VH - (6 * slot - gap)) / 2)), ph = pz + bh + 3;   // below the minimap
     let tip = -1;
     for (let i = 0; i < 6; i++) {
       const y = y0 + i * slot, m = sv.party[i];

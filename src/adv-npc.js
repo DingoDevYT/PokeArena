@@ -9,7 +9,27 @@ const ADVN = {
   load(defs = [...(window.ADV_NPCS || []), ...ADV.roomNpcs()]) {
     this.list = defs.map(d => ({ id: d.id, def: d, e: null, face: d.face | 0, home: { x: (d.x + 0.5) * ADV.Tc(d.x), y: (d.y + 0.5) * ADV.Tc(d.x) }, busy: false, moving: false, walkD: 0, animT: 0, wait: 1 + (d.x * 7 + d.y * 3) % 5, go: null, wp: 0, stuck: 0 }));
   },
-  files() { const R = window.TRAINER_OW_RANGER || {}, O = window.TRAINER_OW8 || window.TRAINER_OW || {}; return [...new Set(this.list.map(n => (R[n.def.sprite] || O[n.def.sprite])?.file).filter(Boolean))]; },
+  // Every person is drawn in the Pokemon Ranger style: a Ranger sheet when the def names one, otherwise a look built with the character creator (adv-outfit.js) for the role,
+  // its colours varied per person so two fishermen are not twins. ROLE: hair, hat (0 none, else index + 1), top, bot, body by sprite name of the older sheets.
+  ROLE: { fishing: { hat: 4, top: 4, bot: 4 }, fishing2: { hat: 1, top: 2, bot: 1 }, delivery: { hat: 2, top: 3, bot: 3 }, cowgirl: { body: 1, hair: 1, hat: 3, top: 3, bot: 1 },
+    shopm2: { top: 0, bot: 4 }, sportsman: { hat: 1, top: 2, bot: 3 }, doctor: { body: 3, hair: 4, top: 2, bot: 4, topC: 15 } },
+  // the older (HGSS / gen 8) sheets by the Ranger person who plays the same part
+  ALIAS: { workman: 'npc2-jumpsuit-man', gswoman1: 'npc2-purple-top-woman', gsoldman: 'npc2-old-man', nurse: 'npc3-apron-woman-blue', shopm: 'npc2-blue-jumpsuit-man', shopm2: 'npc2-yellow-suit-man',
+    gsboy2: 'npc1-backwards-cap-boy', oldwoman: 'npc3-old-woman-cane', gsmiddleman: 'npc3-dark-haired-man', woman3: 'npc2-dark-hair-woman', boy1: 'npc1-blue-cap-boy', gsmama: 'npc3-apron-woman',
+    gsman1: 'npc1-green-shirt-man', gsman2: 'npc2-striped-shirt-man', farmer: 'npc3-man-green-shirt', gsgirl2: 'npc1-ponytail-girl', seaman: 'npc4-sailor', gsman3: 'npc2-bearded-man',
+    delivery: 'npc2-yellow-shirt-boy', boy3: 'npc1-red-jacket-boy', gsgirl3: 'npc1-striped-dress-girl', middlewoman: 'npc2-yellow-jacket-woman', bigman: 'npc3-bearded-man',
+    gsoldwoman: 'npc3-old-woman-purple', whitney: 'npc4-ponytail-girl-pink', lady: 'npc2-red-jacket-woman', picnicgirl: 'npc4-blonde-girl', sportsman: 'north-headband-brawler', doctor: 'npc5-oak' },
+  look(n) {
+    const s = n.def.sprite, R = window.TRAINER_OW_RANGER || {}; if (s == null) return null; if (R[s]) return R[s]; if (R[this.ALIAS[s]]) return R[this.ALIAS[s]];
+    if (!n.outfit) {
+      let h = 2166136261; for (const c of String(n.id)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+      const r = k => (h = Math.imul(h ^ k, 2246822519) >>> 0) % 997, role = this.ROLE[s] || {}, N = ADVO.n();
+      const o = { body: r(1) % 4, hair: r(2) % N.hair, hairC: r(3) % N.hairC, hat: 0, hatC: r(4) % N.hatC, top: r(5) % N.top, topC: r(6) % N.topC, bot: r(7) % N.bot, botC: r(8) % N.botC, bag: 0, bagC: 0, skin: r(9) % N.skin, ...role };
+      n.outfit = ADVO.clean(o);
+    }
+    return ADVO.sheet(n.outfit);
+  },
+  files() { const R = window.TRAINER_OW_RANGER || {}, O = window.TRAINER_OW8 || window.TRAINER_OW || {}; return [...new Set(this.list.map(n => (R[n.def.sprite] || R[this.ALIAS[n.def.sprite]])?.file).filter(Boolean)), ...(this.list.some(n => n.def.sprite != null && !R[n.def.sprite] && !R[this.ALIAS[n.def.sprite]]) ? ADVO.files() : [])]; },
   beaten: n => !!ADV.player?.beat?.[n.id],
   // S2: somebody inside a building (def.room = its id) is seen, talked to and spotted by only while the building is cut away
   vis(n) { const b = n.def.room && ADV.bldById.get(n.def.room); return !b || b.k > 0; },
@@ -35,7 +55,8 @@ const ADVN = {
   team(t, id, badges = ADV.player?.badges | 0) {
     if (t.leader) return this.leaderTeam(t.leader, badges);
     const b = Math.max(0, Math.min(8, badges | 0)), [lo, hi] = this.SIZE[b], n = Math.min(t.team.length, lo + this.hash(id) % (hi - lo + 1)), [a, z] = this.range(t.gym ? 'gym' : 'route', b);
-    return t.team.slice(0, n).map(([sp, rel]) => { const lv = Math.min(z, a + rel); return { species: ADVW.evolve(sp, lv), level: lv }; });
+    let l0 = a, h1 = z; const top = ADVW.partyTop(); if (!t.gym && top > 0 && h1 > top + ADVW.UP) { h1 = Math.max(2, top + ADVW.UP); l0 = Math.min(l0, Math.max(2, h1 - 3)); }   // route trainers: held near the party like the wild; gym trainers keep the band
+    return t.team.slice(0, n).map(([sp, rel]) => { const lv = Math.min(h1, l0 + rel); return { species: ADVW.evolve(sp, lv), level: lv }; });
   },
   pay: (t, team) => t.money * Math.max(...team.map(m => m.level)),
   avatar: t => t.avatar || ADVN.AVATAR[t.cls.toLowerCase()] || 'youngster',
@@ -66,10 +87,23 @@ const ADVN = {
     const S2 = (this.SIM * ADV.Tp(P.x)) ** 2;
     for (const n of this.list) {
       if (Math.hypot(n.home.x - P.x, n.home.y - P.y) ** 2 > S2 || !this.place(n)) continue;
-      n.animT += dt; n.moving = false;
-      if (n.busy || n.def.move === 'still') continue;
+      n.animT += dt; n.moving = false; if (n.bub && (n.bub.t += dt) > 2.4) n.bub = null;
+      if (n.busy) continue;
+      this.life(n, dt, P);
+      if (n.def.move === 'still' && !n.pot) continue;
       this.wander(n, dt, P);
     }
+  },
+  // people are alive: someone close turns to face you, villagers who stand still look about now and then, some outdoors potter round their spot, and now and then
+  // one shows a mood bubble. Trainers keep the way they face (it is their line of sight); people inside buildings stay at their posts.
+  BUBS: ['...', '\u266a', '!', '?', '\u2665'],
+  life(n, dt, P) {
+    const e = n.e, d = n.def, T = ADV.Tp(e.x), near = e.lv === P.lv && Math.hypot(e.x - P.x, e.y - P.y) < 2.2 * T, h = this.hash(n.id);
+    if (near && !n.go && !d.trainer) { n.face = dirFromVec(P.x - e.x, P.y - e.y); n.look = 2; return; }
+    if (d.trainer) return;
+    if (d.move === 'still' && !d.room && h % 3 === 0 && n.pot === undefined) n.pot = true;   // a third of the outdoor villagers potter about (d.r 1)
+    if (d.move === 'still' && !n.pot && (n.look = (n.look ?? 2 + h % 4) - dt) <= 0) { n.look = 3 + Math.random() * 5; n.face = Math.random() < 0.4 ? (d.face | 0) : [0, 2, 4, 6][Math.floor(Math.random() * 4)]; }
+    if (!n.bub && Math.hypot(e.x - P.x, e.y - P.y) < 7 * T && Math.random() < dt * 0.025) n.bub = { s: this.BUBS[Math.floor(Math.random() * this.BUBS.length)], t: 0 };
   },
   wander(n, dt, P) {
     const e = n.e, T = ADV.Tp(e.x), d = n.def;
@@ -77,7 +111,7 @@ const ADVN = {
       if ((n.wait -= dt) > 0) return;
       let x, y;
       if (d.move === 'path' && d.path) { const w = d.path[n.wp++ % d.path.length]; x = (w[0] + 0.5) * T; y = (w[1] + 0.5) * T; }
-      else { const R = (d.r || 3) * T; x = n.home.x + (Math.random() * 2 - 1) * R; y = n.home.y + (Math.random() * 2 - 1) * R; }
+      else { const R = (n.pot ? 1 : d.r || 3) * T; x = n.home.x + (Math.random() * 2 - 1) * R; y = n.home.y + (Math.random() * 2 - 1) * R; }
       if (this.okSpot(x, y, e)) n.go = { x, y, t: 6 }; else n.wait = 0.5;
       return;
     }

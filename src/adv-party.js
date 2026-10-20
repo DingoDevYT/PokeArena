@@ -19,6 +19,7 @@ const ADVP = {
   expFor(rate, n) { return n <= 1 ? 0 : Math.max(0, Math.floor(this.CURVE[rate](n))); }, // total EXP a mon of this growth rate has at level n
   levelFor(rate, exp) { for (let n = 100; n > 1; n--) if (exp >= this.expFor(rate, n)) return n; return 1; },
   // Gen 5 scaled formula; split = number of mons sharing it, a trainer fight pays 1.5x
+  PACE: 1.5,   // a real-time fight takes longer than a turn, so each one is worth half again the mainline EXP (applied where it is awarded, adv-scene.js)
   expGain(base, foeLv, myLv, split = 1, trainer = false) { return Math.floor((trainer ? 1.5 : 1) * base * foeLv / (5 * split) * ((2 * foeLv + 10) / (foeLv + myLv + 10)) ** 2.5 + 1); },
 
   // ---------- catching ----------

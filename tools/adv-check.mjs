@@ -400,7 +400,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
 {
   const st = ADVP.mon('bulbasaur', 5, { ot: 'Ash' }), sv = ADVS.fresh({ name: 'Ash', avatar: 'red', home: 'G7', starter: st });
   ok(sv.party.length === 1 && sv.money === 3000 && sv.badges === 0 && sv.home === 'G7' && sv.last === 'G7' && Array.isArray(sv.box) && sv.bag.pokeball > 0, 'a new save has the party, box, bag, money, badges, hometown, name and avatar');
-  ADVS.check(sv); ADV.player = sv; ok(ADVW.level('common') <= 11, 'ADV.player = the save: badge band 0'); sv.badges = 3; ok(ADVW.level('common') >= 21, 'its badges pick the wild level band'); sv.badges = 0; delete ADV.player;
+  ADVS.check(sv); ADV.player = sv; ok(ADVW.level('common') <= 11, 'ADV.player = the save: badge band 0'); sv.badges = 3; sv.party[0].level = 30; ok(ADVW.level('common') >= 21, 'its badges pick the wild level band (a team up to it)'); sv.party[0].level = 5; ok(ADVW.level('common') <= 7, 'a level 5 team meets nothing over level 7, whatever the badges (wild levels held near the party)'); sv.badges = 0; delete ADV.player;
   const txt = await ADVS.seal(sv); ok(txt.startsWith('KENORA-SAV1\n') && !txt.includes('Ash') && !txt.includes('bulbasaur'), 'the file is a magic line plus base64, no plain text');
   const back = await ADVS.open(txt); assert.deepEqual(back, sv); n++; ok(true, 'decrypts to the same save');
   ok((await ADVS.seal(sv)) !== txt, 'a random salt and iv make every file different');

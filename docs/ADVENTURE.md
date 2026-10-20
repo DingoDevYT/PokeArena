@@ -58,7 +58,10 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
 - Badge-band scaling for EVERYTHING: wild mons, trainers and gyms scale to the badge count of the player who starts the fight. Any hometown and route order works. (Replaces "wild levels fixed per area".)
 - Story state is per player and phased: Team Umbra beats fire at that player's badge thresholds; story NPCs and set pieces show only to players at that stage. Players at different stages still see and help each other.
 - First slice: Goldacre (G7, farm town, gym leader Whitney, ace Miltank) + Routes 5 and 7.
-- Starter: open choice of any base-stage, non-legendary species.
+- Starter (changed 2026-10-20 at Landon's request): only the regional starters of every generation plus partner Pokemon (Pikachu, Eevee, Riolu, Togepi, Meowth, Rockruff). ADVUI.STARTERS.
+- Balance (2026-10-20): wild Pokemon and route trainers keep the badge band but are held to at most 2 levels over the player's strongest party member (ADVW.band / UP), so a level 5 starter meets level 3 to 7. Gym trainers and leaders keep the full band: they are the gate. EXP is 1.5x mainline (ADVP.PACE) because a real-time fight takes longer than a turn.
+- Direction (2026-10-20): the NEXT GOAL panel names the nearest gym not beaten yet with its bearing and distance, and the step before it (train to about the leader's level minus 2, or beat the gym's trainers first). The minimap (top left) shows the goal pin, trainers not beaten yet and waypoints; it opens the map. A new save opens with a short welcome that points at both.
+- People (2026-10-20): every NPC is drawn in the Ranger style (older sheets map to the Ranger person who plays the part, ADVN.ALIAS; anything else gets a character-creator look). Villagers face you when you are close, look about, a third of the outdoor ones potter round their spot, and now and then show a mood bubble. Trainers keep their facing (their line of sight).
 - Region rules from the bible: every town has a Centre and a Mart or local equivalent; gyms are category-based not type-based; encounter tables are time-based; no HMs, trainers learn Skills from NPCs.
 
 ## Waiting on Landon

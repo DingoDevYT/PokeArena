@@ -99,11 +99,13 @@ const ADVUI = {
     g.drawImage(outlined(im, 32, 32), -w / 2, -w / 2, w, w); g.restore(); return true;
   },
   // the starter pool: one base-stage, non-legendary species per dex number that the engine can draw
+  // the starters of every region, then the partner Pokemon (Pikachu, Eevee and friends): nothing stronger than a starter, so the early routes stay a fair fight
+  STARTERS: ['bulbasaur', 'charmander', 'squirtle', 'chikorita', 'cyndaquil', 'totodile', 'treecko', 'torchic', 'mudkip', 'turtwig', 'chimchar', 'piplup', 'snivy', 'tepig', 'oshawott',
+    'chespin', 'fennekin', 'froakie', 'rowlet', 'litten', 'popplio', 'grookey', 'scorbunny', 'sobble', 'sprigatito', 'fuecoco', 'quaxly',
+    'pikachu', 'eevee', 'riolu', 'togepi', 'meowth', 'rockruff'],
   starters() {
     if (this._st) return this._st;
-    const best = {};
-    for (const id in ADV_DEX) { const d = ADV_DEX[id], sp = DEX.species[id]; if (d.baseStage && !d.legendary && sp && sp.num > 0 && SPRITES[sp.sprite] && (!best[sp.num] || id.length < best[sp.num].length)) best[sp.num] = id; }
-    return this._st = Object.values(best).sort((a, b) => DEX.species[a].num - DEX.species[b].num);
+    return this._st = this.STARTERS.filter(id => DEX.species[id] && SPRITES[DEX.species[id].sprite] && ADV_DEX[id]);
   },
   moveRow(id, x, y, w, h) {
     const mv = DEX.moves[id]; if (!mv) return;
@@ -239,9 +241,9 @@ const ADVUI = {
           }
           const id = ids[st.sel];
           if (id) {
-            const sp = DEX.species[id], mv = ADVP.moves(id, 5), y = y0 + r * sz + 8 * s;
-            text(`#${sp.num} ${sp.name.toUpperCase()}`, 40, y + 12 * s, 20 * s, '#fff', 'left'); let cx = 60 + 12 * 20 * s * 0.9; for (const t of sp.types) cx += hudChip(cx, y, t.toUpperCase(), TYPE_COLOR[t], 22 * s);
-            text(mv.map(m => DEX.moves[m].name).join('   ') || 'default moves', 40, y + 40 * s, 14 * s, '#9aa6c0', 'left', null);
+            const sp = DEX.species[id], mv = ADVP.moves(id, 5), y = y0 + r * sz + 8 * s, ix = window.TOUCH?.on ? 175 : 40;   // right of the touch d-pad
+            text(`#${sp.num} ${sp.name.toUpperCase()}`, ix, y + 12 * s, 20 * s, '#fff', 'left'); let cx = ix + 20 + 12 * 20 * s * 0.9; for (const t of sp.types) cx += hudChip(cx, y, t.toUpperCase(), TYPE_COLOR[t], 22 * s);
+            text(mv.map(m => DEX.moves[m].name).join('   ') || 'default moves', ix, y + 40 * s, 14 * s, '#9aa6c0', 'left', null);
           } else text('No Pokemon match', VW / 2, y0 + 60 * s, 20 * s, '#ccc', 'center');
           hint(padUI() ? 'A pick   B back' : 'Type to search   arrows or scroll browse   Enter pick   Esc back'); backButton(back);
         } else {

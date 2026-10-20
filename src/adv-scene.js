@@ -161,7 +161,7 @@ const AdventureScene = {
     if (!this.ready) {
       const sk = ADV.key(Math.floor(this.p.x / (ADV.Tp(this.p.x) * ADV.CH)), Math.floor(this.p.y / (ADV.Tp(this.p.x) * ADV.CH)));
       if (ADV.missing[sk]) this.err = 'Missing world data';
-      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late; this.late = null; this.grow(l); } }
+      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late; this.late = null; this.grow(l); } else if (!this.save.intro && !this.net?.N?.online) this.intro(); }
       return;
     }
     const en = !!KEYS.Enter; this.enterHit = en && !this.enterPrev; this.enterPrev = en;
@@ -638,6 +638,13 @@ const AdventureScene = {
     this.px = x; this.py = y; this.cam = { x, y: y - p.z - 16 }; this.camStep(1);
   },
   // the text box: boxes of 2 lines, typewriter, A / E / click to advance; done() runs after the last box
+  // a new trainer's first moments: where they are, what they are after, and the two things on screen that always show the way (once per save)
+  intro() {
+    const sv = this.save, m = sv.party[0], mon = m ? ADVP.name(m) : 'your partner', home = ADVS.town(sv.home)?.name || 'home', touch = !!window.TOUCH?.on; sv.intro = 1;
+    this.dialog([`Welcome to Kenora, ${sv.name}! You and ${mon} are setting out from ${home}.`,
+      'Gym Leaders across the region award Badges to trainers who beat them. The NEXT GOAL panel at the top left always says where to go next, and what to do first.',
+      `The minimap shows the way: the red pin is your goal and the orange dots are trainers waiting to battle. ${touch ? 'Tap' : 'Click'} it for the full map. Good luck!`], null);
+  },
   dialog(pages, n, done) {
     const boxes = []; for (const s of pages) boxes.push(...this.box(s));
     this.dlg = { pages: boxes, i: 0, t: 0, n, done }; this.mode = 'talk';
@@ -908,7 +915,7 @@ const AdventureScene = {
   award(m) {
     const s0 = B.sides[0], alive = [...this.part].filter(k => !s0.team[k].fainted); if (!alive.length) return;
     const base = ADVP.info(m.sp.id).baseExp ?? 100;
-    alive.forEach(k => { const i = this.order[k], n = ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr); this.gain[i] = (this.gain[i] | 0) + n; if (k === s0.cur) callout({ idx: -1 }, `${ADVP.name(this.save.party[i])} +${n} EXP`); });
+    alive.forEach(k => { const i = this.order[k], n = Math.round(ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr) * ADVP.PACE); this.gain[i] = (this.gain[i] | 0) + n; if (k === s0.cur) callout({ idx: -1 }, `${ADVP.name(this.save.party[i])} +${n} EXP`); });
   },
   // writes the fight back into the party (hp, status) and turns the EXP into the level-up pages
   settle() {
@@ -1052,6 +1059,13 @@ const AdventureScene = {
     }
     return out;
   },
+  // a villager's mood bubble (ADVN.life): a small speech balloon with a mark in it, popping in and fading out
+  drawBub(n) {
+    const g = ctx, e = n.e, b = n.bub, x = Math.round(e.x), a = clamp(Math.min(b.t / 0.15, (2.4 - b.t) / 0.3), 0, 1), y = Math.round(e.y - (e.z || 0)) - 62 - Math.round((1 - Math.min(1, b.t / 0.15)) * 4);
+    g.globalAlpha = a; g.fillStyle = '#101428'; g.fillRect(x - 13, y - 11, 26, 20); g.fillRect(x - 3, y + 9, 6, 4);
+    g.fillStyle = '#fff'; g.fillRect(x - 12, y - 10, 24, 18); g.fillRect(x - 2, y + 8, 4, 3);
+    text(b.s, x, y - 1, 12, b.s === '\u2665' ? '#e03a6a' : b.s === '!' ? '#e03030' : '#101428', 'center', null); g.globalAlpha = 1;
+  },
   drawFx(fx, e) {
     const g = ctx, x = Math.round(e.x), y = Math.round(e.y - (e.z || 0));
     if (fx.k === '!') {
@@ -1125,12 +1139,13 @@ const AdventureScene = {
     if (p.style === 'bound') { const T = p.T || 0.6, ph = (t % T) / T, land = ph < 0.1 || ph > 0.9; return { anim, t: t * rate(p.fps || 10), dz: Math.round(4 * ph * (1 - ph) * (p.h || 20) / 2) * 2, stretch: land ? [1.12, 0.88] : ph > 0.25 && ph < 0.75 ? [0.96, 1.05] : undefined }; }
     return { anim, t: t * rate(p.fps || 12) };   // flap
   },
-  drawNPC(n) { const s = n.def.sprite, ow = (window.TRAINER_OW_RANGER || {})[s] || (window.TRAINER_OW8 || {})[s] || (window.TRAINER_OW || {})[s]; if (ow) this.drawOW(ow, n.face, n.moving, n.walkD, n.e); },
+  drawNPC(n) { const ow = ADVN.look(n); if (ow) this.drawOW(ow, n.face, n.moving, n.walkD, n.e); },   // Ranger sheets, or a character-creator look (ADVN.look)
   // every NPC near the view, plus the "!" over a trainer that just spotted you
   npcItems() {
     const out = [], cx = this.cam.x, cy = this.cam.y;
     for (const n of ADVN.list) { const e = n.e; if (e && Math.abs(e.x - cx) < 700 && Math.abs(e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: e.x, y: e.y, z: e.z, f: () => this.drawNPC(n) }); }
     const b = this.bang, e = b && b.n.e; if (e) out.push({ x: e.x, y: e.y + 2, z: e.z, f: () => this.drawFx({ k: '!', t: b.t }, e) });
+    for (const n of ADVN.list) if (n.bub && n.e && n !== b?.n && Math.abs(n.e.x - cx) < 700 && Math.abs(n.e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: n.e.x, y: n.e.y + 2, z: n.e.z, f: () => this.drawBub(n) });
     return out;
   },
   drawDlg() {
@@ -1224,7 +1239,7 @@ const AdventureScene = {
       items.push(...this.wildItems(), ...this.npcItems(), ...this.remoteItems(), ...this.castItems(), ...this.courseItems());
       if (this.heal && this.room?.d.mach) items.push({ x: this.room.d.mach.x, y: this.room.d.mach.y + 2, z: 0, f: () => this.drawHeal() });
       ADVR.draw(this.cam, items, this.t);
-      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(padUI() ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + (window.TOUCH?.on ? 'tap B or MENU for the menu' : 'tap B menu') : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu'); }
+      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(window.TOUCH?.on ? 'hold B run   A talk' + (rod ? '   X cast' : '') : padUI() ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + (window.TOUCH?.on ? 'tap B or MENU for the menu' : 'tap B menu') : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu'); }
     }
   },
 };

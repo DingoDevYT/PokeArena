@@ -26,8 +26,12 @@ const ADVW = {
     for (const b of bs) if ((r -= this.BW[b] || 0) < 0) return this.pk(by[b]);
     return tab[0];
   },
-  level(band, badges = ADV.player?.badges | 0) { const [a, b] = this.LV[Math.max(0, Math.min(8, badges))]; return a + Math.floor(this.rnd() * (b - a + 1)) + (this.BONUS[band] || 0); },
-  top(band, badges = ADV.player?.badges | 0) { return this.LV[Math.max(0, Math.min(8, badges))][1] + (this.BONUS[band] || 0); }, // highest level of the band
+  // the band for a badge count, held to at most UP levels over the player's strongest party member (top), so a fresh starter meets fair fights and the band is reached by training
+  UP: 2,
+  band(badges, top) { let [a, b] = this.LV[Math.max(0, Math.min(8, badges | 0))]; if (top > 0 && b > top + this.UP) { b = Math.max(2, top + this.UP); a = Math.min(a, Math.max(2, b - 4)); } return [a, b]; },
+  partyTop(sv = ADV.player) { return sv?.party?.length ? Math.max(...sv.party.map(m => m.level | 0)) : 0; },
+  level(band, badges = ADV.player?.badges | 0, top = this.partyTop()) { const [a, b] = this.band(badges, top); return a + Math.floor(this.rnd() * (b - a + 1)) + (this.BONUS[band] || 0); },
+  top(band, badges = ADV.player?.badges | 0, top = this.partyTop()) { return this.band(badges, top)[1] + (this.BONUS[band] || 0); }, // highest level of the band
   // a Wooloo at 30 is a Dubwool: follow plain level evolutions (no item / trade / friendship / time) while the level allows
   evolve(id, lv) {
     for (;;) {
@@ -51,7 +55,7 @@ const ADVW = {
   spawnTry(P, view, Q = [P]) {
     const T = ADV.Tp(P.x), a = this.rnd() * 6.2832, d = (this.MIN + this.rnd() * (this.NEAR - this.MIN)) * T, x = P.x + Math.cos(a) * d, y = P.y + Math.sin(a) * d;
     const r = this.pickSpecies(this.zone(x, y)); if (!r) return null;
-    const lv = this.level(r[1], P.badges), id = this.evolve(r[0], lv), tm = this.tm(id), n = tm.group[0] + Math.floor(this.rnd() * (tm.group[1] - tm.group[0] + 1));
+    const pt = P.top !== undefined ? P.top : this.partyTop(), lv = this.level(r[1], P.badges, pt), id = this.evolve(r[0], lv), tm = this.tm(id), n = tm.group[0] + Math.floor(this.rnd() * (tm.group[1] - tm.group[0] + 1));
     const spot = (cx, cy, rad) => {
       const small = (window.DEX?.species[id]?.weightkg ?? 99) < 12; let any = null;
       for (let i = 0; i < 6; i++) {
@@ -64,7 +68,7 @@ const ADVW = {
     };
     const home = spot(x, y, 3 * T); if (!home) return null;
     const pts = [home]; for (let i = 1; i < n; i++) { const q = spot(home.x, home.y, 36); if (q) pts.push(q); }
-    return this.group(id, lv, home, pts, this.top(r[1], P.badges));
+    return this.group(id, lv, home, pts, this.top(r[1], P.badges, pt));
   },
   pickSpecies(zone) {
     const tab = this.table(zone); if (!tab) return null;
