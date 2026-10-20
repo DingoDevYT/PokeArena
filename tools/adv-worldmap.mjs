@@ -32,6 +32,8 @@ function avg(def) {
 function colour(name) {
   if (memo.has(name)) return memo.get(name);
   const def = get(`ADV.defOf(${JSON.stringify(name)})`), v = def && avg(def);
+  const STAND = { rgGrass: 'grass', rgPath: 'path', rgWater: 'water', pond: 'water' };   // materials drawn from the lab sheet or as quarter tiles (no plain tile to average): their everyday look
+  if (!v && STAND[name]) { const c = colour(STAND[name]); memo.set(name, c); return c; }
   let c = [0, 0, 0];
   if (v) {
     c = v.rgb;
@@ -55,7 +57,7 @@ for (let r = 0; r < PH; r++) for (let c = 0; c < PW; c++) {
   const a = cell(c, r), o = (r * PW + c) * 4; let rgb = [8, 12, 24];
   if (a && a.h >= 0) {
     hs[a.h] = (hs[a.h] || 0) + 1;
-    rgb = colour(W.palette[a.mat]);
+    rgb = colour(W.palette[a.mat] ?? ['rgGrass', 'rgPath', 'rgWater'][a.mat - W.palette.length]);   // the lab windows' materials sit past the end of the palette (ADV.setWorld adds them)
     if (a.over) { const od = colour(W.palette[a.over]); rgb = rgb.map((x, i) => x * 0.4 + od[i] * 0.6); }
     const water = (W.water || ['water']).includes(W.palette[a.mat]);
     let k = water ? 1 : Math.max(0.5, 1 - 0.09 * a.h);   // higher ground is darker, water stays water-coloured

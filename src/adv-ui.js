@@ -680,6 +680,6 @@ const ADVUI = {
     const sel = its[w.sel]; if (sel) {
       const it = ADVP.item(sel); text(it.name, cx, cy - L(18), L(24), '#fff', 'center'); text(cd ? `Ready in ${Math.ceil(sc.itemCd)}` : it.info, cx, cy + L(16), L(13), cd ? '#ff9a9a' : '#9aa6c0', 'center', null);
     }
-    hint(padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close');
+    hint(window.TOUCH?.on ? 'Tap an item to use it   B close' : padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close');
   },
 };

@@ -11,6 +11,7 @@ const HINT_ICONS = { A: 'xbox_a', B: 'xbox_b', X: 'xbox_x', Y: 'xbox_y', LB: 'xb
 const ICON_KEY = { xbox_a: 'A', xbox_b: 'B', xbox_x: 'X', xbox_y: 'Y', xbox_lb: 'LB', xbox_rb: 'RB', xbox_lt: 'LT', xbox_rt: 'RT' };
 // On a touch screen the button icons in the hint are buttons themselves (touch.js only draws A, B and a d-pad on screens), so X / Y / LB / RB / LT / RT stay reachable without covering anything.
 function hint(s, y = VH - 26) {
+  if (window.TOUCH?.on && !TOUCH.padOn) s = s.split(/\s{3,}/).filter(p => !/d-pad|left\/right|\bstick\b|up\/down|arrows|scroll/i.test(p)).join('   ');   // touch: the pad is hidden on screens, so no steering instructions
   const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|LT|RT|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
   const tap = window.TOUCH?.on ? (name, ix, iw) => { const k = ICON_KEY[name]; if (k) hot(ix - 8, y - 22, iw + 16, 44, { click: () => { TOUCH.p[k] = true; } }); } : null;
   iconRow(parts, VW / 2, y, 32, Math.max(12, 14 * S()), '#ccd', 'center', false, tap);

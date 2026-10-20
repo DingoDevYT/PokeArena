@@ -83,6 +83,7 @@ const ADVMAP = {
         if (!mx) mx = INPUT.mx; if (!my) my = INPUT.my;
         if (mx || my) { st.ms = false; st.cx += mx * 420 / z() * dt; st.cy += my * 420 / z() * dt; }
         if (INPUT.hit('TABR')) zoom(1); if (INPUT.hit('TABL')) zoom(-1);
+        if (window.TOUCH?.on) { TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { st.ms = false; st.cx -= d.dx / z(); st.cy -= d.dy / z(); TOUCH.drag = null; } }   // touch: a finger drags the map
         if (MOUSE.hit) { st.ms = true; st.drag = { x: MOUSE.x, y: MOUSE.y, cx: st.cx, cy: st.cy, mv: false }; }
         if (st.drag) {
           const d = st.drag;
@@ -106,7 +107,7 @@ const ADVMAP = {
           const g = id[0] === 'G', l = id[0] === 'L';
           A.sq(x, y, g ? 9 : 7, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff'); text(t.name, x, y - 13, 11, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff', 'center', '#101428', 'Silkscreen');
         }
-        for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); if (!on(x, y, 60)) continue; const won = !!sc.save.beat?.[gy.id]; A.sq(x, y, 9, won ? '#888' : '#ff3b30'); text(won ? 'GYM (won)' : 'GYM', x, y + 13, 11, won ? '#bbb' : '#ff9a8a', 'center', '#101428', 'Silkscreen'); }
+        for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); if (!on(x, y, 60)) continue; const won = !!sc.save.beat?.[gy.id]; ctx.beginPath(); ctx.arc(x, y, 8, 0, 6.2832); ctx.fillStyle = won ? '#777' : '#e8402e'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#101428'; ctx.stroke(); text('G', x, y + 1, 10, '#fff', 'center', null); }   // a gym: a red G badge (grey once won)
         { const G = A.goal(sc); if (G.x !== undefined) { const [x, y] = scr(G.x / T, G.y / T); if (on(x, y)) A.pin(x, y - 6, pk + 0.5); } }   // the NEXT GOAL
         if (N && !sc.room) for (const v of N.vis.values()) { const [x, y] = scr(v.x / T, v.y / T); if (!on(x, y)) continue; A.sq(x, y, 5, '#7be07b'); if (st.zi >= 2) text(N.roster.get(v.pid)?.name || '', x, y - 9, 11, '#7be07b', 'center', '#101428', 'Silkscreen'); }
         for (const p of w) { const [x, y] = scr(p.x / T, p.y / T); if (on(x, y)) { A.pin(x, y, pk); text(p.name, x, y - 12 * pk - 7, 11, '#fff', 'center', '#101428', 'Silkscreen'); } }
@@ -132,7 +133,7 @@ const ADVMAP = {
           });
         }
         if (st.nt > 0) text(st.note, VW / 2, by - 14, Math.max(14, L(17)), '#9f9', 'center', '#101428');
-        hint(padUI() ? (window.TOUCH?.on ? 'd-pad pan' : 'stick pan') + '   LB/RB zoom   ' + (window.TOUCH?.on ? 'tap or A' : 'A') + ' waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
+        hint(padUI() ? (window.TOUCH?.on ? 'drag to pan' : 'stick pan') + '   LB/RB zoom   ' + (window.TOUCH?.on ? 'tap or A' : 'A') + ' waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
         backButton(() => sc.close());
       },
     };

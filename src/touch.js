@@ -3,12 +3,14 @@
 // (run straight from the touch handler so file pickers and the keyboard may open), swipes scroll lists, and a hidden <input> brings up the phone keyboard for text fields.
 'use strict';
 const TOUCH = window.TOUCH = (() => {
-  const T = { on: false, h: {}, p: {}, sx: 0, sy: 0 }, R = 52, SENT = String.fromCharCode(0x200b), tps = new Map(), down = {};
+  // drag: a finger moving on a screen that pans (the map asks with dragT); padOn: the PAD toggle shows A, B and the d-pad on screens
+  const T = { on: false, h: {}, p: {}, sx: 0, sy: 0, padOn: false, drag: null, dragT: 0 }, R = 52, SENT = String.fromCharCode(0x200b), tps = new Map(), down = {};
   // key (INPUT name), label, size, centre from right (or from left when negative), centre from bottom (0 = top row), when shown, colour, label in menus
   // when: all | play (walking or fighting) | fight | chat | ride | bag (an Adventure fight with items to use) | menu (a screen, not the world: the d-pad)
   const BTN = [
     ['A', 'A', 64, 92, 56, 'all', '#5ad26b'], ['B', 'B', 56, 32, 118, 'all', '#e8554e'], ['X', 'X', 56, 152, 118, 'play', '#4aa3ff'], ['Y', 'Y', 56, 92, 180, 'play', '#ffde3b'],
     ['LB', 'DODGE', 54, 214, 100, 'fight', '#c58bff', 'LB'], ['RB', 'SWAP', 50, 214, 166, 'fight', '#ff9f43', 'RB'], ['LTRT', 'MEGA', 46, 276, 134, 'fight', '#ff5fd2'],   // clear of the move bar along the bottom
+    ['PADT', 'PAD', 40, 30, 28, 'menu', '#cfd8ff'],   // screens: everything is tapped, so the pad hides behind this toggle (for anyone who wants it)
     ['START', 'MENU', 46, 36, 0, 'play', '#ffffff'], ['CHAT', 'CHAT', 46, 90, 0, 'chat', '#ffffff'], ['BACK', 'RIDE', 46, 144, 0, 'ride', '#ffffff'], ['ITEM', 'BAG', 46, 90, 0, 'bag', '#ffffff'],
     ['UP', '\u25B2', 46, -78, 140, 'menu', '#cfd8ff'], ['DOWN', '\u25BC', 46, -78, 44, 'menu', '#cfd8ff'], ['LEFT', '\u25C0', 46, -30, 92, 'menu', '#cfd8ff'], ['RIGHT', '\u25B6', 46, -126, 92, 'menu', '#cfd8ff'],
   ];
@@ -75,7 +77,8 @@ const TOUCH = window.TOUCH = (() => {
     const m = !stickOK() && !(typeof TitleScene !== 'undefined' && SCENE === TitleScene);   // a screen, not the world: the d-pad, A and B (the other buttons are the icons in its hint, ui.js)
     root.classList.toggle('menu', m); root.classList.toggle('fight', f);
     for (const k in els) {
-      const e = els[k], w = e.dataset.when, on = (w === 'bag' && bag) || w === 'all' || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m);
+      const e = els[k], w = e.dataset.when, pad = m && T.padOn && k !== 'PADT';   // on screens A, B and the d-pad only show when PAD is on
+      const on = (w === 'bag' && bag) || (w === 'all' && (!m || pad)) || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m && (k === 'PADT' || pad));
       e.style.display = on ? 'flex' : 'none';
       const l = m ? e.dataset.ml : e.dataset.l; if (e.textContent !== l) { e.textContent = l; e.classList.toggle('sm', l.length > 1); }
     }
@@ -110,7 +113,7 @@ const TOUCH = window.TOUCH = (() => {
     for (const t of e.changedTouches) {
       const b = t.target.closest && t.target.closest('[data-k]'), o = { x0: t.clientX, y0: t.clientY, x: t.clientX, y: t.clientY, t0: performance.now(), acc: 0, swipe: false };
       MOUSE.x = t.clientX; MOUSE.y = t.clientY; MOUSE.moved = performance.now();
-      if (b) { o.k = b.dataset.k; if (o.k !== 'CHAT') hold(o.k, 1); }
+      if (b) { o.k = b.dataset.k; if (o.k !== 'CHAT' && o.k !== 'PADT') hold(o.k, 1); }
       else if (sid === null && stickOK() && t.clientX < innerWidth * 0.55) { sid = t.identifier; o.stick = true; ox = t.clientX; oy = t.clientY; base.style.display = 'block'; base.style.left = ox - R + 'px'; base.style.top = oy - R + 'px'; setStick(ox, oy); }
       tps.set(t.identifier, o);
     }
@@ -121,6 +124,7 @@ const TOUCH = window.TOUCH = (() => {
       const o = tps.get(t.identifier); if (!o) continue;
       if (o.stick) setStick(t.clientX, t.clientY);
       else if (!o.k && pinch(t, o)) continue;
+      else if (!o.k && performance.now() - T.dragT < 300) { T.drag = { dx: (T.drag?.dx || 0) + t.clientX - o.x, dy: (T.drag?.dy || 0) + t.clientY - o.y }; if (Math.hypot(t.clientX - o.x0, t.clientY - o.y0) > 12) o.swipe = true; }   // a screen that pans (the map): the finger drags it
       else if (!o.k) {   // a swipe scrolls whatever list is under the finger
         MOUSE.x = t.clientX; MOUSE.y = t.clientY; o.acc += o.y - t.clientY;
         while (Math.abs(o.acc) >= 38) { const s = Math.sign(o.acc); MOUSE.wheel += s; o.acc -= s * 38; o.swipe = true; }
@@ -141,6 +145,7 @@ const TOUCH = window.TOUCH = (() => {
     e.preventDefault();
     for (const t of e.changedTouches) {
       const o = tps.get(t.identifier); if (!o) continue; tps.delete(t.identifier);
+      if (o.k === 'PADT') { if (!cancel) { T.padOn = !T.padOn; els.PADT.classList.toggle('dn', T.padOn); } continue; }
       if (o.k) { if (o.k === 'CHAT') { if (!cancel) { KEYS.Enter = true; setTimeout(() => KEYS.Enter = false, 140); T.kbd(); } } else hold(o.k, -1); continue; }
       if (o.stick) { sid = null; T.sx = T.sy = 0; knob.style.transform = ''; }
       if (!cancel && !o.swipe && performance.now() - o.t0 < 380 && Math.hypot(t.clientX - o.x0, t.clientY - o.y0) < 16) tap(t.clientX, t.clientY);
