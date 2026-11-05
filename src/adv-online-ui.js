@@ -20,7 +20,7 @@ Object.assign(ADVUI, {
         drawMenu(items(), st, VW / 2, 190 * s, 520 * s, 64);
         const hintS = ['Joins the fullest server with room, or starts one', 'Pick a server and see who is on it', 'Type a friend\'s trainer name to find their server', 'No network, just you'][st.sel];
         if (hintS) text(hintS, VW / 2, 190 * s + 5 * 64 * s + 20 * s, 15 * s, '#9aa6c0', 'center', null);
-        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
+        hint(padUI() ? 'A select   B back' : 'Enter or click select   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -99,7 +99,7 @@ Object.assign(ADVUI, {
         ctx.fillStyle = '#000b'; ctx.fillRect(0, 0, VW, VH); const { X, Y, L } = layout(), p = r() || {};
         text((p.name || '').toUpperCase(), VW / 2, Y(90), L(40), '#ffde3b', 'center', '#1a2a6c');
         drawMenu(items(), st, VW / 2, Y(150), L(460), 62);
-        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back');
+        hint(padUI() ? 'A select   B back' : 'Enter or click select   Esc back');
       },
     };
   },

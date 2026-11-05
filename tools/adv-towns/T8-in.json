@@ -87,7 +87,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Even Goomy. Wipe your hands after."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -228,7 +228,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "Anything glowing that should not be gets written down here. Then word goes up the road."
+     "Anything glowing that should not be gets written down here. Then word goes up the road.",
+     "This week's page is longer than last week's. Last week's was longer than the one before."
     ],
     "dx": 2.75,
     "dy": 1.25
@@ -303,7 +304,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "At night I count the caps I can see from my window. Mum says that is not a game."
+     "At night I count the glowing caps from my window. There are more than last month. I checked."
     ],
     "dx": 1.25,
     "dy": 2.75

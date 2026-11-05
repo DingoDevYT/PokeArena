@@ -87,7 +87,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Like a woodpile, but for Pokemon."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -292,7 +292,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "My husband fells and my daughter replants. Between them the forest stays the same size."
+     "My husband fells and my daughter replants. Between them the forest stays the same size.",
+     "She's out watering before school again. He pretends he isn't proud. He is."
     ],
     "dx": 5.25,
     "dy": 2.75
@@ -303,7 +304,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Aspen has a Kleavor! Nobody else in Kenora has one."
+     "Aspen has a Kleavor! Nobody else in Kenora has one. I've asked everybody."
     ],
     "dx": 2.75,
     "dy": 1.75
@@ -495,7 +496,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Bonsly stand among the saplings. You cannot tell them from the trees."
+     "Bonsly stand among the saplings. You can't tell them from the trees until they start crying."
     ],
     "dx": 5.25,
     "dy": 2.25
@@ -506,7 +507,7 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Route 3 is quiet at night. We do not stare at the stumps."
+     "Route 3 is quiet at night. We don't stare at the stumps. The stumps stare at us."
     ],
     "dx": 0.75,
     "dy": 2.75
@@ -749,7 +750,7 @@
     "move": "still",
     "lines": [
      "Aspen runs this mill herself, and the whole town loves her for it.",
-     "Do not ask her about Claystone. She says it is family, and then she says nothing more."
+     "Her crew are bugs, fighters and heavy steel. Fire burns through most of them. Bring some!"
     ],
     "dx": 4.25,
     "dy": 4.25

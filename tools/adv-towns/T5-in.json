@@ -75,7 +75,8 @@
     "move": "wander",
     "r": 2,
     "lines": [
-     "We do not get many visitors. The road ends at the water, so you came on purpose."
+     "We do not get many visitors. The road ends at the water, so you came on purpose.",
+     "Or by mistake. Either way, the Nurse will patch your Pokemon up."
     ],
     "dx": 3.75,
     "dy": 1.75
@@ -87,7 +88,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Take them back out whenever you like.",
+     "Grandad says it's like a keep-net, only drier."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -155,7 +157,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The shop has been in the family a long time. Cherimart never thought the trip worth it."
+     "The shop has been in the family a long time. Cherimart never thought the trip worth it.",
+     "Their loss. Rope, bait and Poke Balls. What else would anyone need?"
     ],
     "dx": 3.25,
     "dy": 1.75
@@ -213,7 +216,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "Four generations of my family have done nothing but fish. We teach anyone who asks nicely."
+     "Four generations of my family have done nothing but fish. We teach anyone who asks nicely.",
+     "My son is out on the pier with a spare rod. Ask him. Nicely."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -224,7 +228,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Someone tried to measure the bay once. Everyone tells the story, and nobody tells it the same."
+     "Grandad says the man who measured the bay used every rope in town. Mum says it was fishing line."
     ],
     "dx": 0.75,
     "dy": 2.75
@@ -265,7 +269,8 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Twenty metres from shore the ground is just gone. Nets come up from depths that make no sense."
+     "Twenty metres from shore the ground just stops. Nets come up from depths that make no sense.",
+     "My aunt says the measuring rope came back up wet, and longer. She tells it that way to scare me."
     ],
     "dx": 5.25,
     "dy": 2.75
@@ -364,7 +369,8 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Some of us have been after a Feebas for most of our lives."
+     "Some of us have been after a Feebas for most of our lives.",
+     "A camper swore he saw one in a lake up north. A lake! Honestly. The cheek of it."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -446,7 +452,8 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "You do not learn to surf casually on water like this. Learn properly, or do not go out."
+     "You do not learn to surf casually on water like this. Learn properly, or do not go out.",
+     "The surf teacher is out on the pier. He will teach you right, and he will tell you twice."
     ],
     "dx": 3.25,
     "dy": 2.25

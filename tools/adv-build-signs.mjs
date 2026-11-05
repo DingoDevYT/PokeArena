@@ -1,4 +1,5 @@
 // Signposts at every town exit: which route starts there and where it leads (the 2026-11-05 world review found 6 signs for about 30 routes), and one by every gym door.
+// Also one beside each cave mouth (world.doors), saying where the far end comes out.
 // Run: node tools/adv-build-signs.mjs   (reads tools/adv-towns/<code>.json exits, data/adv/world.js towns and data/adv/zones.js; writes data/adv/signs.js)
 // The route is the zone just outside the exit; where it leads is the other place that route's zone reaches, the one furthest along the way out. The game adds each sign to its chunk as it loads (adv-world.js) and reads it out when you press A in front of it (adv-scene.js).
 import fs from 'node:fs'; import vm from 'node:vm';
@@ -52,6 +53,19 @@ for (const P of places) {
     out.push({ n: 'signGreen', x: (sx + 0.5) * T, y: (sy + 1) * T - 1, town: P.code, lines });
   }
 }
+// a sign at each cave mouth (world.doors): the cave and where its far end comes out, beside the mouth on its open side
+for (const d of W.doors || []) {
+  const other = (W.doors || []).find(o => o !== d && o.room === d.room); if (!other) continue;
+  const ox = Math.floor(other.x / T), oy = Math.floor(other.y / T) + 2, near = roads([ox, oy], { tx: -999, ty: -999, code: 'X' }).slice(0, 1).map(o => o.name)[0];
+  const tx = Math.floor(d.x / T) + (d.end === 'w' ? -3 : 3), ty = Math.floor(d.y / T) + 1, z = label([zoneAt(tx, ty), zoneAt(ox, oy - 4), zoneAt(Math.floor(d.x / T), Math.floor(d.y / T) - 4)].find(v => /^route/.test(v)) || ''), home = places.find(o => o.code === other.town), inTown = home && near === home.name;
+  out.push({ n: 'signGreen', x: (tx + 0.5) * T, y: (ty + 1) * T - 1, town: d.town, cave: d.room, lines: [`${/^Route/.test(z) ? z : 'The'} cave, through the mountain.`, inTown ? `It comes out in ${home.name}.` : near ? `It comes out on the road to ${near}.` : 'It comes out on the far side.'] });
+}
+// hand-placed notices where the review found players stuck (data tiles: the sign's tile, the place it belongs to)
+const NOTES = [
+  { n: 'rg_sign_board', px: 2896, py: 23615, town: 'T7', lines: ['Longshore Pier. Open all hours. Mind the Wingull.', 'Cast a line off the far end. Chinchou bite out there.'] },
+  { x: 363, y: 501, town: 'G4', lines: ['Claystone Landing. Fine fishing off the jetty.', 'No ferry here. Route 133 runs west, Route 132 east.'] },
+];
+for (const o of NOTES) out.push({ n: o.n || 'signGreen', x: o.px ?? (o.x + 0.5) * T, y: o.py ?? (o.y + 1) * T - 1, town: o.town, note: 1, lines: o.lines });   // px, py: an exact spot (a board the chunk used to carry)
 // a sign by every gym's door: the gym and its leader (two tiles to the right of the door, on the front step row)
 for (const b of W.buildings) {
   const L = b.interior.npcs.find(n => n.trainer?.leader); if (!L) continue;

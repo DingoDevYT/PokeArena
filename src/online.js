@@ -411,7 +411,7 @@ const OnlineScene = {
       uiBtn(this, 'ldn', X(1244), Y(412), L(56), L(28), { label: 'v', size: L(14), disabled: this.lOff >= open.length - rows }, () => lwheel(1));
     }
     if (this.msg) { rrect(X(360), Y(784), L(600), L(36), L(10), '#5a1a1aee', '#ff9a9a', 2); text(this.msg, X(660), Y(802), L(15), '#ffd0d0', 'center', null); }
-    else hint(padUI() ? 'D-pad move   A select   B back' : 'Click to select   Esc back');
+    else hint(padUI() ? 'D-pad move   A select   B back' : 'Enter or click select   Esc back');
   },
 };
 

@@ -87,7 +87,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Free storage, in Tradeway! Imagine that."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -179,7 +179,7 @@
     "move": "wander",
     "r": 2,
     "lines": [
-     "The best prices in the region are here. The stock is a gamble, though."
+     "The best prices in the region are here. The stock's a gamble, though. That's half the fun."
     ],
     "dx": 3.25,
     "dy": 2.25
@@ -348,7 +348,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Goldacre sends its crates up the market road. We pay cash and ask nothing."
+     "Goldacre sends its crates up Route 5 to the market. We pay cash and ask nothing."
     ],
     "dx": 3.25,
     "dy": 1.75
@@ -458,7 +458,8 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Past the last stall the road gets dark. I never ask what is further in."
+     "Past the last stall the road gets dark. I never ask what's further in.",
+     "Lately some stall-holders talk about Pokemon that never flinch. Sounds like a sales pitch to me."
     ],
     "dx": 1.75,
     "dy": 1.75

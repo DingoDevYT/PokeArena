@@ -1770,8 +1770,8 @@ function confirmChoose() {
 
 // ---------- CPU ----------
 const AI_TIERS = {
-  easy: { react: 0.6, aimErr: 0.4, lead: 0, dodge: 0.08, iq: 0.3, swap: 0, strafe: 0.3 },
-  normal: { react: 0.38, aimErr: 0.2, lead: 0.5, dodge: 0.3, iq: 0.65, swap: 0.35, strafe: 0.6 },
+  easy: { react: 0.6, aimErr: 0.4, lead: 0, dodge: 0.08, iq: 0.3, swap: 0, strafe: 0.3, back: 0.3 },   // back: how hard it backs off to keep its range (a Lv4 Wingull kiting forever beat a melee-only Eevee)
+  normal: { react: 0.38, aimErr: 0.2, lead: 0.5, dodge: 0.3, iq: 0.65, swap: 0.35, strafe: 0.6, back: 0.65 },
   hard: { react: 0.22, aimErr: 0.09, lead: 0.85, dodge: 0.6, iq: 0.9, swap: 0.7, strafe: 0.85 },
   champion: { react: 0.13, aimErr: 0.04, lead: 1, dodge: 0.82, iq: 1, swap: 0.9, strafe: 1 },
 };
@@ -1794,7 +1794,7 @@ function moveValue(side, slot) {
   if (trapOut) return 0.005;
   // trap clouds are big and linger, so they land far more often than a plain status shot
   if (mv.status) return fm.status || statusImmune(fm, mv.status, foe) ? 0 : arch === 'trap' ? 0.1 : 0.07;
-  if (arch === 'trap' && mv.boosts) return 0.05;
+  if (arch === 'trap' && mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -2 : (fm.stages[k] | 0) < 2) ? 0.05 : 0;   // Smokescreen and other stat clouds stop at -2 as well
   if (mv.target === 'foeSide') return B.hazards.filter(h => h.owner === side.idx).length < 3 ? 0.05 : 0;
   if (mv.boosts && SELF_TARGETS.has(mv.target)) return hp > 0.6 && Object.keys(mv.boosts).some(k => m.stages[k] < 2) ? 0.08 : 0;
   if (mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -2 : (fm.stages[k] | 0) < 2) ? 0.03 : 0;   // Growl and the like: down to -2, no further (a CPU that could not hurt you stacked them to -6)
@@ -1917,7 +1917,7 @@ function cpuThink(side, dt) {
   let mx = 0, my = 0;
   if (ai.flee && (ai.flee.t -= dt) > 0) { const l = Math.hypot(ai.flee.x, ai.flee.y) || 1; mx = ai.flee.x / l; my = ai.flee.y / l; }
   else {
-    const want = ai.wantDist, k = clamp((d - want) / 60, -1, 1);
+    const want = ai.wantDist, k = clamp((d - want) / 60, -(T.back ?? 1), 1);
     mx = dx / d * k + (-dy / d) * ai.strafe * T.strafe * 0.7;
     my = dy / d * k + (dx / d) * ai.strafe * T.strafe * 0.7;
     // avoid walls

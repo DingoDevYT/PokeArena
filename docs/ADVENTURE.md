@@ -83,5 +83,27 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - Phones get the fight left of the buttons, callouts in the middle, lighter nights, and props in front of a fighter go see-through. No rain indoors.
   - Main menu defaults to Adventure, Adventure to Offline. A hometown tip. Controls page covers Adventure. Sentence-aware text boxes. TEST only with ?debug. App icons.
 
+- World fixes (2026-11-05, from the level-design review):
+  - Route 4: the flat grey blob over the Tradeway cave is a terraced, wooded mountain with a rocky crown, and a spur now carries the east cave mouth in its cliff face. Both mouths have signs saying where the cave comes out.
+  - The Northern snowfields (Routes 15 to 21 and the massif round Frostfall): snowy conifers along the terrace rims and in groves, boulders on the bare grey rock. Nothing within 3 tiles of a road, stair or bridge, or 2 of a person.
+  - Route 8: the stream that stopped dead in the meadow ends in a reedy pond; the mud round it is a soft-edged marsh with willows.
+  - Route 133: the cross-shaped puddle is a round pond with reeds. Claystone's south street ends at a landing with a short jetty and a sign (no ferry; the roads out are west and east). Longshore Pier's board reads out.
+  - Stray bulldozers in the Spindlewood woods became log piles.
+  - The chunks were edited directly (the generator no longer reproduces the committed world); the scratchpad scripts were wedit.py (load a tile rectangle into numpy layers, write back changed chunks), mtn.py (terraces, blue-noise scatter), r4.py, marsh.py and snow.py.
+- UI and feel (2026-11-05, second batch):
+  - Max HP was cached before Adventure set its flatter HP curve, so a new starter showed 235 HP in menus but 147 in battle; the cache now keys on HP_CAP. Potions say how much they gave ("recovered 137 HP") and the bag text uses bar numbers (Potion 140, Super 420, Hyper 840).
+  - A grass ambush shows "!" over the mon for half a second before the fight. Adventure fights hide the arena clock.
+  - Phone: pushing the stick to its rim runs (Settings: Full push runs), so A stays free while running. Settings has Text speed (Slow, Normal, Fast, Instant).
+  - The overworld hint row sits on a dark pill. Keyboard hints say Enter and Esc instead of click and right-click. The bag's Growth tab is Training.
+  - NEXT GOAL names the gym as "<Town> Gym"; under a story goal it reads "Also: Goldacre Gym, SW 125 tiles".
+  - The world map is re-baked after the world fixes and labels every route once you zoom in a step. Sporehaven and Routes 2 and 101 are lighter again.
+- Second playtest fixes (2026-11-05, from the story-build playtest while it ran):
+  - NEXT GOAL's "Train your team to about Lv N" never showed: `top` had slipped into a comment, so new players were sent into a Lv12 to 15 gym at Lv5.
+  - The hometown list shows all 16 towns in two columns (a phone showed 10 and would not scroll), with a truthful tip: any town works, everything matches your badges.
+  - The intro's quoted "!" no longer splits a sentence across pages, and Linden is "her". The title says TAP TO START on a touch screen before the first tap. The New Game card text wraps.
+  - A fight only counts as indoors when a fighter stands inside (a rival fight by a Center's door dropped you among its furniture). A story speaker left far away after a fight steps up beside you. A story goal's pin and bearing point at the cast member once they stand in town.
+  - The CPU's stat clouds (Smokescreen) also stop at -2. Easy and normal CPUs back off more slowly, so a melee-only starter can catch a ranged foe. Signs show their two lines on one page. The phone text box stays clear of the PAD toggle. Designer colour rows say "11 of 16".
+- NPC writing pass (2026-11-05): 171 people rewritten with a voice per town, small arcs inside towns, a useful hint from about one in three (route exits from the signs, catch spots, Skill teachers, gym type tips) and quiet foreshadowing of the story. Lines pinned by STORY.md and the checks were kept.
+
 ## Waiting on Landon
 - Title.

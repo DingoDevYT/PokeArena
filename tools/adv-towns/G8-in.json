@@ -87,7 +87,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. It glows a bit. Everything here does."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -228,7 +228,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "Clearing, treating, patrolling. Three jobs, every day, and the forest never runs out of work for us."
+     "Clearing, treating, patrolling. Three jobs, every day, and the forest never runs out of work for us.",
+     "The old wardens' rule: cut it back, every week, forever. Nobody remembers why. We do it anyway."
     ],
     "dx": 2.75,
     "dy": 1.25
@@ -250,7 +251,7 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Off shift. I will be asleep in a moment, and you will not see me yawn."
+     "Off shift. I will be asleep in a moment, and you will not see me yawn. Yaaawn. You saw nothing."
     ],
     "dx": 1.25,
     "dy": 2.25
@@ -779,7 +780,7 @@
     "move": "still",
     "lines": [
      "Rue is a warden first and a gym leader second, and she does both without complaint.",
-     "Her Breloom is the one everybody remembers. I will not say why."
+     "Fire and Flying moves do well in here. Her Breloom hits back hard, though. I will not say how."
     ],
     "dx": 4.25,
     "dy": 4.25

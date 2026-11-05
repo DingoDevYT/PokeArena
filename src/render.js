@@ -814,8 +814,8 @@ function drawHUD() {
   const S = Math.min(1, VW / 1500);
   drawSideHUD(B.sides[0], false); drawSideHUD(B.sides[1], true);
   const t = Math.floor(B.time), clock = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
-  rrect(VW / 2 - 55 * S, 14 * S, 110 * S, 38 * S, 19 * S, '#111a', null);
-  text(clock, VW / 2, 33 * S, 22 * S, '#fff', 'center', null);
+  const adv = typeof AdventureScene !== 'undefined' && SCENE === AdventureScene && SCENE.mode !== 'pvp';   // Adventure's wild and trainer fights have no clock to beat: no timer there
+  if (!adv) { rrect(VW / 2 - 55 * S, 14 * S, 110 * S, 38 * S, 19 * S, '#111a', null); text(clock, VW / 2, 33 * S, 22 * S, '#fff', 'center', null); }
   let fy = 66 * S;
   // field effects sit in dark-backed pills so they read over any arena; timed ones end in "s"
   const fieldPill = (lbl, col) => { const h = 20 * S; ctx.font = `${h * 0.62}px Bungee, "Arial Black", sans-serif`; const w = ctx.measureText(lbl).width + h * 0.9; hudChip(VW / 2 - w / 2, fy - h / 2, lbl, col, h); fy += h + 5 * S; };

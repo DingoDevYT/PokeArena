@@ -30,6 +30,8 @@ const ADVSTORY = {
   goal(sc) {
     const b = this.main(sc.save); if (!b || !b.goal) return null;
     const w = b.where || {}, t = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null;
+    const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
+    if (n?.e) return { line: this.fill(b.goal, sc.save), story: b, x: n.e.x, y: n.e.y };   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
   },
 
@@ -65,6 +67,8 @@ const ADVSTORY = {
     const n = { id: d.id, def: d, e: null, face: 0, home: { x, y }, busy: false, moving: false, walkD: 0, animT: 0, wait: 1, go: null, wp: 0, stuck: 0, bub: { s: '!', t: 0 } };
     ADVN.list.push(n); ADVN.place(n); this.cast.set(who, n); return n;
   },
+  // a speaker left far away (a fight moved you off): they step up beside you so the scene plays on screen
+  near(sc, n) { const p = sc.p, k = [...this.cast.values()].indexOf(n), at = this.free(p.x + (k % 2 ? 1 : -1) * ADV.T * (1.4 + 0.5 * k), p.y - ADV.T * 0.4); n.home = { x: at.x, y: at.y }; n.go = null; n.e = null; ADVN.place(n); },
   label(c, who) { const nm = c.name || who; return c.cls && !nm.toLowerCase().includes(c.cls.toLowerCase().slice(0, 4)) ? c.cls + ' ' + nm : nm; },   // 'Rival Ethan', but 'Prof. Linden' not 'Professor Prof. Linden'
   drop(who) { const n = this.cast.get(who); if (n) { const i = ADVN.list.indexOf(n); if (i >= 0) ADVN.list.splice(i, 1); } this.cast.delete(who); },
   // a speaker for an 'enter' beat (or one who has not appeared yet) steps up near you
@@ -82,7 +86,7 @@ const ADVSTORY = {
     const r = this.run; if (!r) return; const sv = sc.save;
     while (r.i < r.steps.length) {
       const s = r.steps[r.i++];
-      if (s.say) { const n = this.speaker(sc, s.say); if (n) { n.busy = true; n.bub = null; if (n.e) { n.face = dirFromVec(sc.p.x - n.e.x, sc.p.y - n.e.y); sc.p.face = dirFromVec(n.e.x - sc.p.x, n.e.y - sc.p.y); } }
+      if (s.say) { const n = this.speaker(sc, s.say); if (n) { n.busy = true; n.bub = null; if (n.e && Math.hypot(n.e.x - sc.p.x, n.e.y - sc.p.y) > 5 * ADV.T) this.near(sc, n); if (n.e) { n.face = dirFromVec(sc.p.x - n.e.x, sc.p.y - n.e.y); sc.p.face = dirFromVec(n.e.x - sc.p.x, n.e.y - sc.p.y); } }
         return sc.dialog([].concat(s.lines).map(l => this.fill(l, sv)), n, () => this.next(sc)); }
       if (s.battle) return this.fight(sc, s);
       if (s.win || s.lose) continue;   // only reached right after a battle (after() takes the branch)

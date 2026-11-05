@@ -15,7 +15,7 @@ const ADVUI = {
   // sizes follow the window height and margins follow the font, so a small window gets a smaller (never cramped) box
   dlg() {
     const fs = clamp(Math.round(VH / 28), 15, 34), g = Math.round(fs * 0.7), padX = Math.round(fs * 1.05), padY = Math.round(fs * 0.7), pitch = Math.round(fs * 1.5);
-    const w = Math.min(VW - 2 * g, Math.max(480, Math.round(fs * 46))), h = 2 * pitch + 2 * padY;
+    const pad = window.TOUCH?.on ? Math.round(VW * 0.07) : 0, w = Math.min(VW - 2 * g - 2 * pad, Math.max(480, Math.round(fs * 46))), h = 2 * pitch + 2 * padY;   // pad: on a phone the PAD toggle sits at the bottom right, so the box (and its continue arrow) stays clear of it
     return { fs, g, padX, padY, pitch, w, h, x: Math.round((VW - w) / 2), y: VH - g - h, tw: w - 2 * padX - Math.round(fs * 0.9), r: Math.round(fs * 0.7) };
   },
   font: fs => fs + 'px Bungee, "Arial Black", sans-serif',
@@ -26,7 +26,7 @@ const ADVUI = {
     const wrap = t => { const lines = []; let cur = ''; for (const wd of t.split(' ').filter(Boolean)) { const x = cur ? cur + ' ' + wd : wd; if (ctx.measureText(x).width > d.tw && cur) { lines.push(cur); cur = wd; } else cur = x; } if (cur) lines.push(cur); return lines; };
     const out = [], put = L => { if (!L.length) return; const pg = L.slice(0, 2); pg.chars = pg.join('').length; out.push(pg); };
     let cur = '';
-    for (const sn of String(s).match(/[^.!?]+[.!?]*["')]*\s*|\s+/g) || [String(s)]) {
+    for (const sn of String(s).match(/(?:"[^"]*"|[^.!?"]|")+[.!?]*["')]*\s*|\s+/g) || [String(s)]) {   // a quoted "!" stays inside its sentence
       const t = (cur + sn).trim();
       if (wrap(t).length <= 2) { cur = t + ' '; continue; }
       if (cur.trim()) put(wrap(cur.trim()));
@@ -68,7 +68,7 @@ const ADVUI = {
     ctx.font = this.font(fs); const lines = []; let cur = '';
     for (const wd of String(s).split(' ')) { const t = cur ? cur + ' ' + wd : wd; if (ctx.measureText(t).width > maxW - 2 * padX && cur) { lines.push(cur); cur = wd; } else cur = t; }
     if (cur) lines.push(cur);
-    const w = Math.round(Math.max(...lines.map(l => ctx.measureText(l).width)) + 2 * padX), pitch = Math.round(fs * 1.35), h = lines.length * pitch + 2 * padY - Math.round(fs * 0.35), x = Math.round((VW - w) / 2), y = g + slot * (Math.round(fs * 2.6) + Math.round(g * 0.5));
+    const w = Math.round(Math.max(...lines.map(l => ctx.measureText(l).width)) + 2 * padX), pitch = Math.round(fs * 1.35), h = lines.length * pitch + 2 * padY - Math.round(fs * 0.35), x = Math.round((VW - w) / 2), y = Math.round(VH * 0.7) - h - slot * (Math.round(fs * 2.6) + Math.round(g * 0.5));   // lower middle: the top belongs to the minimap, NEXT GOAL and the clock
     rrect(x, y, w, h, Math.round(fs * 0.6), '#0b1020ee', '#ffffff40', 2); lines.forEach((l, i) => text(l, VW / 2, y + padY + pitch * (i + 0.5) - Math.round(fs * 0.17), fs, '#fff', 'center', null));
   },
   // bag item icons: the PokeSprite item sprites (data/adv/item-sprites.js, 32 x 32) at a whole-number scale; r is the icon's radius in px.
@@ -172,7 +172,7 @@ const ADVUI = {
           const ps = Math.min(34 * s, (w - (tx - x) - p - 5 * 5 * s) / 6); slot.party.forEach((m, i) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, tx + i * (ps + 5 * s), y + h - p - ps, ps, ps); });
         }
         if (note.s) text(note.s, VW / 2, VH - 70 * s, 16 * s, note.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => setScene(MenuScene));
+        hint(padUI() ? 'A select   B back' : 'Enter or click select   Esc back'); backButton(() => setScene(MenuScene));
       },
     };
   },
@@ -200,7 +200,8 @@ const ADVUI = {
       update(dt) {
         if (st.stage === 0) { runMenu(st, dlgItems(), dt); if (backHit()) sc.close(); return; }
         if (st.stage === 1) {
-          ADVUI.nav(st, towns.length); if (okHit()) { st.home = towns[st.sel].id; stage(2); st.list = ADVUI.starters(); st.q = ''; return; } if (backHit()) back(); return;
+          const half = Math.ceil(towns.length / 2), dm = INPUT.menu;   // two columns: up/down within one, left/right across
+          if (dm === 'left' || dm === 'right') { st.sel = clamp(st.sel + (dm === 'right' ? half : -half), 0, towns.length - 1); uiBlip(600, 0.03); } else ADVUI.nav(st, towns.length); if (okHit()) { st.home = towns[st.sel].id; stage(2); st.list = ADVUI.starters(); st.q = ''; return; } if (backHit()) back(); return;
         }
         if (st.stage === 2) {
           const n = st.list.length, c = cols(), dir = ['KeyW', 'KeyA', 'KeyS', 'KeyD'].some(k => KEYS[k]) ? '' : INPUT.menu;
@@ -218,23 +219,24 @@ const ADVUI = {
         if (st.stage === 0) {
           text('NEW GAME', X(660), Y(60), L(44), '#ffde3b', 'center', '#1a2a6c');
           panel(X(380), Y(110), L(560), L(300), 'YOUR TRAINER'); avatarTile(profileAvatar(), X(410), Y(160), L(200), '#ffde3b');
-          text(profileName(), X(640), Y(220), L(30), '#fff', 'left', null); text((avatarById(profileAvatar())?.name || '').toUpperCase(), X(640), Y(262), L(15), '#9aa6c0', 'left', null);
-          text('Name and portrait: from your Profile.', X(410), Y(380), L(13), '#9aa6c0', 'left', null);
+          text(profileName(), X(640), Y(220), L(30), '#fff', 'left', null);   // (the portrait's own name read like a second name, so it is not shown)
+          wrapText('Change your name or portrait with the button below.', X(640), Y(262), L(270), L(13), '#9aa6c0');
           drawMenu(dlgItems(), st, X(660), Y(450), L(560), 62);
-          hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
+          hint(padUI() ? 'A select   B back' : 'Enter or click select   Esc back'); backButton(() => sc.close());
         } else if (st.stage === 1) {
           text('CHOOSE YOUR HOMETOWN', X(660), Y(50), L(36), '#ffde3b', 'center', '#1a2a6c');
-          const rows = 10, per = L(54); ADVUI.scroll(st, towns.length, rows);
-          towns.slice(st.off, st.off + rows).forEach((t, j) => {
-            const i = j + st.off, y = Y(110) + j * per, on = i === st.sel;
-            hot(X(380), y, L(560), per - 6, { hover: () => st.sel = i, click: () => { st.sel = i; st.home = t.id; stage(2); }, wheel: d => st.sel = clamp(st.sel + d, 0, towns.length - 1) });
-            rrect(X(380), y, L(560), per - 6, L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
-            text(t.name, X(404), y + (per - 6) / 2, L(22), on ? '#1a1a2a' : '#fff', 'left', null);
-            text(t.id[0] === 'G' ? 'GYM CITY' : 'TOWN', X(916), y + (per - 6) / 2, L(13), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
+          const half = Math.ceil(towns.length / 2), per = L(62), cw = L(330);   // every town on one screen, two columns (a phone showed 10 of 16 and would not scroll)
+          st.sel = clamp(st.sel, 0, towns.length - 1);
+          towns.forEach((t, i) => {
+            const col = i < half ? 0 : 1, x = X(660) - cw - L(8) + col * (cw + L(16)), y = Y(100) + (i % half) * per, on = i === st.sel;
+            hot(x, y, cw, per - 6, { hover: () => st.sel = i, click: () => { st.sel = i; st.home = t.id; stage(2); }, wheel: d => st.sel = clamp(st.sel + d, 0, towns.length - 1) });
+            rrect(x, y, cw, per - 6, L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
+            text(t.name, x + L(18), y + (per - 6) / 2, L(20), on ? '#1a1a2a' : '#fff', 'left', null);
+            text(t.id[0] === 'G' ? 'GYM' : 'TOWN', x + cw - L(14), y + (per - 6) / 2, L(12), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
           });
-          text('Tip: a GYM CITY has a gym right there, the easiest place to start.', X(660), Y(686), L(14), '#ffde3b', 'center', null);
-          text('Professor Linden meets you at its Pokemon Center.', X(660), Y(712), L(13), '#9aa6c0', 'center', null);
-          hint(padUI() ? 'A pick   B back' : 'Click a town   Esc back'); backButton(back);
+          text('Any town works: every gym and route matches the badges you hold.', X(660), Y(612), L(14), '#ffde3b', 'center', null);
+          text('Professor Linden meets you at its Pokemon Center, and you wake there after a blackout.', X(660), Y(640), L(13), '#9aa6c0', 'center', null);
+          hint(padUI() ? 'A pick   B back' : 'Enter or click a town   Esc back'); backButton(back);
         } else if (st.stage === 2) {
           const sz = 84 * s, ids = st.list, c = cols(), r = rows(), y0 = 150 * s;
           text('CHOOSE YOUR STARTER', VW / 2, 34 * s, 30 * s, '#ffde3b', 'center');
@@ -275,7 +277,7 @@ const ADVUI = {
   outfit(sc, start, done) {
     const st = { sel: 0, t0: performance.now() }, o = ADVO.clean(start), n = ADVO.n(), D = window.ADV_OUTFIT, K = ADVO.KEYS.filter(k => D.bag.length || !/^bag/.test(k));   // no bag rows while there are no bags
     const names = { body: 'Body', hair: 'Hair', hairC: 'Hair colour', hat: 'Hat', hatC: 'Hat colour', top: 'Top', topC: 'Top colour', bot: 'Bottom', botC: 'Bottom colour', bag: 'Bag', bagC: 'Bag colour', skin: 'Skin' };
-    const val = k => ADVO.label(k, o);
+    const val = k => /C$|skin/.test(k) ? `${o[k] + 1} of ${n[k]}` : ADVO.label(k, o);   // a colour row says which of its colours you are on (its swatches show that colour's shades)
     const items = () => [
       ...K.map(k => ({ label: names[k], value: val(k), cycle: d => o[k] = (o[k] + d + n[k]) % n[k] })),
       { label: 'Randomise', act: () => Object.assign(o, ADVO.rand()) },
@@ -300,7 +302,8 @@ const ADVUI = {
         K.forEach((k, i) => {   // colour rows show their ramp
           if (!/C$|skin/.test(k)) return;
           const cols = k === 'skin' ? D.skins[o.skin] : D.ramps[o[k]], on = i === st.sel, yy = y0 + i * rowH * s, sw = 22 * s;
-          cols.forEach((c, j) => { const xx = x + w / 2 - 70 * s - (cols.length - j) * (sw + 2 * s); rrect(xx, yy + (rowH - 8) * s / 2 - sw / 2, sw, sw, 4 * s, '#' + c, on ? '#1a1a2a' : '#ffffff55', 2); });
+          ctx.font = `${Math.max(18 * s, TEXT_MIN)}px Bungee, "Arial Black", sans-serif`; const vw = ctx.measureText(`< ${val(k)} >`).width;   // the swatches sit left of the value text
+          cols.forEach((c, j) => { const xx = x + w / 2 - 26 * s - vw - 10 * s - (cols.length - j) * (sw + 2 * s); rrect(xx, yy + (rowH - 8) * s / 2 - sw / 2, sw, sw, 4 * s, '#' + c, on ? '#1a1a2a' : '#ffffff55', 2); });
         });
         hint(padUI() ? 'A change   B cancel   left/right change' : 'Up/down pick a row   left/right change   Enter confirm   Esc cancel'); backButton(() => sc.close());
       },
@@ -350,7 +353,7 @@ const ADVUI = {
         const ps = L(48), gap = (cw - 2 * pad - 6 * ps) / 5; sv.party.forEach((m, i) => { const im = portrait(toId(m.species)), x = cx + pad + i * (ps + gap), y = Y(top + H - 72); rrect(x, y, ps, ps, L(8), '#00000066', '#ffffff33', 1); if (im) { ctx.globalAlpha = ADVP.fainted(m) ? 0.35 : 1; ctx.drawImage(im, x, y, ps, ps); ctx.globalAlpha = 1; } });
         drawMenu(its, st, X(870), Y(top), L(500), rowH);
         if (note.s) text(note.s, X(870), Y(top + H + 24), L(15), note.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(padUI() ? 'A select   B resume' : 'Click to select   Esc resume');
+        hint(padUI() ? 'A select   B resume' : 'Enter or click select   Esc resume');
       },
     };
   },

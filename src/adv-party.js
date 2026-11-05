@@ -73,7 +73,7 @@ const ADVP = {
     return s;
   },
   // battle-unit max HP and the real-game HP behind it (memoised: makeMon sorts the learnset)
-  maxes(s) { const k = s.species + '|' + s.level + '|' + s.nature; if (!this.mc[k]) { const m = makeMon({ species: s.species, level: s.level, nature: s.nature }); this.mc[k] = { max: m.maxHp, real: m.stats.hp }; } return this.mc[k]; },
+  maxes(s) { const k = s.species + '|' + s.level + '|' + s.nature + '|' + (typeof HP_CAP === 'undefined' ? '' : HP_CAP); if (!this.mc[k]) { const m = makeMon({ species: s.species, level: s.level, nature: s.nature }); this.mc[k] = { max: m.maxHp, real: m.stats.hp }; } return this.mc[k]; },   // HP_CAP is in the key: the cache may fill on the starter screen, before Adventure sets its own cap
   max(s) { return this.maxes(s).max; },
   heal(s) { s.hp = this.max(s); s.status = ''; },
   fainted: s => !(s.hp > 0),
@@ -132,9 +132,9 @@ const ADVP = {
     greatball: { name: 'Great Ball', cat: 'ball', ball: 1.5, info: 'Catches better than a Poke Ball.' },
     ultraball: { name: 'Ultra Ball', cat: 'ball', ball: 2, info: 'Catches twice as well as a Poke Ball.' },
     masterball: { name: 'Master Ball', cat: 'ball', ball: 255, info: 'Never fails.' },
-    potion: { name: 'Potion', cat: 'med', heal: 20, info: 'Restores 20 HP.' },
-    superpotion: { name: 'Super Potion', cat: 'med', heal: 60, info: 'Restores 60 HP.' },
-    hyperpotion: { name: 'Hyper Potion', cat: 'med', heal: 120, info: 'Restores 120 HP.' },
+    potion: { name: 'Potion', cat: 'med', heal: 20, info: 'Restores 140 HP.' },
+    superpotion: { name: 'Super Potion', cat: 'med', heal: 60, info: 'Restores 420 HP.' },
+    hyperpotion: { name: 'Hyper Potion', cat: 'med', heal: 120, info: 'Restores 840 HP.' },
     maxpotion: { name: 'Max Potion', cat: 'med', heal: 9999, info: 'Restores all HP.' },
     fullrestore: { name: 'Full Restore', cat: 'med', heal: 9999, cure: 'all', info: 'Restores all HP and cures any status.' },
     antidote: { name: 'Antidote', cat: 'med', cure: ['psn', 'tox'], info: 'Cures poison.' },
@@ -156,7 +156,7 @@ const ADVP = {
     if (this.STONES.includes(id)) return { name: DEX.items?.[id]?.name || this.cap(id.replace('stone', ' Stone')), cat: 'grow', stone: true, info: 'Makes certain Pokemon evolve.' };
     return { name: id, cat: 'key', info: '' };
   },
-  CATS: [['ball', 'Balls'], ['med', 'Medicine'], ['grow', 'Growth'], ['tm', 'TMs'], ['key', 'Key items']],
+  CATS: [['ball', 'Balls'], ['med', 'Medicine'], ['grow', 'Training'], ['tm', 'TMs'], ['key', 'Key items']],
   startBag: () => ({ pokeball: 20, greatball: 3, potion: 10, superpotion: 2, antidote: 3, paralyzeheal: 2, awakening: 2, burnheal: 2, iceheal: 2, revive: 2 }),
   // ---------- Skills (no HMs): taught by NPCs, stored in save.skills ----------
   SKILLS: { fishing: { name: 'Fishing', info: 'Face water and cast the rod to hook a wild Pokemon from the zone fishing table.' }, surf: { name: 'Surf', info: 'Walk across water on a raft, or riding a lead that can learn Surf.' },
@@ -274,7 +274,7 @@ const ADVP = {
   },
   take(bag, id) { if (!(bag[id] > 0)) return false; if (--bag[id] <= 0) delete bag[id]; return true; },
   add(bag, id, n = 1) { bag[id] = (bag[id] | 0) + n; },
-  // heal / cure / revive on t = { hp, status, fainted? }; maxHp and realHp give the battle-units-per-HP scale. Returns what happened or '' when it would do nothing.
+  // heal / cure / revive on t = { hp, status, fainted? }; maxHp and realHp give the battle-units-per-HP scale (heal is in real HP: a Potion's 20 shows as 140 on the bar). Returns what happened or '' when it would do nothing.
   useOn(t, id, maxHp, realHp) {
     const it = this.item(id), dead = !(t.hp > 0) || t.fainted;
     if (it.revive) { if (!dead) return ''; t.hp = Math.max(1, Math.round(maxHp * it.revive)); if ('fainted' in t) t.fainted = false; return 'revived'; }

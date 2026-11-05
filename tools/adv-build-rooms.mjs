@@ -17,52 +17,52 @@ const SPECS = [
     items: [['winWide', 3, -0.45], ['winWide', 11, -0.45], ['paintingSea', 7, -0.6], ['counterCurve', 7, 3], ['healMachine', 11.4, 3.2], ['pcBlue', 1.6, 3], ['plantC', 1, 8], ['plantC', 13, 8], ['sofaBlue', 4, 6.9], ['plantA', 12.4, 6.8]],
     mach: [11.4, 3.2],
     npcs: [npc('t5-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('t5-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
-      npc('t5-c-fisher', 10, 5, 'fishing', 6, ['We do not get many visitors. The road ends at the water, so you came on purpose.'], { move: 'wander', r: 2 }),
-      npc('t5-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('t5-c-fisher', 10, 5, 'fishing', 6, ['We do not get many visitors. The road ends at the water, so you came on purpose.', 'Or by mistake. Either way, the Nurse will patch your Pokemon up.'], { move: 'wander', r: 2 }),
+      npc('t5-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Take them back out whenever you like.', 'Grandad says it\'s like a keep-net, only drier.'], { move: 'wander', r: 1 })] },
   { id: 't5-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 6, -0.5], ['shelfPotion', 1.5, 2.3], ['shelfGreen', 3.5, 2.3], ['counterRed', 9, 3], ['tableBrownSmall', 3, 5.2], ['plantA', 0.8, 7], ['plantA', 11.2, 7]],
     npcs: [npc('t5-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
-      npc('t5-m-mama', 3, 4, 'gsmama', 0, ['The shop has been in the family a long time. Cherimart never thought the trip worth it.'], { move: 'wander', r: 1 }),
+      npc('t5-m-mama', 3, 4, 'gsmama', 0, ['The shop has been in the family a long time. Cherimart never thought the trip worth it.', 'Their loss. Rope, bait and Poke Balls. What else would anyone need?'], { move: 'wander', r: 1 }),
       npc('t5-m-fisher', 8, 5, 'fishing2', 6, ['Deep cold water holds little. That is why the catch is so thin out here.'])] },
   { id: 't5-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 1.6, 2.8], ['shelfBooks', 6.2, 2.3], ['tableBrownSmall', 6, 4.8], ['plantB', 0.8, 6]],
-    npcs: [npc('t5-h1-old', 4, 3, 'gsoldman', 0, ['Four generations of my family have done nothing but fish. We teach anyone who asks nicely.'], { move: 'wander', r: 1 }), npc('t5-h1-girl', 7, 4, 'gsgirl2', 6, ['Someone tried to measure the bay once. Everyone tells the story, and nobody tells it the same.'])] },
+    npcs: [npc('t5-h1-old', 4, 3, 'gsoldman', 0, ['Four generations of my family have done nothing but fish. We teach anyone who asks nicely.', 'My son is out on the pier with a spare rod. Ask him. Nicely.'], { move: 'wander', r: 1 }), npc('t5-h1-girl', 7, 4, 'gsgirl2', 6, ['Grandad says the man who measured the bay used every rope in town. Mum says it was fishing line.'])] },
   { id: 't5-h2', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 6, -0.45], ['bedPlain', 1.5, 2.8], ['sofaBlue', 6.6, 5.3], ['plantA', 8.2, 2.7], ['plantB', 0.8, 6]],
-    npcs: [npc('t5-h2-woman', 3, 4, 'woman3', 2, ['Twenty metres from shore the ground is just gone. Nets come up from depths that make no sense.'])] },
+    npcs: [npc('t5-h2-woman', 3, 4, 'woman3', 2, ['Twenty metres from shore the ground just stops. Nets come up from depths that make no sense.', 'My aunt says the measuring rope came back up wet, and longer. She tells it that way to scare me.'])] },
   { id: 't5-h3', theme: 'home3', W: 8, H: 6, exit: [3, 4],
     items: [['winSmall', 2, -0.5], ['shelfGreen', 5.8, 2.3], ['tableBrownSmall', 3.2, 4.8], ['plantC', 0.8, 6]],
     npcs: [npc('t5-h3-boy', 5, 4, 'boy1', 6, ['Lapras are bred at Sailsport, not here. The bay is too deep, Grandad says.'])] },
   { id: 't5-h4', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 4.5, -0.45], ['bedPink', 1.6, 2.8], ['shelfBooks', 7, 2.3], ['plantB', 0.8, 6], ['plantA', 8.3, 6]],
-    npcs: [npc('t5-h4-nan', 3, 4, 'oldwoman', 0, ['Feebas is our white whale. Every fisherman here has an opinion about where it bites.'], { move: 'wander', r: 1 }), npc('t5-h4-man', 6, 4, 'gsman1', 6, ['Some of us have been after a Feebas for most of our lives.'])] },
+    npcs: [npc('t5-h4-nan', 3, 4, 'oldwoman', 0, ['Feebas is our white whale. Every fisherman here has an opinion about where it bites.'], { move: 'wander', r: 1 }), npc('t5-h4-man', 6, 4, 'gsman1', 6, ['Some of us have been after a Feebas for most of our lives.', 'A camper swore he saw one in a lake up north. A lake! Honestly. The cheek of it.'])] },
   { id: 't5-h5', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 7.4, 2.8], ['stoveRed', 3, 2.3], ['tableBrownSmall', 4.5, 4.9], ['plantA', 0.8, 6]],
     npcs: [npc('t5-h5-man', 6, 4, 'gsmiddleman', 6, ['We are not struggling and we are not hiding anything. We just like it quiet.'])] },
   { id: 't5-h6', theme: 'home3', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 4.5, -0.45], ['bedPlain', 1.5, 2.8], ['shelfBooks', 6.6, 2.3], ['plantB', 8.2, 6]],
-    npcs: [npc('t5-h6-sailor', 6, 4, 'seaman', 6, ['You do not learn to surf casually on water like this. Learn properly, or do not go out.']), npc('t5-h6-woman', 3, 3, 'gswoman1', 0, ['The Longshore lot surf for fun, in rented gear. Mostly shouting. We are not impressed.'], { move: 'wander', r: 1 })] },
+    npcs: [npc('t5-h6-sailor', 6, 4, 'seaman', 6, ['You do not learn to surf casually on water like this. Learn properly, or do not go out.', 'The surf teacher is out on the pier. He will teach you right, and he will tell you twice.']), npc('t5-h6-woman', 3, 3, 'gswoman1', 0, ['The Longshore lot surf for fun, in rented gear. Mostly shouting. We are not impressed.'], { move: 'wander', r: 1 })] },
   // ---------- T7 Longshore: a Center, the beach store and five holiday houses; every line from the bible's Longshore and Route 6 files or plain flavour ----------
   { id: 't7-center', theme: 'center', W: 14, H: 8, exit: [6, 7],
     items: [['winWide', 3, -0.45], ['winWide', 11, -0.45], ['paintingSea', 7, -0.6], ['counterCurve', 7, 3], ['healMachine', 11.4, 3.2], ['pcBlue', 1.6, 3], ['plantC', 1, 8], ['plantC', 13, 8], ['sofaBlue', 4, 6.9], ['plantA', 12.4, 6.8]],
     mach: [11.4, 3.2],
     npcs: [npc('t7-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('t7-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
-      npc('t7-c-tourist', 10, 5, 'gswoman1', 6, ['Wide beach, boardwalk, swimming, ice cream, sunburn. I come every summer.'], { move: 'wander', r: 2 }),
-      npc('t7-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('t7-c-tourist', 10, 5, 'gswoman1', 6, ['Wide beach, boardwalk, swimming, ice cream, sunburn. I come every summer.', 'This year I\'m finally trying the surfboards. I said that last year, too.'], { move: 'wander', r: 2 }),
+      npc('t7-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Handy if you try to catch the whole beach.', 'A loud boy from Johto slept on that sofa three nights running. Said the ferry food was awful.'], { move: 'wander', r: 1 })] },
   { id: 't7-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 6, -0.5], ['shelfPotion', 1.5, 2.3], ['shelfGreen', 3.5, 2.3], ['counterRed', 9, 3], ['tableBrownSmall', 3, 5.2], ['plantA', 0.8, 7], ['plantA', 11.2, 7]],
     npcs: [npc('t7-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
       npc('t7-m-mama', 3, 4, 'gsmama', 0, ['Everything on these shelves came down Route 6 from the Goldacre farms.'], { move: 'wander', r: 1 }),
-      npc('t7-m-kid', 8, 5, 'boy3', 6, ['Sunscreen sells out first. Ice cream sells out second.'])] },
+      npc('t7-m-kid', 8, 5, 'boy3', 6, ['Sunscreen sells out first. Ice cream sells out second. Then Potions, for the sunburn.'])] },
   { id: 't7-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 1.6, 2.8], ['shelfBooks', 6.2, 2.3], ['tableBrownSmall', 6, 4.8], ['plantB', 0.8, 6]],
-    npcs: [npc('t7-h1-host', 4, 3, 'woman3', 0, ['We let rooms in summer. In winter half this street is shuttered.'], { move: 'wander', r: 1 }), npc('t7-h1-kid', 7, 4, 'boy1', 6, ['I swam out so far and the water was still only up to my chest!'])] },
+    npcs: [npc('t7-h1-host', 4, 3, 'woman3', 0, ['We let rooms in summer. In winter half this street is shuttered and I finally get some sleep.'], { move: 'wander', r: 1 }), npc('t7-h1-kid', 7, 4, 'boy1', 6, ['I swam out so far and the water was still only up to my chest! I\'m basically a Lapras.'])] },
   { id: 't7-h2', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 6, -0.45], ['bedPlain', 1.5, 2.8], ['sofaBlue', 6.6, 5.3], ['plantA', 8.2, 2.7], ['plantB', 0.8, 6]],
     npcs: [npc('t7-h2-old', 3, 4, 'gsoldman', 2, ['The sea here has never been over anyone\'s head. That is why the families come.']), npc('t7-h2-girl', 6, 3, 'gsgirl2', 0, ['The Sharpedo signs are real. Nobody minds them, because nothing has ever happened.'])] },
   { id: 't7-h3', theme: 'home3', W: 8, H: 6, exit: [3, 4],
     items: [['winSmall', 2, -0.5], ['shelfGreen', 5.8, 2.3], ['tableBrownSmall', 3.2, 4.8], ['plantC', 0.8, 6]],
-    npcs: [npc('t7-h3-van', 5, 4, 'delivery', 6, ['The vans come down Route 6 from Goldacre every morning. The boardwalk eats it all.'])] },
+    npcs: [npc('t7-h3-van', 5, 4, 'delivery', 6, ['The vans come down Route 6 from Goldacre every morning. The boardwalk eats it all by noon.'])] },
   { id: 't7-h4', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 4.5, -0.45], ['bedPink', 1.6, 2.8], ['shelfBooks', 7, 2.3], ['plantB', 0.8, 6], ['plantA', 8.3, 6]],
     npcs: [npc('t7-h4-nan', 3, 4, 'oldwoman', 0, ['Sandygast are castles some child left behind. They drag things down into the sand.'], { move: 'wander', r: 1 }), npc('t7-h4-man', 6, 4, 'seaman', 6, ['We set the deckchairs out well away from the castles. Every morning, all season.'])] },
@@ -78,13 +78,13 @@ SPECS.push(
     mach: [11.4, 3.2],
     npcs: [npc('t4-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('t4-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
       npc('t4-c-trader', 10, 5, 'gsmiddleman', 6, ['Cherimart owns every Mart in Kenora, but not this town. I like it that way.'], { move: 'wander', r: 2 }),
-      npc('t4-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('t4-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Free storage, in Tradeway! Imagine that.'], { move: 'wander', r: 1 })] },
   { id: 't4-market', theme: 'barn', W: 16, H: 10, exit: [7, 9],
     items: [['winArch', 3.5, -0.4], ['winArch', 12.5, -0.4], ['boardGreen', 8, -0.6], ['counterRed', 4, 3], ['counterRed', 12, 3], ['shelfGreen', 1, 2.3], ['shelfPotion', 7.5, 2.3], ['shelfBooks', 15, 2.3],
       ['tableBrownLong', 4.5, 7], ['tableBrownLong', 11.5, 7], ['crateWide', 1.4, 9.4], ['barrelOrange', 14.6, 9.6], ['plantA', 0.8, 5.5], ['plantC', 15.2, 5.6]],
     npcs: [npc('t4-clerk', 4, 1, 'shopm', 0, ['Cherimart owns every Mart in Kenora. It does not own this counter.', 'What I have today is not what I will have next week. Take it or leave it.'], { extra: { name: 'Trader', script: 'clerk', market: true, reach: 66 } }),
       npc('t4-barter', 12, 1, 'gsman2', 0, ['Many of us deal goods for goods. Show me something I want and we can talk.'], { extra: { name: 'Barterer', script: 'barter', reach: 66 } }),
-      npc('t4-m-buyer', 8, 5, 'gswoman1', 2, ['The best prices in the region are here. The stock is a gamble, though.'], { move: 'wander', r: 2 }),
+      npc('t4-m-buyer', 8, 5, 'gswoman1', 2, ['The best prices in the region are here. The stock\'s a gamble, though. That\'s half the fun.'], { move: 'wander', r: 2 }),
       npc('t4-m-grower', 13, 6, 'farmer', 6, ['I carry my own crates in. Tradeway pays cash and asks nothing.']),
       npc('t4-m-nick', 2, 6, 'boy3', 0, ['Nickit and Purrloin work the stalls. Every trader here complains about them constantly.'], { move: 'wander', r: 1 })] },
   { id: 't4-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
@@ -95,13 +95,13 @@ SPECS.push(
     npcs: [npc('t4-h2-old', 3, 4, 'gsoldman', 2, ['The market started in the cave mouth, in the shade. Now the stalls go a long way in.']), npc('t4-h2-man', 6, 3, 'gsman1', 0, ['Hallowmead growers use the orchard cut to reach us. They keep an independent price that way.'])] },
   { id: 't4-h3', theme: 'home3', W: 8, H: 6, exit: [3, 4],
     items: [['winSmall', 2, -0.5], ['shelfGreen', 5.8, 2.3], ['tableBrownSmall', 3.2, 4.8], ['plantC', 0.8, 6]],
-    npcs: [npc('t4-h3-van', 5, 4, 'delivery', 6, ['Goldacre sends its crates up the market road. We pay cash and ask nothing.'])] },
+    npcs: [npc('t4-h3-van', 5, 4, 'delivery', 6, ['Goldacre sends its crates up Route 5 to the market. We pay cash and ask nothing.'])] },
   { id: 't4-h4', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 4.5, -0.45], ['bedPink', 1.6, 2.8], ['shelfBooks', 7, 2.3], ['plantB', 0.8, 6], ['plantA', 8.3, 6]],
     npcs: [npc('t4-h4-nan', 3, 4, 'oldwoman', 0, ['Timber comes up from Pinegrove, and tools and supplies go back down.'], { move: 'wander', r: 1 }), npc('t4-h4-man', 6, 4, 'workman', 6, ['Claystone\'s finds come down the spoil road. Claystone\'s fortunes went with them.'])] },
   { id: 't4-h5', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 7.4, 2.8], ['stoveRed', 3, 2.3], ['tableBrownSmall', 4.5, 4.9], ['plantA', 0.8, 6]],
-    npcs: [npc('t4-h5-driver', 6, 4, 'workman', 6, ['Everything on a Cherimart shelf has been down the freight run from here to Aldermere.']), npc('t4-h5-woman', 2, 4, 'gswoman1', 2, ['Past the last stall the road gets dark. I never ask what is further in.'])] },
+    npcs: [npc('t4-h5-driver', 6, 4, 'workman', 6, ['Everything on a Cherimart shelf has been down the freight run from here to Aldermere.']), npc('t4-h5-woman', 2, 4, 'gswoman1', 2, ['Past the last stall the road gets dark. I never ask what\'s further in.', 'Lately some stall-holders talk about Pokemon that never flinch. Sounds like a sales pitch to me.'])] },
 );
 
 // ---------- G6 Pinegrove: a Center, the Outfitters (the local general store), the forestry office, five houses and Aspen's sawmill; every line from the bible's Pinegrove, Route 3 and Route 111 files or plain flavour ----------
@@ -112,7 +112,7 @@ SPECS.push(
     mach: [11.4, 3.2],
     npcs: [npc('g6-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('g6-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
       npc('g6-c-feller', 10, 5, 'workman', 6, ['A good day of felling ends here. The Nurse has seen every kind of splinter.'], { move: 'wander', r: 2 }),
-      npc('g6-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('g6-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Like a woodpile, but for Pokemon.'], { move: 'wander', r: 1 })] },
   { id: 'g6-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 6, -0.5], ['shelfPotion', 1.5, 2.3], ['shelfGreen', 3.5, 2.3], ['counterRed', 9, 3], ['tableBrownSmall', 3, 5.2], ['plantA', 0.8, 7], ['plantA', 11.2, 7]],
     npcs: [npc('g6-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
@@ -125,7 +125,7 @@ SPECS.push(
       npc('g6-o-girl', 3, 4, 'gsgirl3', 2, ['Some of the old stumps seem to look back at you. We do not discuss that in here.'])] },
   { id: 'g6-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedPink', 1.6, 2.8], ['shelfBooks', 6.2, 2.3], ['tableBrownSmall', 6, 4.8], ['plantB', 0.8, 6]],
-    npcs: [npc('g6-h1-mom', 4, 3, 'woman3', 0, ['My husband fells and my daughter replants. Between them the forest stays the same size.'], { move: 'wander', r: 1 }), npc('g6-h1-kid', 7, 4, 'boy1', 6, ['Aspen has a Kleavor! Nobody else in Kenora has one.'])] },
+    npcs: [npc('g6-h1-mom', 4, 3, 'woman3', 0, ['My husband fells and my daughter replants. Between them the forest stays the same size.', 'She\'s out watering before school again. He pretends he isn\'t proud. He is.'], { move: 'wander', r: 1 }), npc('g6-h1-kid', 7, 4, 'boy1', 6, ['Aspen has a Kleavor! Nobody else in Kenora has one. I\'ve asked everybody.'])] },
   { id: 'g6-h2', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 6, -0.45], ['bedPlain', 1.5, 2.8], ['sofaBlue', 6.6, 5.3], ['plantA', 8.2, 2.7], ['plantB', 0.8, 6]],
     npcs: [npc('g6-h2-old', 3, 4, 'gsoldman', 2, ['Claystone? We do not deal with Claystone. No trade, no word. That is how it has always been.']), npc('g6-h2-woman', 6, 3, 'gswoman1', 0, ['Ask Aspen why and she says it is family. Then she changes the subject, very nicely.'])] },
@@ -137,7 +137,7 @@ SPECS.push(
     npcs: [npc('g6-h4-nan', 3, 4, 'oldwoman', 0, ['Read the stand numbers on Route 3 and you know the whole rotation. Fresh cut, replanted, left alone.'], { move: 'wander', r: 1 }), npc('g6-h4-man', 6, 4, 'gsman1', 6, ['Timber from here goes all the way to Sprucevale. Every carved gable up there is ours.'])] },
   { id: 'g6-h5', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 7.4, 2.8], ['stoveRed', 3, 2.3], ['tableBrownSmall', 4.5, 4.9], ['plantA', 0.8, 6]],
-    npcs: [npc('g6-h5-mama', 6, 4, 'gsmama', 6, ['Bonsly stand among the saplings. You cannot tell them from the trees.']), npc('g6-h5-man', 2, 4, 'gsmiddleman', 2, ['Route 3 is quiet at night. We do not stare at the stumps.'])] },
+    npcs: [npc('g6-h5-mama', 6, 4, 'gsmama', 6, ['Bonsly stand among the saplings. You can\'t tell them from the trees until they start crying.']), npc('g6-h5-man', 2, 4, 'gsmiddleman', 2, ['Route 3 is quiet at night. We don\'t stare at the stumps. The stumps stare at us.'])] },
   { id: 'g6-gym', theme: 'barn', W: 18, H: 13, exit: [8, 9],
     items: [['winSmall', 3, -0.5], ['winSmall', 15, -0.5], ['boardGreen', 9, -0.6],
       ['fallenLog', 2.4, 12.6], ['logShort', 16, 12.6], ['fallenLog', 16.4, 9.6], ['fallenLog', 1.6, 6.2], ['barrelOrange', 12.6, 12.4], ['crateWide', 5.4, 12.4], ['logShort', 12.4, 7.6]],
@@ -151,7 +151,7 @@ SPECS.push(
       lj('g6-gym-hewitt', 'Lumberjack', 'Hewitt', 'workman', 2, 'hiker', 30, [['axew', 0], ['pawniard', 0], ['bonsly', 1], ['scyther', 1], ['heracross', 2], ['pinsir', 2]], 'Every board starts as a tree I put down myself. Show me you can handle an axe!', 'Clean cut. You fight as well as you fell.', 4, 9),
       lj('g6-gym-cord', 'Lumberjack', 'Cord', 'bigman', 2, 'hiker', 30, [['timburr', 0], ['machop', 0], ['timburr', 1], ['machop', 1], ['sawk', 2], ['throh', 2]], 'I carry logs all day long. A battle is light work next to that!', 'Dropped it. That was a heavy one.', 4, 6),
       lj('g6-gym-tilly', 'Teamster', 'Tilly', 'gswoman1', 6, 'cowgirl', 30, [['cufant', 0], ['mudbray', 0], ['rhyhorn', 1], ['tauros', 1], ['bouffalant', 2], ['gogoat', 2]], 'My team hauls what the others cut. They never tire, and neither do I.', 'Ha! You are stronger than a full load.', 12, 4),
-      npc('g6-gym-guide', 5, 11, 'gsman2', 0, ['Aspen runs this mill herself, and the whole town loves her for it.', 'Do not ask her about Claystone. She says it is family, and then she says nothing more.'])] },
+      npc('g6-gym-guide', 5, 11, 'gsman2', 0, ['Aspen runs this mill herself, and the whole town loves her for it.', 'Her crew are bugs, fighters and heavy steel. Fire burns through most of them. Bring some!'])] },
 );
 
 // ---------- T6 Spindlewood: a Center, the dock store (rope, tackle and Poke Balls; a single stubborn shopkeeper) and five dockers' houses; every line from the bible's Spindlewood, Route 102 and Route 111 files or plain flavour. Nothing about the boats' real business: that is the story pass ----------
@@ -160,8 +160,8 @@ SPECS.push(
     items: [['winWide', 3, -0.45], ['winWide', 11, -0.45], ['paintingSea', 7, -0.6], ['counterCurve', 7, 3], ['healMachine', 11.4, 3.2], ['pcBlue', 1.6, 3], ['plantC', 1, 8], ['plantC', 13, 8], ['sofaBlue', 4, 6.9], ['plantA', 12.4, 6.8]],
     mach: [11.4, 3.2],
     npcs: [npc('t6-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('t6-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
-      npc('t6-c-hand', 10, 5, 'workman', 6, ['Crushed fingers, splinters, the odd rope burn. The Nurse has seen every one.'], { move: 'wander', r: 2 }),
-      npc('t6-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('t6-c-hand', 10, 5, 'workman', 6, ['Crushed fingers, splinters, the odd rope burn. The Nurse has seen every one. Mostly mine.'], { move: 'wander', r: 2 }),
+      npc('t6-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Like a warehouse, minus the crane.'], { move: 'wander', r: 1 })] },
   { id: 't6-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 6, -0.5], ['shelfPotion', 1.5, 2.3], ['shelfGreen', 3.5, 2.3], ['counterRed', 9, 3], ['mapIsland', 7, 0.1], ['tableBrownSmall', 3, 5.2], ['plantA', 0.8, 7], ['plantA', 11.2, 7]],
     npcs: [npc('t6-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
@@ -169,7 +169,7 @@ SPECS.push(
       npc('t6-m-deck', 8, 5, 'seaman', 6, ['The cove is calm, but the lines still chafe. I buy new rope every month.'])] },
   { id: 't6-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 1.6, 2.8], ['shelfBooks', 6.2, 2.3], ['tableBrownSmall', 6, 4.8], ['plantB', 0.8, 6]],
-    npcs: [npc('t6-h1-mom', 4, 3, 'woman3', 0, ['My husband loads and my daughter ties up. We all go to bed smelling of pine and salt.'], { move: 'wander', r: 1 }), npc('t6-h1-kid', 7, 4, 'boy1', 6, ['I can name every engine in the cove by its sound. Mum says that is not a talent.'])] },
+    npcs: [npc('t6-h1-mom', 4, 3, 'woman3', 0, ['My husband loads and my daughter ties up. We all go to bed smelling of pine and salt.'], { move: 'wander', r: 1 }), npc('t6-h1-kid', 7, 4, 'boy1', 6, ['I can name every engine in the cove by its sound. Mum says that\'s not a talent.', 'There\'s a new one lately. It only runs at night, and it doesn\'t sound like a fishing boat.'])] },
   { id: 't6-h2', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winWide', 6, -0.45], ['bedPlain', 1.5, 2.8], ['sofaBlue', 6.6, 5.3], ['plantA', 8.2, 2.7], ['plantB', 0.8, 6]],
     npcs: [npc('t6-h2-old', 3, 4, 'gsoldman', 2, ['Forty years on this quay. It has been busy every day of them, and I like it that way.']), npc('t6-h2-girl', 6, 3, 'gsgirl2', 0, ['Wimpod live under the boards. When it goes quiet you can hear them scuttling.'])] },
@@ -181,7 +181,7 @@ SPECS.push(
     npcs: [npc('t6-h4-nan', 3, 4, 'oldwoman', 0, ['We are not the fungus town. Duskmoss, on the south coast, is the one that lives close to it.'], { move: 'wander', r: 1 }), npc('t6-h4-man', 6, 4, 'gsman1', 6, ['Rot is the enemy. A log with rot in it goes straight back up the road.'])] },
   { id: 't6-h5', theme: 'home2', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedBlue', 7.4, 2.8], ['stoveRed', 3, 2.3], ['tableBrownSmall', 4.5, 4.9], ['plantA', 0.8, 6]],
-    npcs: [npc('t6-h5-woman', 6, 4, 'gswoman1', 6, ['All our trouble comes off the water. Tides, storms, tangled lines. The land is easy.']), npc('t6-h5-man', 2, 4, 'seaman', 2, ['Nights on the wharf have their own crowd. Zubat, Murkrow, and a big Golisopod.'])] },
+    npcs: [npc('t6-h5-woman', 6, 4, 'gswoman1', 6, ['All our trouble comes off the water. Tides, storms, tangled lines. The land is easy.']), npc('t6-h5-man', 2, 4, 'seaman', 2, ['Nights on the wharf have their own crowd. Zubat, Murkrow, and a big Golisopod.', 'And a crew I don\'t know, loading crates by lantern. Keep yourself to yourself, I say.'])] },
 );
 
 // ---------- G8 Sporehaven: a Center, the general store, the wardens' lodge, five houses and Rue's gym under the great cap; every line from the bible's Sporehaven, Route 2 and Route 101 files or plain flavour. Nothing story-gated ----------
@@ -192,7 +192,7 @@ SPECS.push(
     mach: [11.4, 3.2],
     npcs: [npc('g8-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('g8-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
       npc('g8-c-warden', 10, 5, 'workman', 6, ['Spores in the eyes are the usual complaint. The Nurse keeps drops by the dozen.'], { move: 'wander', r: 2 }),
-      npc('g8-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('g8-c-boy', 2, 5, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. It glows a bit. Everything here does.'], { move: 'wander', r: 1 })] },
   { id: 'g8-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 6, -0.5], ['shelfPotion', 1.5, 2.3], ['shelfGreen', 3.5, 2.3], ['counterRed', 9, 3], ['tableBrownSmall', 3, 5.2], ['plantA', 0.8, 7], ['plantA', 11.2, 7]],
     npcs: [npc('g8-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
@@ -200,9 +200,9 @@ SPECS.push(
       npc('g8-m-warden', 8, 5, 'workman', 6, ['Gloves, masks and shears go out by the crate. The crews wear them out.'])] },
   { id: 'g8-lodge', theme: 'home1', W: 12, H: 7, exit: [5, 6],
     items: [['winSmall', 2.5, -0.5], ['winSmall', 9.5, -0.5], ['boardGreen', 6, -0.6], ['shelfBooks', 1.6, 2.3], ['shelfGreenTall', 10.6, 2.4], ['tableBrownLong', 6, 4.2], ['mapIsland', 3.2, 6.4], ['plantA', 0.8, 7], ['plantB', 11.2, 7]],
-    npcs: [npc('g8-l-chief', 5, 2, 'gsoldman', 0, ['Clearing, treating, patrolling. Three jobs, every day, and the forest never runs out of work for us.'], { move: 'wander', r: 1 }),
+    npcs: [npc('g8-l-chief', 5, 2, 'gsoldman', 0, ['Clearing, treating, patrolling. Three jobs, every day, and the forest never runs out of work for us.', 'The old wardens\' rule: cut it back, every week, forever. Nobody remembers why. We do it anyway.'], { move: 'wander', r: 1 }),
       npc('g8-l-crew', 8, 5, 'workman', 6, ['We go down to Duskmoss by the east road to hold the line. They are glad to see us.']),
-      npc('g8-l-rest', 3, 4, 'gsman3', 2, ['Off shift. I will be asleep in a moment, and you will not see me yawn.'])] },
+      npc('g8-l-rest', 3, 4, 'gsman3', 2, ['Off shift. I will be asleep in a moment, and you will not see me yawn. Yaaawn. You saw nothing.'])] },
   { id: 'g8-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4],
     items: [['winSmall', 2.5, -0.5], ['bedPink', 1.6, 2.8], ['shelfBooks', 6.2, 2.3], ['tableBrownSmall', 6, 4.8], ['plantB', 0.8, 6]],
     npcs: [npc('g8-h1-mom', 4, 3, 'woman3', 0, ['We keep one lamp on, turned low. The window glows blue the rest of the time anyway.'], { move: 'wander', r: 1 }), npc('g8-h1-kid', 7, 4, 'boy1', 6, ['I can read by the window at night. The caps outside are that bright.'])] },
@@ -232,7 +232,7 @@ SPECS.push(
       sr('g8-gym-hazel', 'Forager', 'Hazel', 'picnicgirl', 6, 'picnicker', 30, [['foongus', 0], ['shroomish', 0], ['morelull', 1], ['paras', 1], ['toedscool', 2], ['foongus', 2]], 'I gather what the forest lets me have. Let us see what you gather!', 'You picked the better basket. On you go.', 13, 9),
       sr('g8-gym-orrin', 'Cultivator', 'Orrin', 'gsoldman', 2, 'scientist', 30, [['oddish', 0], ['bellsprout', 0], ['gloom', 1], ['tangela', 1], ['weepinbell', 2], ['amoonguss', 2]], 'I grow these beds from spore to cap. Do you know how long that takes?', 'Slow work, and you beat it anyway.', 4, 6),
       sr('g8-gym-fern', 'Warden', 'Fern', 'gswoman1', 6, 'backpacker', 30, [['stunky', 0], ['croagunk', 0], ['shroomish', 1], ['stunky', 1], ['toedscool', 2], ['croagunk', 2]], 'I patrol the boundary, and I do not let things cross. Not even you!', 'Nothing crosses my line. Except you, just now.', 13, 4),
-      npc('g8-gym-guide', 5, 11, 'gsman2', 0, ['Rue is a warden first and a gym leader second, and she does both without complaint.', 'Her Breloom is the one everybody remembers. I will not say why.'])] },
+      npc('g8-gym-guide', 5, 11, 'gsman2', 0, ['Rue is a warden first and a gym leader second, and she does both without complaint.', 'Fire and Flying moves do well in here. Her Breloom hits back hard, though. I will not say how.'])] },
 );
 
 // ---------- T8 Duskmoss: a Center, the general store (one stubborn shopkeeper), the watch house (where anything glowing that should not be gets written down and word goes up the road) and five houses; every line from the bible's Duskmoss, Route 101 and Route 103 files or plain flavour. No gym, nothing story-gated ----------
@@ -240,17 +240,17 @@ SPECS.push(
   { id: 't8-center', theme: 'center', W: 14, H: 8, exit: [6, 7], items: [], mach: [11.4, 3.2],
     npcs: [npc('t8-nurse', 6, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('t8-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
       npc('t8-c-warden', 10, 5, 'npc1-green-shirt-man', 6, ['I came down from Sporehaven with the crew. The Nurse always has drops ready for our eyes.'], { move: 'wander', r: 2 }),
-      npc('t8-c-boy', 2, 5, 'npc2-blue-shirt-boy', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('t8-c-boy', 2, 5, 'npc2-blue-shirt-boy', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Even Goomy. Wipe your hands after.'], { move: 'wander', r: 1 })] },
   { id: 't8-mart', theme: 'mart', W: 12, H: 7, exit: [5, 6], items: [],
     npcs: [npc('t8-clerk', 9, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
       npc('t8-m-keeper', 4, 4, 'npc3-apron-woman', 0, ['I stock what I stock. Poke Balls, rope, rain gear. Ask for something else and I will say no.'], { move: 'wander', r: 1 }),
       npc('t8-m-crew', 8, 5, 'npc2-jumpsuit-man', 6, ['Gloves and masks go out by the crate for the crews. They wear them thin.'])] },
   { id: 't8-lodge', theme: 'home1', W: 12, H: 7, exit: [5, 6], items: [],
-    npcs: [npc('t8-l-clerk', 5, 2, 'npc3-white-haired-man', 0, ['Anything glowing that should not be gets written down here. Then word goes up the road.'], { move: 'wander', r: 1 }),
+    npcs: [npc('t8-l-clerk', 5, 2, 'npc3-white-haired-man', 0, ['Anything glowing that should not be gets written down here. Then word goes up the road.', 'This week\'s page is longer than last week\'s. Last week\'s was longer than the one before.'], { move: 'wander', r: 1 }),
       npc('t8-l-crew', 8, 5, 'npc2-jumpsuit-man', 6, ['The crews sit at this table when they come down. They are welcome here, as always.']),
       npc('t8-l-local', 3, 4, 'npc2-dark-hair-woman', 2, ['We would not be here without them. They know it, we know it, and nobody makes a speech.'])] },
   { id: 't8-h1', theme: 'home1', W: 9, H: 6, exit: [4, 4], items: [],
-    npcs: [npc('t8-h1-mom', 4, 3, 'npc3-apron-woman', 0, ['Half this town looks at the glow and half looks at the sea. I married into the sea half.'], { move: 'wander', r: 1 }), npc('t8-h1-kid', 7, 4, 'npc4-vest-boy', 6, ['At night I count the caps I can see from my window. Mum says that is not a game.'])] },
+    npcs: [npc('t8-h1-mom', 4, 3, 'npc3-apron-woman', 0, ['Half this town looks at the glow and half looks at the sea. I married into the sea half.'], { move: 'wander', r: 1 }), npc('t8-h1-kid', 7, 4, 'npc4-vest-boy', 6, ['At night I count the glowing caps from my window. There are more than last month. I checked.'])] },
   { id: 't8-h2', theme: 'home2', W: 9, H: 6, exit: [4, 4], items: [],
     npcs: [npc('t8-h2-old', 3, 4, 'npc2-old-man', 2, ['I grew up watching that wall of light. Now I only notice it when a visitor points.']), npc('t8-h2-woman', 6, 3, 'npc2-purple-top-woman', 0, ['A mushroom on the windowsill is nothing. A mushroom on the stove is a letter up the road.'])] },
   { id: 't8-h3', theme: 'home3', W: 8, H: 6, exit: [3, 4], items: [],
@@ -299,21 +299,21 @@ const MIGR = ['t5', 't7', 't4', 'g6', 't6', 'g8', 't8'];   // the towns whose ol
     P(kind, x + 1, ly + 1); who && N(who[0], x, ly + 1, who[1], side === 'n' ? 0 : 4, who[2], { extra: who[3] });
   };
   stall('pxStallPink', 11, 'n', ['t4-cv-fruit', 'shopm', ['Rare stock, wild prices. What is on my stall today will not be here next week.'], { name: 'Trader', script: 'clerk', market: true, reach: 66 }]);
-  stall('pxStallBlue', 15, 's', ['t4-cv-cloth', 'oldwoman', ['The stalls began at the mouth and crept in. I am further in than most.'], { reach: 66 }]);
+  stall('pxStallBlue', 15, 's', ['t4-cv-cloth', 'oldwoman', ['The stalls began at the mouth and crept in. I\'m further in than most, and proud of it.'], { reach: 66 }]);
   stall('pxStallBlue', 20, 'n', ['t4-cv-curios', 'gsman2', ['Goods for goods, down here. Show me something I want and we can talk.'], { name: 'Barterer', script: 'barter', reach: 66 }]);
   stall('pxStallBlue', 27, 's', ['t4-cv-curios2', 'gsmiddleman', ['There are fewer stalls every few steps, and fewer customers with them.'], { reach: 66 }]);
-  stall('pxStallBlue', 32, 'n', ['t4-cv-cloth2', 'woman3', ['Cave air keeps cloth dry. It does not keep it warm.'], { reach: 66 }]);
+  stall('pxStallBlue', 32, 'n', ['t4-cv-cloth2', 'woman3', ['Cave air keeps cloth dry. It doesn\'t keep it warm. Buy a scarf. Please.'], { reach: 66 }]);
   stall('pxStallPink', 40, 's', ['t4-cv-fruit2', 'farmer', ['Nobody sets up past the bend. The road goes on without us.'], { reach: 66 }]);
-  stall('pxStallBlue', 47, 'n', ['t4-cv-last', 'gsoldman', ['Last stall on the road. Past here it is just the road.'], { reach: 66 }]);
+  stall('pxStallBlue', 47, 'n', ['t4-cv-last', 'gsoldman', ['Last stall on the road. Past here it\'s just the road, the rock and the bats.'], { reach: 66 }]);
   // people: two shoppers and a porter in the market, a trainer every so often along the quiet part
-  N('t4-cv-shopper', 22, Math.round(cl(22)), 'gswoman1', 2, ['Bats and rocks, mostly. Nothing in this half bites hard.'], { move: 'wander', r: 2 });
+  N('t4-cv-shopper', 22, Math.round(cl(22)), 'gswoman1', 2, ['Bats and rocks, mostly. Nothing in this half bites hard. Geodude don\'t bite at all. They punch.'], { move: 'wander', r: 2 });
   N('t4-cv-porter', 36, Math.round(cl(36)), 'workman', 6, ['Crates go up to the mouth by hand. Look up: only Zubat and Noibat ever hang from that ceiling.'], { move: 'wander', r: 2 });
   N('t4-cv-kid', 9, Math.round(cl(9)) + 2, 'boy1', 0, ['Mind the Geodude. They look like rocks until they are not.'], { move: 'wander', r: 1 });
   const tr = (id, x, y, sprite, face, cls, name, av, money, team, say, lose, line) => N(id, x, y, sprite, face, [line], { extra: { trainer: { cls, name, ...(av ? { avatar: av } : {}), sight: 5, money, team, say, lose } } });
   tr('r4-rolf', 62, top[62] + 1, 'mount', 0, 'Hiker', 'Rolf', 'hiker', 24, [['geodude', 0], ['roggenrola', 1], ['geodude', 1], ['rockruff', 2], ['roggenrola', 2], ['geodude', 3]], 'Rock all the way down here. Care to test your Pokemon against it?', 'Solid, but you cracked it.', 'The rock holds up well. Better than my team did.');
   tr('r4-marta', 74, bot[74] - 1, 'mount2', 4, 'Hiker', 'Marta', 'hiker', 24, [['roggenrola', 0], ['geodude', 1], ['joltik', 1], ['rockruff', 2], ['geodude', 2], ['roggenrola', 3]], 'The rock is good for the legs. Let us see how yours hold up!', 'You are tougher than the rock.', 'The floor is loose in places. Watch where you step.');
-  tr('r4-wil', 93, top[93] + 1, 'campboy', 0, 'Youngster', 'Wil', null, 16, [['zubat', 0], ['noibat', 1], ['zubat', 1], ['noibat', 2], ['zubat', 2], ['noibat', 3]], 'The bats do not mind the dark, and neither do I. Battle?', 'Back to the ceiling for me.', 'Bats hang up there all day. They are quiet company.');
-  tr('r4-dara', 108, bot[108] - 1, 'explore', 4, 'Backpacker', 'Dara', 'hiker', 24, [['rockruff', 0], ['zubat', 1], ['geodude', 1], ['joltik', 2], ['noibat', 2], ['rockruff', 3]], 'I mapped as much as the lamps allow. Let us see you map my team!', 'Fair. Mark that one on the chart.', 'The map ends where the lamps do.');
+  tr('r4-wil', 93, top[93] + 1, 'campboy', 0, 'Youngster', 'Wil', null, 16, [['zubat', 0], ['noibat', 1], ['zubat', 1], ['noibat', 2], ['zubat', 2], ['noibat', 3]], 'The bats don\'t mind the dark, and neither do I. Battle?', 'Back to the ceiling for me.', 'Bats hang up there all day. Quiet company. Good listeners.');
+  tr('r4-dara', 108, bot[108] - 1, 'explore', 4, 'Backpacker', 'Dara', 'hiker', 24, [['rockruff', 0], ['zubat', 1], ['geodude', 1], ['joltik', 2], ['noibat', 2], ['rockruff', 3]], 'I mapped as much as the lamps allow. Let us see you map my team!', 'Fair. Mark that one on the chart.', 'The map ends where the lamps do. The road doesn\'t.');
   // the shut side passage: three boulders across it, nothing more said
   for (let x = BX; x <= BX + 2; x++) P('caveRock', x + 0.5, bb + 3 + 0.95);
   // crystal light in the wide chamber and past it
@@ -362,36 +362,36 @@ const IN7 = [
     items: [['winWide', 2, -0.45], ['winWide', 6, -0.45], ['paintingSea', 4, -0.6], ['pcBlue', 1, 1.7], ['counterRed', 3.9, 3], ['healMachine', 6.65, 2.6], ['sofaBlue', 1.5, 4.9], ['plantC', 7.4, 5]],
     npcs: [npc('g7-nurse', 3, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('g7-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
       npc('g7-c-hallowmead', 6, 3, 'gswoman1', 6, ['Hallowmead is a meadow village out east, and Aldermere keeps swallowing it up.', 'Miss Whitney has opinions about that. Ask her, if you dare.'], { move: 'wander', r: 2 }),
-      npc('g7-c-boy', 2, 3, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
+      npc('g7-c-boy', 2, 3, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you can\'t carry. Six in your party, the rest wait in there.', 'Tauros and Ponyta graze the pastures round town. Catch one and you can learn to ride it on Route 7.'], { move: 'wander', r: 1 })] },
   { id: 'g7-mart', theme: 'mart', C: 10, R: 5,
     items: [['winSmall', 2, -0.5], ['winSmall', 7.5, -0.5], ['shelfPotion', 1, 2.3], ['shelfGreen', 2.9, 2.3], ['counterRed', 7.6, 3], ['tableBrownSmall', 1.6, 4.9], ['plantA', 9.4, 5]],
     npcs: [npc('g7-clerk', 7, 1, 'shopm', 0, null, { extra: { name: 'Clerk', script: 'clerk', reach: 66 } }),
-      npc('g7-m-farmer', 5, 3, 'farmer', 0, ['The clerk keeps the better stock for trainers who have proven themselves. Earn a badge or two.'], { move: 'wander', r: 2 })] },
+      npc('g7-m-farmer', 5, 3, 'farmer', 0, ['The clerk keeps better stock for trainers who\'ve proven themselves. Earn a badge or two.', 'One badge and the Great Balls come out from the back. Worth it, in Miltank country.'], { move: 'wander', r: 2 })] },
   { id: 'g7-whitney', theme: 'farm', C: 6, R: 7,
     items: [['winSmall', 1.5, -0.5], ['winSmall', 4.5, -0.5], ['stoveRed', 1, 2.3], ['shelfBooks', 3, 2.3], ['bedBlue', 5, 2.8], ['tableBrownSmall', 4.4, 5.2], ['plantB', 5.4, 7]],
     npcs: [npc('g7-w-hand', 2, 4, 'cowgirl', 0, ['Miss Whitney left Johto to start over here. Goldenrod had grown too big for her.', 'She wanted land of her own, and out here there is nothing but.'], { move: 'wander', r: 1 }),
-      npc('g7-w-aunt', 5, 3, 'gsoldwoman', 6, ['Her Clefable came with her from Johto. Everything else on this farm is a working animal.', 'Even Miltank is a working dairy cow now. It is no gentler for it.'])] },
+      npc('g7-w-aunt', 5, 3, 'gsoldwoman', 6, ['Her Clefable came with her from Johto. Everything else on this farm is a working animal.', 'Even the Miltank works the dairy now. It\'s no gentler for it, mind.'])] },
   { id: 'g7-h1', theme: 'home1', C: 6, R: 7,
     items: [['winSmall', 1.6, -0.5], ['shelfBooks', 2.9, 2.3], ['bedPink', 4.9, 2.7], ['tableBrownSmall', 4.4, 5], ['plantB', 0.6, 6.9]],
-    npcs: [npc('g7-h1-mom', 3, 3, 'woman3', 0, ['Goldacre feeds Kenora. Every van that leaves here is full.'], { move: 'wander', r: 1 }), npc('g7-h1-kid', 0, 5, 'boy1', 6, ['Mum says Goldacre feeds the whole region. That is a lot of dinners!'])] },
+    npcs: [npc('g7-h1-mom', 3, 3, 'woman3', 0, ['Goldacre feeds Kenora. Every van that leaves here goes out full and comes back empty.'], { move: 'wander', r: 1 }), npc('g7-h1-kid', 0, 5, 'boy1', 6, ['Mum says Goldacre feeds the whole region. That is a lot of dinners!'])] },
   { id: 'g7-h2', theme: 'home2', C: 6, R: 7,
     items: [['winWide', 3, -0.45], ['bedPlain', 1, 2.8], ['sofaBlue', 1.5, 5.3], ['plantA', 5.4, 2.6]],
     npcs: [npc('g7-h2-farmer', 5, 5, 'farmer', 2, ['I am up with the sun out here. There is a great deal of sky to get up under.']), npc('g7-h2-oldman', 2, 3, 'gsoldman', 0, ['Miss Whitney named this town after her old one. Goldenrod to Goldacre. I like the sound of it.'])] },
   { id: 'g7-h3', theme: 'home3', C: 6, R: 7,
     items: [['winSmall', 2, -0.5], ['shelfGreen', 4.8, 2.3], ['tableBrownSmall', 4.4, 5], ['plantC', 0.6, 6.9]],
-    npcs: [npc('g7-h3-turbine', 3, 3, 'workman', 6, ['I keep the Route 7 turbines turning. Goldacre makes its own power and sells the rest.'])] },
+    npcs: [npc('g7-h3-turbine', 3, 3, 'workman', 6, ['I keep the Route 7 turbines turning. Goldacre makes its own power and sells the rest.', 'Fifty metres up in the wind, every day. The Rowlet up there think I\'m a very big Rowlet.'])] },
   { id: 'g7-h4', theme: 'home1', C: 6, R: 7,
     items: [['winWide', 3, -0.45], ['shelfBooks', 1.1, 2.3], ['bedBlue', 5, 2.8], ['plantB', 5.4, 6.9]],
-    npcs: [npc('g7-h4-cow', 3, 3, 'cowgirl', 0, ['Miltank run free on Route 5. Miss Whitney knows every one of them by face.'], { move: 'wander', r: 1 }), npc('g7-h4-girl', 5, 5, 'gsgirl2', 6, ['Her ace was never bought. She picked it out of a field on that road.'])] },
+    npcs: [npc('g7-h4-cow', 3, 3, 'cowgirl', 0, ['Miltank run free on Route 5. Miss Whitney knows every one of them by face.'], { move: 'wander', r: 1 }), npc('g7-h4-girl', 5, 5, 'gsgirl2', 6, ['Her ace was never bought. She picked it out of a field on that road, and it picked her right back.'])] },
   { id: 'g7-h5', theme: 'home2', C: 6, R: 7,
     items: [['winSmall', 2.5, -0.5], ['stoveRed', 1, 2.3], ['bedPink', 5, 2.8], ['tableBrownSmall', 4.4, 5], ['plantA', 0.5, 6.9]],
-    npcs: [npc('g7-h5-van', 5, 6, 'delivery', 6, ['In season the vans run down to Longshore every day. They eat everything we send.']), npc('g7-h5-man', 3, 3, 'gsman1', 2, ['Tradeway pays cash and asks nothing. So most of our crates go there.'])] },
+    npcs: [npc('g7-h5-van', 5, 6, 'delivery', 6, ['In season the vans run down to Longshore every day. They eat everything we send.']), npc('g7-h5-man', 3, 3, 'gsman1', 2, ['Tradeway pays cash and asks nothing. So most of our crates go up Route 5 to the market.'])] },
   { id: 'g7-h6', theme: 'home3', C: 6, R: 7,
     items: [['winWide', 3, -0.45], ['bedPlain', 1, 2.8], ['shelfBooks', 4.5, 2.3], ['plantB', 5.4, 6.9]],
-    npcs: [npc('g7-h6-oldwoman', 5, 4, 'oldwoman', 6, ['The Bidoof dam the river up Route 8, and the water table wanders. A bridge was the only answer.']), npc('g7-h6-man', 3, 3, 'gsman3', 0, ['The ford is not reliable. I would stay on the bridge.'], { move: 'wander', r: 1 })] },
+    npcs: [npc('g7-h6-oldwoman', 5, 4, 'oldwoman', 6, ['The Bidoof dam the river up Route 8, and the water table wanders. A bridge was the only answer.']), npc('g7-h6-man', 3, 3, 'gsman3', 0, ['The ford isn\'t reliable. I\'d stay on the bridge. Ask my boots.'], { move: 'wander', r: 1 })] },
   { id: 'g7-h7', theme: 'home1', C: 6, R: 7,
     items: [['winSmall', 2, -0.5], ['shelfGreen', 2.8, 2.3], ['bedBlue', 5, 2.8], ['plantC', 5.4, 6.9]],
-    npcs: [npc('g7-h7-man', 5, 4, 'gsmiddleman', 6, ['Wooloo, Mareep and Tauros all graze our pasture. There is wool in every direction.']), npc('g7-h7-boy', 0, 5, 'boy3', 2, ['Cherubi like our crop fields. Cherimart put one on its logo, you know.'], { move: 'wander', r: 1 })] },
+    npcs: [npc('g7-h7-man', 5, 4, 'gsmiddleman', 6, ['Wooloo, Mareep and Tauros all graze our pasture. There is wool in every direction.']), npc('g7-h7-boy', 0, 5, 'boy3', 2, ['Cherubi like our crop fields. Cherimart put one on its logo, you know. Ours are cuter.'], { move: 'wander', r: 1 })] },
   { id: 'g7-gym', theme: 'barn', C: 10, R: 7,
     items: [['winArch', 2, -0.4], ['winArch', 8, -0.4], ['maHayPile', 1.8, 2], ['maHayPile', 8.2, 2], ['crateWide', 0.8, 3.4], ['barrelOrange', 9.3, 3.6], ['statueBeast', 1, 6.6], ['statueBeast', 9, 6.6]],
     npcs: [
@@ -404,7 +404,7 @@ const IN7 = [
         sorry: ['Oh, I do apologise, dear. Miltank gets so carried away.', 'Sorry again! She really does not know her own strength.'] } } }),
       farm('g7-gym-hank', 'Rancher', 'Hank', 'farmer', 2, 5, 30, [['mareep', 0], ['wooloo', 0], ['ponyta', 1], ['tauros', 1], ['girafarig', 2], ['miltank', 2]], 'Miss Whitney trusts me with the stock. Let us see you handle it!', 'Fair enough. On you go.', 1, 4),
       farm('g7-gym-mabel', 'Farmer', 'Mabel', 'cowgirl', 6, 5, 30, [['oddish', 0], ['hoppip', 0], ['sunkern', 1], ['cherubi', 1], ['bounsweet', 2], ['lechonk', 2]], 'The crops do not grow themselves, and neither do trainers. Come on!', 'Well, there goes my harvest.', 8, 2),
-      npc('g7-gym-guide', 6, 5, 'gsman2', 0, ['Whitney came all the way from Johto. Her Miltank knows Rollout, so watch for it to build speed.', 'Her ranch hands are in your way. Beat them first.'])] },
+      npc('g7-gym-guide', 6, 5, 'gsman2', 0, ['Whitney came all the way from Johto. Her Miltank knows Rollout, so watch it build up speed.', 'Fighting moves hit Miltank hardest. But beat her ranch hands first, they\'re in your way.'])] },
 ];
 // Buildings that grew (tools/adv-build-big.py): the town plan (tools/adv-towns/<code>.json, written by its town script) holds each building's footprint, and the floor
 // is (2w - 2) x (2d - 1) of it; furniture and people keep their places in proportion
@@ -476,7 +476,7 @@ const IN1 = [
         'I have dug up half this desert. Now let me dig into your team!', 'Buried again. That happens a lot to me.', 8, 3),
       gt('g1-gym-dov', 'Lamplighter', 'Dov', 'npc2-old-man', 6, 'gentleman', [['honedge', 0], ['yamask', 0], ['litwick', 1], ['golett', 1], ['honedge', 2], ['duskull', 2]],
         'I light every lamp at dusk and I have never missed one. Mind the flame!', 'Snuffed out. Go on, Miss Vesper is waiting.', 7, 6),
-      npc('g1-gym-guide', 6, 7, 'gsman2', 0, ['Miss Vesper keeps the old relics of the caravans. Her Pokemon are slow, sturdy and hard to hurt.', 'Hit fast and hit often. Waiting games are what she wants.'])] },
+      npc('g1-gym-guide', 6, 7, 'gsman2', 0, ['Miss Vesper keeps the old relics of the caravans. Her Pokemon are slow, sturdy and hard to hurt.', 'Ghost and Dark moves hit them hardest. Normal moves pass straight through. Hit fast, hit often!'])] },
 ];
 const IN2 = [
   { id: 'g2-gym', theme: 'barn', C: 10, R: 9,
@@ -495,7 +495,7 @@ const IN2 = [
         'The hot spring is open after you beat me. Not before.', 'Fine, fine. Towels are on the left.', 8, 3),
       gt('g2-gym-kari', 'Sawyer', 'Kari', 'npc2-yellow-jacket-woman', 6, 'cowgirl', [['stufful', 0], ['munchlax', 0], ['drampa', 1], ['teddiursa', 1], ['stufful', 2], ['munchlax', 2]],
         'My Pokemon are big softies. Big softies that hit very hard!', 'Timber. That was me falling over.', 7, 6),
-      npc('g2-gym-guide', 6, 7, 'gsman2', 0, ['Bjorn trains heavy Pokemon that shrug off hits. They wind up slowly, so make them chase you.', 'Keep moving and do not stand toe to toe with them.'])] },
+      npc('g2-gym-guide', 6, 7, 'gsman2', 0, ['Bjorn trains heavy Pokemon that shrug off hits. They wind up slowly, so make them chase you.', 'Keep moving, never stand toe to toe, and save your best move for when they\'re open.'])] },
 ];
 const IN3 = [
   { id: 'g3-gym', theme: 'farm', C: 12, R: 9,
@@ -514,7 +514,7 @@ const IN3 = [
         'Six dogs, one lead, zero patience. Let us go!', 'Good walk. Good battle. Good dogs.', 10, 3),
       gt('g3-gym-maple', 'Gardener', 'Maple', 'npc2-pink-top-girl', 6, 'picnicker', [['skiddo', 0], ['petilil', 0], ['eevee', 1], ['zorua', 1], ['skiddo', 2], ['petilil', 2]],
         'Careful where you step. Everything in here is growing, including my team!', 'Pruned. Fair enough.', 9, 6),
-      npc('g3-gym-guide', 7, 7, 'gsman2', 0, ['Thorn raised every one of his Pokemon from the park. They read each other perfectly.', 'His birds come in from the air. Watch the shadows.'])] },
+      npc('g3-gym-guide', 7, 7, 'gsman2', 0, ['Thorn raised every one of his Pokemon from the park. They read each other perfectly.', 'His birds come in from the air. Electric and Rock moves bring them down. Watch the shadows.'])] },
 ];
 const IN4 = [
   { id: 'g4-gym', theme: 'cave', C: 12, R: 9,
@@ -533,7 +533,7 @@ const IN4 = [
         'These Pokemon are older than the hills. I asked the hills.', 'Ancient history. That would be me.', 10, 3),
       gt('g4-gym-ada', 'Scientist', 'Ada', 'npc2-purple-top-woman', 6, 'scientist', [['archen', 0], ['tirtouga', 0], ['tyrunt', 1], ['amaura', 1], ['archen', 2], ['tirtouga', 2]],
         'Every fossil in this room was revived in my lab. Behave!', 'Fascinating. You must let me write that up.', 9, 6),
-      npc('g4-gym-guide', 7, 7, 'gsman2', 0, ['Silas brings back Pokemon from fossils. They hit like boulders but some are slow to start.', 'Get your hits in before they wake up properly.'])] },
+      npc('g4-gym-guide', 7, 7, 'gsman2', 0, ['Silas brings back Pokemon from fossils. They hit like boulders, but some are slow to start.', 'Steel and Fighting moves work wonders. Get your hits in before they wake up properly.'])] },
 ];
 const IN5 = [
   { id: 'g5-gym', theme: 'center', C: 10, R: 9,

@@ -75,7 +75,7 @@
     "move": "wander",
     "r": 2,
     "lines": [
-     "Crushed fingers, splinters, the odd rope burn. The Nurse has seen every one."
+     "Crushed fingers, splinters, the odd rope burn. The Nurse has seen every one. Mostly mine."
     ],
     "dx": 3.75,
     "dy": 1.75
@@ -87,7 +87,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Like a warehouse, minus the crane."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -224,7 +224,8 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "I can name every engine in the cove by its sound. Mum says that is not a talent."
+     "I can name every engine in the cove by its sound. Mum says that's not a talent.",
+     "There's a new one lately. It only runs at night, and it doesn't sound like a fishing boat."
     ],
     "dx": 2.75,
     "dy": 1.75
@@ -427,7 +428,8 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Nights on the wharf have their own crowd. Zubat, Murkrow, and a big Golisopod."
+     "Nights on the wharf have their own crowd. Zubat, Murkrow, and a big Golisopod.",
+     "And a crew I don't know, loading crates by lantern. Keep yourself to yourself, I say."
     ],
     "dx": 0.75,
     "dy": 2.75

@@ -75,7 +75,8 @@
     "move": "wander",
     "r": 2,
     "lines": [
-     "Wide beach, boardwalk, swimming, ice cream, sunburn. I come every summer."
+     "Wide beach, boardwalk, swimming, ice cream, sunburn. I come every summer.",
+     "This year I'm finally trying the surfboards. I said that last year, too."
     ],
     "dx": 3.75,
     "dy": 1.75
@@ -87,7 +88,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Handy if you try to catch the whole beach.",
+     "A loud boy from Johto slept on that sofa three nights running. Said the ferry food was awful."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -166,7 +168,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Sunscreen sells out first. Ice cream sells out second."
+     "Sunscreen sells out first. Ice cream sells out second. Then Potions, for the sunburn."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -208,7 +210,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "We let rooms in summer. In winter half this street is shuttered."
+     "We let rooms in summer. In winter half this street is shuttered and I finally get some sleep."
     ],
     "dx": 3.25,
     "dy": 1.75
@@ -219,7 +221,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "I swam out so far and the water was still only up to my chest!"
+     "I swam out so far and the water was still only up to my chest! I'm basically a Lapras."
     ],
     "dx": 5.25,
     "dy": 2.75
@@ -317,7 +319,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "The vans come down Route 6 from Goldacre every morning. The boardwalk eats it all."
+     "The vans come down Route 6 from Goldacre every morning. The boardwalk eats it all by noon."
     ],
     "dx": 3.25,
     "dy": 2.25

@@ -87,7 +87,7 @@ const AdventureScene = {
     const W = window.ADV_WORLD; this.uis.forEach(u => u.exit && u.exit()); this.uis = []; B = null;
     HP_CAP = 1.0; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); if (!Number.isFinite(m.exp)) m.exp = ADVP.expFor(ADVP.rate(m.species), m.level); });   // and saves hit by the NaN EXP bug get their EXP back   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
     this.save = ADV.save = ADV.player = save; ADVF.fix(save); ADV.reset(); ADV.setWorld(W); ADV.fallback = false; ADVW.reset(); ADVN.load(); this.dlg = this.sp = this.tr = this.bang = this.room = this.heal = this.warpTo = null;
-    this.startNet(want); this.ready = false; this.mode = 'walk'; this.inB = false; this.msg = null; this.back = false; this.fadeT = 9; this.step = null; this.bHeld = 0; this.wh = null; this.cs = this.iu = null; this.itemCd = 0; this.inDoor = ''; this.flash = 0; this.late = null; this.mount = ''; this.lent = null; this.alt = 0; this.landing = false; this.running = false;
+    this.startNet(want); this.ready = false; this.mode = 'walk'; this.inB = false; this.msg = null; this.back = false; this.fadeT = 9; this.step = null; this.bHeld = 0; this.wh = null; this.cs = this.iu = null; this.itemCd = 0; this.inDoor = ''; this.flash = 0; this.late = null; this.mount = ''; this.lent = null; this.alt = 0; this.landing = false; this.running = false; this.amb = null;
     const ow = this.ow = this.pickOW(), files = [ow.file]; this.key = this.leadKey();
     const sp = spriteOf(this.key); if (sp) for (const a of ['Walk', 'Idle']) if (sp.anims[a]) files.push(sp.anims[a].file);
     files.push(...assetSrcs({ arena: {}, player: { avatar: save.avatar, team: save.party }, cpu: { team: [] } }), ...ADVN.files(), ...ADVO.files());
@@ -183,6 +183,7 @@ const AdventureScene = {
     if (this.mode === 'fade' || this.mode === 'warp') return;
     if (this.mode === 'fish') { this.fishStep(dt); return; }
     if (this.mode === 'talk' || this.mode === 'spot' || this.mode === 'heal') { this.peopleStep(dt); return; }
+    if (this.amb) { const w = this.amb.w; this.amb.t += dt; if (w.dead || this.amb.t >= 0.5) { this.amb = null; if (!w.dead) this.startFight(w); } else this.camStep(dt); return; }   // a grass ambush: half a second of "!" over the mon first, so you see what jumped out
     if (typeof ADVSTORY !== 'undefined') { ADVSTORY.update(this, dt); if (this.mode !== 'walk' || this.dlg) return; }   // the story (adv-story.js): cast by the Center, beats that run when you arrive
     const zd = window.TOUCH?.on ? 0 : MOUSE.wheel ? (MOUSE.wheel < 0 ? 1 : -1) : (INPUT.hit('RB') ? 1 : 0) - (INPUT.hit('LB') ? 1 : 0); if (zd) ADVR.zoomBy(zd);   // mouse wheel / shoulders: overworld zoom tiers 1-6 (Farthest to Closest)
     if (this.skipStart) this.skipStart = false;
@@ -197,7 +198,7 @@ const AdventureScene = {
     let mx = (INPUT.held('RIGHT') ? 1 : 0) - (INPUT.held('LEFT') ? 1 : 0), my = (INPUT.held('DOWN') ? 1 : 0) - (INPUT.held('UP') ? 1 : 0);
     if (!mx) mx = INPUT.mx; if (!my) my = INPUT.my;
     let ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; ml = 1; }   // diagonals are unit length: ml stays the stick fraction, never the pre-normalised length
-    const run = KEYS.ShiftLeft || KEYS.ShiftRight || this.bHeld > 0.25, mt = this.mountSpeed(), mat = ADV.palette[ADV.mat(Math.floor(p.x / ADV.Tp(p.x)), Math.floor(p.y / ADV.Tp(p.x)))];
+    const run = KEYS.ShiftLeft || KEYS.ShiftRight || this.bHeld > 0.25 || (window.TOUCH?.on && ml > 0.95 && (typeof rimRun === 'undefined' || rimRun())), mt = this.mountSpeed(), mat = ADV.palette[ADV.mat(Math.floor(p.x / ADV.Tp(p.x)), Math.floor(p.y / ADV.Tp(p.x)))];
     const gnd = mat === 'ford' && !p.hop ? 0.55 : this.mount === 'fly' ? 1 : ADVP.ground(mat, this.mount === 'ride' ? ADVP.rideKnown(this.save, this.save.party[this.leadIdx()]) : []);   // wading a ford is slow; deep snow, sand and rough ground slow everyone but a mount trained for it
     const sp = ADVP.pace(run, mt) * Math.min(1, ml) * gnd;
     this.running = mt > 0 || run;
@@ -222,7 +223,7 @@ const AdventureScene = {
     let pop = null;
     if (!this.room) pop = ADVW.grass(p, p.moving ? Math.hypot(p.x - this.px, p.y - this.py) : 0);
     this.px = p.x; this.py = p.y;
-    if (pop) { pop.g.local = true; return this.startFight(pop); }   // an ambush out of the grass is yours alone
+    if (pop) { pop.g.local = true; this.amb = { w: pop, t: 0 }; p.moving = false; return; }   // an ambush out of the grass is yours alone (the fight starts after the "!", above)
     if (!this.room || this.room.d.live) this.touch();   // wild mons live in the cave too
     if (this.mode === 'walk') this.people(dt);
     this.camStep(dt);
@@ -309,7 +310,7 @@ const AdventureScene = {
   readSign() {
     const p = this.p, v = DIR_VEC[p.face] || [0, 1], k = ADV.OUT; if (this.room) return false;
     const s = (window.ADV_SIGNS || []).find(s => { const dx = s.x * k - p.x, dy = s.y * k - 8 - p.y, d = Math.hypot(dx, dy); return d < 1.5 * ADV.T && dx * v[0] + dy * v[1] > 0.3 * d; });
-    if (!s) return false; p.moving = false; uiBlip(600, 0.03); this.dialog(s.lines, null); return true;
+    if (!s) return false; p.moving = false; uiBlip(600, 0.03); this.dialog([s.lines.join(' ')], null); return true;   // a sign's short lines share a page where they fit
   },
   playerAct() {
     const n = this.net; if (!n || this.room && !n.N.vis.size) return;
@@ -651,7 +652,7 @@ const AdventureScene = {
   intro() {
     const sv = this.save, m = sv.party[0], mon = m ? ADVP.name(m) : 'your partner', home = ADVS.town(sv.home)?.name || 'home', touch = !!window.TOUCH?.on; sv.intro = 1;
     this.dialog([`Welcome to Kenora, ${sv.name}! You and ${mon} are setting out from ${home}.`,
-      'Professor Linden is waiting outside the Pokemon Center with your League Pass. Go and say hello! Look for the "!" over his head.',
+      'Professor Linden is waiting outside the Pokemon Center with your League Pass. Look for the "!" over her head and go and say hello.',
       'Gym Leaders across the region award Badges to trainers who beat them. The NEXT GOAL panel at the top left always says where to go next, and what to do first.',
       `The minimap shows the way: the red pin is your goal and the orange dots are trainers waiting to battle. ${touch ? 'Tap' : 'Click'} it for the full map. Good luck!`], null);
   },
@@ -661,7 +662,7 @@ const AdventureScene = {
   },
   box(s) { return ADVUI.pages(s); },
   talkStep(dt) {
-    const d = this.dlg; d.t += dt * (INPUT.held('B') || INPUT.held('BACKK') || KEYS.Escape ? 4 : 1);
+    const d = this.dlg; d.t += dt * (INPUT.held('B') || INPUT.held('BACKK') || KEYS.Escape ? 4 : 1) * (typeof TEXT_SPEED !== 'undefined' ? TEXT_SPEED.now : 1);
     if (!(this.talkHit() || MOUSE.hit && d.t > 0.15)) return;
     uiBlip(700, 0.03);
     if (d.t * 50 < d.pages[d.i].chars) { d.t = 1e3; return; }
@@ -968,10 +969,10 @@ const AdventureScene = {
     if (it.ball) { this.wh = null; return this.tr ? this.say("You can't catch another trainer's Pokemon!") : this.throwBall(id, it); }
     const e = s0.ent, m = it.revive ? s0.team.find((x, k) => x.fainted && k !== s0.cur) : s0.team[s0.cur];
     if (!m) return this.say('No fainted Pokemon to revive');
-    const r = ADVP.useOn(m, id, m.maxHp, m.stats.hp); if (!r) return this.say(`It would have no effect on ${m.sp.name}`);
+    const h0 = m.hp, r = ADVP.useOn(m, id, m.maxHp, m.stats.hp); if (!r) return this.say(`It would have no effect on ${m.sp.name}`);
     ADVP.take(bag, id); this.itemCd = 6; this.wh = null; const pm = this.save.party[this.order[s0.team.indexOf(m)]]; if (pm) pm.friend = Math.min(255, (pm.friend | 0) + 2);
     this.iu = { id, t: 0, tr: !!it.revive }; ADVUI.sprite(id);
-    this.say(`${m.sp.name} ${r === 'healed' ? 'was healed' : r === 'cured' ? 'was cured' : 'was revived'}!`); if (m === s0.team[s0.cur]) floatText(e.x, e.y - 40 * SS, r === 'healed' ? 'HEAL' : 'CURED', '#7dff8a', 13);
+    const got = Math.round(m.hp - h0); this.say(r === 'healed' ? `${m.sp.name} recovered ${got} HP!` : `${m.sp.name} ${r === 'cured' ? 'was cured' : 'was revived'}!`); if (m === s0.team[s0.cur]) floatText(e.x, e.y - 40 * SS, r === 'healed' ? '+' + got : 'CURED', '#7dff8a', 13);
   },
   // the ball arcs from the trainer to the active wild mon on its own, then shakes up to 3 times (the sim waits)
   throwBall(id, it) {
@@ -1080,9 +1081,9 @@ const AdventureScene = {
     if (it.stone) { const to = ADVP.evoItem(s, id); if (!to) return no; ADVP.take(sv.bag, id); return yes([{ t: 'evo', s, to }]); }
     if (it.candy) { if (s.level >= 100) return no; ADVP.take(sv.bag, id); return yes(ADVP.gain(s, ADVP.expFor(ADVP.rate(s.species), s.level + 1) - s.exp, { time })); }
     if (it.tm) { if (!ADVP.legalSet(toId(s.species)).has(it.tm) || s.moves.includes(it.tm)) return no; return yes(ADVP.learn(s, it.tm)); } // TMs are not used up
-    const mx = ADVP.maxes(s), r = ADVP.useOn(s, id, mx.max, mx.real); if (!r) return no;
+    const mx = ADVP.maxes(s), h0 = s.hp, r = ADVP.useOn(s, id, mx.max, mx.real); if (!r) return no;
     ADVP.take(sv.bag, id); s.friend = Math.min(255, (s.friend | 0) + 2); this.refreshLead();
-    return { ok: true, s: r === 'healed' ? `${nm} was healed.` : r === 'cured' ? `${nm} was cured.` : `${nm} was revived.` };
+    return { ok: true, s: r === 'healed' ? `${nm} recovered ${Math.round(s.hp - h0)} HP.` : r === 'cured' ? `${nm} was cured.` : `${nm} was revived.` };
   },
   // everything wild the world draws: roaming mons (not the one in the sim), plus emotes and grass rustles
   wildItems() {
@@ -1181,6 +1182,7 @@ const AdventureScene = {
     const out = [], cx = this.cam.x, cy = this.cam.y;
     for (const n of ADVN.list) { const e = n.e; if (e && Math.abs(e.x - cx) < 700 && Math.abs(e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: e.x, y: e.y, z: e.z, f: () => this.drawNPC(n) }); }
     const b = this.bang, e = b && b.n.e; if (e) out.push({ x: e.x, y: e.y + 2, z: e.z, f: () => this.drawFx({ k: '!', t: b.t }, e) });
+    const am = this.amb, ae = am && am.w.e; if (ae) out.push({ x: ae.x, y: ae.y + 2, z: ae.z, f: () => this.drawFx({ k: '!', t: am.t }, ae) });
     for (const n of ADVN.list) if (n.bub && n.e && n !== b?.n && Math.abs(n.e.x - cx) < 700 && Math.abs(n.e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: n.e.x, y: n.e.y + 2, z: n.e.z, f: () => this.drawBub(n) });
     return out;
   },
@@ -1225,10 +1227,10 @@ const AdventureScene = {
     if (this.wh && this.mode === 'battle') ADVUI.wheelDraw(this);
     if (ui) ui.draw();
     else if (this.dlg) this.drawDlg();
-    else if (this.msg) ADVUI.notice(this.msg.s);
-    if (this.mount === 'lent' && this.lent.kind === 'course' && !ui) ADVUI.notice(`${this.lent.i} / ${this.lent.pts.length}    ${Math.max(0, Math.ceil(this.lent.t))} s`, this.msg ? 1 : 0);
     this.drawNet();
     if (typeof ADVMAP !== 'undefined') ADVMAP.hud(this);
+    if (!ui && !this.dlg && this.msg) ADVUI.notice(this.msg.s);   // after the map HUD, so "Got away safely!" is not hidden under the NEXT GOAL panel
+    if (this.mount === 'lent' && this.lent.kind === 'course' && !ui) ADVUI.notice(`${this.lent.i} / ${this.lent.pts.length}    ${Math.max(0, Math.ceil(this.lent.t))} s`, this.msg ? 1 : 0);
     TEXT_MIN = 0;
     const fa = this.fadeT < 1 ? this.fadeT : this.fadeT < 2 ? 2 - this.fadeT : 0;
     if (fa > 0 && this.save && this.iris && this.p) {   // walking through a cave mouth: the world darkens in hard steps round a closing (then opening) circle of light on you
@@ -1241,7 +1243,7 @@ const AdventureScene = {
   },
   // the cave is dim: a soft radius of light around you (around the fight while one is on), your lead, every torch and crystal near, daylight at both mouths
   // the glowing zones (G8 Sporehaven and its routes) lie under a dim canopy, darker at night; Route 101's fungus thins toward Duskmoss. The level eases in and out as you cross a zone edge.
-  GLOOM: { sporehaven: 0.55, route2: 0.8, route101: 0.6 },   // lighter since the 2026-11-05 world review: Sporehaven read as murky even at noon
+  GLOOM: { sporehaven: 0.4, route2: 0.7, route101: 0.5 },   // lighter since the 2026-11-05 world review: Sporehaven read as murky even at noon
   gloom() {
     const p = this.p, z = ADVW.zone(p.x, p.y) || '', g = this.GLOOM[z] || 0, W = window.ADV_WORLD;
     const k = z === 'route101' ? g * clamp(1 - (p.x - W.towns.G8.x - 1400 * ADV.OUT) / (2800 * ADV.OUT), 0.2, 1) : g, dt = Math.min(0.1, this.t - (this.glT ?? this.t));
@@ -1275,7 +1277,7 @@ const AdventureScene = {
       items.push(...this.wildItems(), ...this.npcItems(), ...this.remoteItems(), ...this.castItems(), ...this.courseItems());
       if (this.heal && this.room?.d.mach) items.push({ x: this.room.d.mach.x, y: this.room.d.mach.y + 2, z: 0, f: () => this.drawHeal() });
       ADVR.draw(this.cam, items, this.t);
-      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(window.TOUCH?.on ? 'hold B run   A talk' + (rod ? '   X cast' : '') : padUI() ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + (window.TOUCH?.on ? 'tap B or MENU for the menu' : 'tap B menu') : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu'); }
+      if (!this.uis.length && !this.dlg && this.mode === 'walk') { const sv = this.save, rod = sv.skills?.fishing, ld = sv.party[this.leadIdx()], mk = ADVP.mountKind(sv, ld), fy = sv.skills.fly && ADVP.flies(ld); hint(window.TOUCH?.on ? 'push to the rim to run   A talk' + (rod ? '   X cast' : '') : padUI() ? 'stick move   hold B run   A talk   ' + (rod ? 'X cast   ' : '') + (this.mount ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + (this.mount === 'fly' ? 'land' : 'get off') + '   ' : mk ? (window.TOUCH?.on ? 'RIDE ' : 'Select ') + { bike: 'bike', ride: 'ride', fly: 'fly' }[mk] + '   ' : '') + (window.TOUCH?.on ? 'tap B or MENU for the menu' : 'tap B menu') : 'WASD move   Shift run   E talk   M map   ' + (rod ? 'F cast rod   ' : '') + (this.mount ? (this.mount === 'fly' ? 'G land   ' : 'V / R / G get off   ') : (sv.bag.bike ? 'V bike   ' : '') + (ADVP.rideable(ld) ? 'R ride   ' : '') + (fy ? 'G fly   ' : '')) + (this.chatOn() ? 'Enter chat   ' : '') + 'Esc menu', undefined, true); }
     }
   },
 };

@@ -88,7 +88,8 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like."
+     "The PC on the wall holds any Pokemon you can't carry. Six in your party, the rest wait in there.",
+     "Tauros and Ponyta graze the pastures round town. Catch one and you can learn to ride it on Route 7."
     ],
     "dx": 1.75,
     "dy": 1.75
@@ -156,7 +157,8 @@
     "move": "wander",
     "r": 2,
     "lines": [
-     "The clerk keeps the better stock for trainers who have proven themselves. Earn a badge or two."
+     "The clerk keeps better stock for trainers who've proven themselves. Earn a badge or two.",
+     "One badge and the Great Balls come out from the back. Worth it, in Miltank country."
     ],
     "dx": 3.25,
     "dy": 1.75
@@ -226,7 +228,7 @@
     "move": "still",
     "lines": [
      "Her Clefable came with her from Johto. Everything else on this farm is a working animal.",
-     "Even Miltank is a working dairy cow now. It is no gentler for it."
+     "Even the Miltank works the dairy now. It's no gentler for it, mind."
     ],
     "dx": 3.25,
     "dy": 1.75
@@ -273,7 +275,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "Goldacre feeds Kenora. Every van that leaves here is full."
+     "Goldacre feeds Kenora. Every van that leaves here goes out full and comes back empty."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -377,7 +379,8 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "I keep the Route 7 turbines turning. Goldacre makes its own power and sells the rest."
+     "I keep the Route 7 turbines turning. Goldacre makes its own power and sells the rest.",
+     "Fifty metres up in the wind, every day. The Rowlet up there think I'm a very big Rowlet."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -430,7 +433,7 @@
     "face": 6,
     "move": "still",
     "lines": [
-     "Her ace was never bought. She picked it out of a field on that road."
+     "Her ace was never bought. She picked it out of a field on that road, and it picked her right back."
     ],
     "dx": 3.25,
     "dy": 2.75
@@ -487,7 +490,7 @@
     "face": 2,
     "move": "still",
     "lines": [
-     "Tradeway pays cash and asks nothing. So most of our crates go there."
+     "Tradeway pays cash and asks nothing. So most of our crates go up Route 5 to the market."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -540,7 +543,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "The ford is not reliable. I would stay on the bridge."
+     "The ford isn't reliable. I'd stay on the bridge. Ask my boots."
     ],
     "dx": 2.25,
     "dy": 1.75
@@ -593,7 +596,7 @@
     "move": "wander",
     "r": 1,
     "lines": [
-     "Cherubi like our crop fields. Cherimart put one on its logo, you know."
+     "Cherubi like our crop fields. Cherimart put one on its logo, you know. Ours are cuter."
     ],
     "dx": 0.75,
     "dy": 2.75
@@ -795,8 +798,8 @@
     "face": 0,
     "move": "still",
     "lines": [
-     "Whitney came all the way from Johto. Her Miltank knows Rollout, so watch for it to build speed.",
-     "Her ranch hands are in your way. Beat them first."
+     "Whitney came all the way from Johto. Her Miltank knows Rollout, so watch it build up speed.",
+     "Fighting moves hit Miltank hardest. But beat her ranch hands first, they're in your way."
     ],
     "dx": 5.75,
     "dy": 3.75

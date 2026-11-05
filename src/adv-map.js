@@ -102,6 +102,7 @@ const ADVMAP = {
         if (!im) text('LOADING', VW / 2, VH / 2, 28, '#fff', 'center');
         else { const [x0, y0] = scr(0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x0, y0, im.naturalWidth * k, im.naturalHeight * k); }
         const on = (x, y, m = 40) => x > -m && y > -m && x < VW + m && y < VH + m, pk = Math.max(2, Math.round(VH / 300));
+        if (st.zi >= 1) for (const rt of A.routes()) { const [x, y] = scr(rt.c, rt.r); if (on(x, y)) text(rt.name, x, y, 10, '#dfe8f5', 'center', '#101428', 'Silkscreen'); }   // route names once you zoom in a step
         for (const [id, t] of Object.entries(window.ADV_WORLD?.towns || {})) {
           const [x, y] = scr(t.center.x / T, t.center.y / T); if (!on(x, y, 80)) continue;
           const g = id[0] === 'G', l = id[0] === 'L';
@@ -155,19 +156,29 @@ const ADVMAP = {
     for (const b of W?.buildings || []) for (const n of b.interior?.npcs || []) if (n.trainer?.leader) this._gy.push({ id: n.id, b: b.id, x: b.x * ADV.OUT, y: b.y * ADV.OUT, town: W.towns[b.town]?.name || b.town, who: n.trainer.name, badge: n.trainer.badge, leader: n.trainer.leader, after: n.trainer.after || [] });
     return this._gy;
   },
+  // route labels for the world map: each route zone's cell nearest its middle (data tiles), worked out once
+  routes() {
+    if (this._rt) return this._rt; const Z = window.ADV_ZONES, acc = {}; this._rt = []; if (!Z) return this._rt;
+    Z.cells.forEach((row, cy) => ADV.rle(row).forEach((v, cx) => { const id = Z.ids[v]; if (/^route\d+$/.test(id || '')) (acc[id] ||= []).push([cx, cy]); }));
+    for (const [id, cs] of Object.entries(acc)) {
+      const mx = cs.reduce((a, c) => a + c[0], 0) / cs.length, my = cs.reduce((a, c) => a + c[1], 0) / cs.length, d = c => Math.hypot(c[0] - mx, c[1] - my), best = cs.reduce((b, c) => d(c) < d(b) ? c : b);
+      this._rt.push({ name: 'Route ' + id.slice(5), c: (best[0] + 0.5) * Z.cell, r: (best[1] + 0.5) * Z.cell });
+    }
+    return this._rt;
+  },
   goal(sc) {
     const st = typeof ADVSTORY !== 'undefined' && ADVSTORY.goal(sc), gy = this.gymGoal(sc);
-    if (st) return { ...st, sub: gy.done ? gy.line : 'Also: ' + gy.line };   // the story leads (adv-story.js); the gym hunt carries on underneath
+    if (st) return { ...st, sub: gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}` };   // the story leads (adv-story.js); the gym hunt carries on underneath
     return gy;
   },
   gymGoal(sc) {
     const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
     if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
     const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
-    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)))   // the ace's level: a starter two under it loses to Miltank in the sims (balance pass 2026-11-05), top = ADVW.partyTop(sv);
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level))), top = ADVW.partyTop(sv);   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
     const sub = top < want ? `Train your team to about Lv ${want} (best: Lv ${top})` : left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;   // the trainers left count indoors and out
-    return { x: g.x, y: g.y, line: `${g.badge}: ${g.town}`, sub, g };
+    return { x: g.x, y: g.y, line: `${g.town} Gym`, sub, g };
   },
   // compass and distance in tiles from you
   dir(sc, x, y) { const h = this.here(sc), dx = x - h.x, dy = y - h.y, n = Math.round(Math.hypot(dx, dy) / ADV.T); if (n < 2) return 'here'; const a = (Math.atan2(dy, dx) * 180 / Math.PI + 360 + 22.5) % 360; return ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'][Math.floor(a / 45)] + ' ' + n + ' tiles'; },

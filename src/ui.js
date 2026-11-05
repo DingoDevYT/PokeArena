@@ -10,11 +10,13 @@ function bgFill(top = '#1b1f3a', bottom = '#3a1f3f') {
 const HINT_ICONS = { A: 'xbox_a', B: 'xbox_b', X: 'xbox_x', Y: 'xbox_y', LB: 'xbox_lb', RB: 'xbox_rb', LT: 'xbox_lt', RT: 'xbox_rt', 'left/right': 'xbox_dpad', Delete: 'key_delete', F2: 'key_f2', Enter: 'key_enter', Esc: 'key_esc' };
 const ICON_KEY = { xbox_a: 'A', xbox_b: 'B', xbox_x: 'X', xbox_y: 'Y', xbox_lb: 'LB', xbox_rb: 'RB', xbox_lt: 'LT', xbox_rt: 'RT' };
 // On a touch screen the button icons in the hint are buttons themselves (touch.js only draws A, B and a d-pad on screens), so X / Y / LB / RB / LT / RT stay reachable without covering anything.
-function hint(s, y = VH - 26) {
+function hint(s, y = VH - 26, pill = false) {   // pill: a dark backing so the row reads over a bright map (the overworld)
   if (window.TOUCH?.on && !TOUCH.padOn) s = s.split(/\s{3,}/).filter(p => !/d-pad|left\/right|\bstick\b|up\/down|arrows|scroll/i.test(p)).join('   ');   // touch: the pad is hidden on screens, so no steering instructions
   const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|LT|RT|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
   const tap = window.TOUCH?.on ? (name, ix, iw) => { const k = ICON_KEY[name]; if (k) hot(ix - 8, y - 22, iw + 16, 44, { click: () => { TOUCH.p[k] = true; } }); } : null;
-  iconRow(parts, VW / 2, y, 32, Math.max(12, 14 * S()), '#ccd', 'center', false, tap);
+  const fs = Math.max(12, 14 * S());
+  if (pill) { const w = iconRow(parts, VW / 2, y, 32, fs, '#ccd', 'center', true); rrect(VW / 2 - w / 2 - 14, y - 19, w + 28, 38, 19, 'rgba(10,14,28,0.62)', null, 0); }
+  iconRow(parts, VW / 2, y, 32, fs, pill ? '#eef' : '#ccd', 'center', false, tap);
 }
 function backButton(fn) {
   const s = S(), w = 110 * s, h = 36 * s;
@@ -127,7 +129,7 @@ const TitleScene = {
     // letterbox + title
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH * 0.14); ctx.fillRect(0, VH * 0.86, VW, VH * 0.14);
     text('POKEARENA', VW / 2, VH * 0.07, 54 * s, '#ffde3b', 'center', '#1a2a6c');
-    if (Math.floor(this.t * 2) % 2 === 0) text(window.TOUCH?.on ? 'TAP TO START' : INPUT.pad ? 'PRESS A' : 'PRESS ENTER', VW / 2, VH * 0.93, 26 * s, '#fff', 'center');
+    if (Math.floor(this.t * 2) % 2 === 0) text(window.TOUCH?.on || window.matchMedia?.('(pointer: coarse)').matches ? 'TAP TO START' : INPUT.pad ? 'PRESS A' : 'PRESS ENTER', VW / 2, VH * 0.93, 26 * s, '#fff', 'center');
     if (this.fade > 0) { ctx.globalAlpha = clamp(this.fade, 0, 1); ctx.fillStyle = this.fadeCol; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
   },
 };
@@ -164,25 +166,30 @@ const MenuScene = {
       { label: 'Profile', value: profileName(), act: () => { ProfileScene.back = null; setScene(ProfileScene); } },
       { label: 'Team Builder', act: () => setScene(TeamsScene) },
       { label: 'Settings', act: () => { SettingsScene.back = null; setScene(SettingsScene); } },
-      ...(OFFLINE.st === 'unsupported' ? [] : [{ label: 'Play offline', value: OFFLINE.label(), act: () => OFFLINE.save() }]),   // src/offline.js: save Adventure mode for a flight
+      ...(OFFLINE.st === 'unsupported' ? [] : [{ label: 'Download for offline', value: OFFLINE.label(), act: () => OFFLINE.save() }]),   // src/offline.js: save Adventure mode for a flight
     ];
   },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(TitleScene); },
-  draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(TitleScene)); },
+  draw() { bgFill(); const s = S(); text('POKEARENA', VW / 2, 90 * s, 56 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Enter or click select   Esc back   left/right or scroll change'); backButton(() => setScene(TitleScene)); },
 };
 
 // ---------- settings: the rows shared by the main menu's Settings screen and the Adventure pause menu ----------
+// text speed for Adventure's text boxes (adv-scene talkStep multiplies its clock by k); rimRun: on a phone, the stick pushed to its rim runs
+const TEXT_SPEED = { names: ['Slow', 'Normal', 'Fast', 'Instant'], k: [0.6, 1, 2, 60], get i() { return clamp(STORE.get('textSpeed', 1) | 0, 0, 3); }, get now() { return this.k[this.i]; } };
+const rimRun = () => STORE.get('rimRun', true) !== false;
 const settingsItems = () => [
   { label: 'Camera zoom', value: ADVR.NAMES[ADVR.zm - 1], cycle: d => ADVR.zoomBy(d) },
   { label: 'Music Volume', value: Math.round(AUDIO.vol.music * 10), cycle: d => { AUDIO.vol.music = clamp(AUDIO.vol.music + d * 0.1, 0, 1); if (AUDIO.music) AUDIO.music.volume = AUDIO.vol.music; STORE.set('vol', AUDIO.vol); } },
   { label: 'SFX Volume', value: Math.round(AUDIO.vol.sfx * 10), cycle: d => { AUDIO.vol.sfx = clamp(AUDIO.vol.sfx + d * 0.1, 0, 1); STORE.set('vol', AUDIO.vol); uiBlip(700); } },
+  { label: 'Text speed', value: TEXT_SPEED.names[TEXT_SPEED.i], cycle: d => STORE.set('textSpeed', clamp(TEXT_SPEED.i + d, 0, 3)) },
+  ...(window.TOUCH?.on ? [{ label: 'Full push runs', value: rimRun() ? 'On' : 'Off', cycle: () => STORE.set('rimRun', !rimRun()) }] : []),
 ];
 const SettingsScene = {
   back: null, st: { sel: 0 },   // back = scene to return to; null = main menu
   enter() { AUDIO.playMusic(MUSIC.menu); },
   items() { return [{ label: 'Controls', act: () => { ControlsScene.back = SettingsScene; setScene(ControlsScene); } }, ...settingsItems()]; },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(this.back || MenuScene); },
-  draw() { bgFill(); const s = S(); text('SETTINGS', VW / 2, 90 * s, 48 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Click to select   right-click back   scroll to change'); backButton(() => setScene(this.back || MenuScene)); },
+  draw() { bgFill(); const s = S(); text('SETTINGS', VW / 2, 90 * s, 48 * s, '#ffde3b', 'center', '#1a2a6c'); drawMenu(this.items(), this.st, VW / 2, 170 * s, 520 * s, 64); hint(padUI() ? 'A select   B back   left/right change' : 'Enter or click select   Esc back   left/right or scroll change'); backButton(() => setScene(this.back || MenuScene)); },
 };
 
 // ---------- profile: trainer name + avatar (shown in battle, the online lobby and the team cards) ----------
@@ -280,7 +287,7 @@ const ControlsScene = {
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
     if (window.TOUCH?.on) {   // a phone: the on-screen controls, not the pad and keyboard tables (they do not fit)
       const L = [['Move', 'drag on the left half'], ['Moves 1 to 4', 'A  B  X  Y'], ['Dodge roll', 'DODGE'], ['Swap', 'hold SWAP, aim the stick, let go'], ['Mega Evolve', 'MEGA'],
-        ['Items', 'BAG in a fight, B closes it'], ['Forfeit, run', 'MENU in a fight'], ['Talk, read signs', 'A'], ['Run', 'hold B'], ['Menu', 'MENU, or tap B'], ['Map', 'tap the minimap'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B']];
+        ['Items', 'BAG in a fight, B closes it'], ['Forfeit, run', 'MENU in a fight'], ['Talk, read signs', 'A'], ['Run', 'push the stick to its rim, or hold B'], ['Menu', 'MENU, or tap B'], ['Map', 'tap the minimap'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B']];
       const rh = Math.max(18, (VH - 130 * s - 60) / L.length), fs = Math.max(11, Math.min(18, rh * 0.5)), x0 = Math.max(VW * 0.08, 175), x1 = x0 + Math.max(VW * 0.22, 130);   // right of the d-pad
       L.forEach(([a, b], i) => { const y = 110 * s + i * rh; text(a, x0, y, fs, '#ffde3b', 'left', null); text(b, x1, y, fs, '#fff', 'left', null); });
       hint('B back'); backButton(() => setScene(this.back || MenuScene)); return;
@@ -369,7 +376,7 @@ const SetupScene = {
     text(tr.name.toUpperCase(), x0, oy, 18 * s, '#7fd0e8', 'left');
     const tim = img(tr.sprite); if (tim) ctx.drawImage(tim, x0 + pw - 56 * s, oy - 28 * s, 56 * s, 56 * s);
     tiles(tr.team, oy + 18 * s, -1);
-    hint(padUI() ? 'left/right change   A fight   B back' : 'Click a row to change it (left side -, right side +)   scroll also changes'); backButton(() => setScene(MenuScene));
+    hint(padUI() ? 'left/right change   A fight   B back' : 'left/right or scroll change   click a row: left side -, right side +'); backButton(() => setScene(MenuScene));
   },
 };
 
@@ -478,7 +485,7 @@ function BattleScene(cfg) {
         text('PAUSED', VW / 2, VH * 0.25, 48 * s, '#ffde3b', 'center');
         if (NET.role && B.pausedBy !== meIdx()) text(`${B.sides[B.pausedBy]?.name || 'Your opponent'} paused the game`, VW / 2, VH * 0.25 + 50 * s, 20 * s, '#fff', 'center');
         drawMenu(this.pauseItems(), this.pause, VW / 2, VH * 0.35, 380 * s, 60);
-        hint(padUI() ? 'A select   B resume' : 'Click to select   Esc resume', VH * 0.35 + 4 * 60 * s + 16 * s);
+        hint(padUI() ? 'A select   B resume' : 'Enter or click select   Esc resume', VH * 0.35 + 4 * 60 * s + 16 * s);
       }
       if (B.over && B.endT > 0.8) {
         const mi = meIdx(), win = B.winner === mi, me = B.sides[mi], foe = B.sides[1 - mi];
@@ -565,6 +572,7 @@ const CopyScene = {
 
 // ---------- team editor: src/teambuilder.js ----------
 function wrapText(s, x, y, w, size, color) {
+  size = Math.max(size, TEXT_MIN);   // measure at the size text() will really draw
   ctx.font = `${size}px Bungee, "Arial Black", sans-serif`;
   let line = '', yy = y;
   for (const word of s.split(' ')) { const t = line ? line + ' ' + word : word; if (ctx.measureText(t).width > w && line) { text(line, x, yy, size, color, 'left', null); line = word; yy += size * 1.4; } else line = t; }
