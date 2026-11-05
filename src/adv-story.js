@@ -31,7 +31,7 @@ const ADVSTORY = {
     const b = this.main(sc.save); if (!b || !b.goal) return null;
     const w = b.where || {}, t = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null;
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
-    if (n?.e) return { line: this.fill(b.goal, sc.save), story: b, x: n.e.x, y: n.e.y };   // the cast member is standing there now: the pin and bearing point at them, not at the town
+    if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
   },
 
@@ -85,7 +85,7 @@ const ADVSTORY = {
 
   // ---------- running a beat ----------
   talk(sc, n) { const b = this.beats().find(x => x.id === n.def.story); if (!b || !this.open(sc.save).includes(b)) return sc.dialog([this.castOf(n.def.cast).name + ' is lost in thought.'], n, () => { n.busy = false; }); this.start(sc, b, n); },
-  start(sc, b) { this.run = { beat: b, steps: b.script.slice(), i: 0 }; sc.p.moving = false; this.next(sc); },
+  start(sc, b) { const k = this.lost?.[b.id] ? b.script.findIndex(s => s.battle) : -1; this.run = { beat: b, steps: b.script.slice(), i: k > 0 ? k - 1 : 0 }; sc.p.moving = false; this.next(sc); },   // a retry after a lost must-win fight starts at the line before the battle, not the whole scene
   next(sc) {
     const r = this.run; if (!r) return; const sv = sc.save;
     while (r.i < r.steps.length) {
@@ -116,6 +116,7 @@ const ADVSTORY = {
     if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     if (s.max) team = team.slice(-s.max);
+    if (s.minus) team = team.map(m => ({ ...m, level: Math.max(2, m.level - s.minus), moves: undefined }));   // a softer first meeting (moves follow the new level)
     n.def.trainer = { cls: c.cls || '', name: c.name || s.battle, avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
     n.busy = true; this.run.fighting = true; sc.startTrainer(n);
   },
@@ -126,5 +127,5 @@ const ADVSTORY = {
     const s = r.steps[r.i]; if (s && (s.win || s.lose)) r.steps.splice(r.i, 1, ...((won ? s.win : s.lose) || []));
     this.next(sc);
   },
-  abort() { this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },
+  abort() { if (this.run?.fighting) (this.lost ||= {})[this.run.beat.id] = 1; this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
 };

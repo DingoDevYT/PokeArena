@@ -83,7 +83,7 @@ window.ADV_STORY = {
           "Team pays you, pup gets fixed. No more shaking. Everybody wins."] },
         { say: 'kid', lines: ["No! I said no! Pip isn't for sale! Pip doesn't need fixing! Pip is just little!"] },
         { say: 'soot', lines: ["Hm. You. The one staring. You want to argue? Where I come from, we argue with Pokemon."] },
-        { battle: 'soot', mustWin: true },
+        { battle: 'soot', mustWin: true, minus: 2 },   // the first time, straight after a first badge: two under the band (playtest 3 needed Lv30 to win at Lv18)
         { win: [{ say: 'soot', lines: ["Hah. Good arm. Good team.", "Fine. Keep the pup. Team Umbra pays fair, ask anyone.",
             "...Don't ask anyone. I wasn't here."] }],
           lose: [{ say: 'soot', lines: ["Hah. Not much of an argument. Go rest up. I'll be around."] }] },

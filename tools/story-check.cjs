@@ -47,7 +47,7 @@ const walk = (steps, where, b) => {
       if (!S.cast[st.battle]) err(w + ': battle vs ' + st.battle + ' not in cast');
       if (st.team && !Array.isArray(st.team) && !R[st.battle]?.[st.team]) err(w + ': roster band ' + st.team + ' missing');
       const nxt = steps[i + 1]; if (!nxt || (!nxt.win && !nxt.lose)) err(w + ': battle without win/lose branch after it');
-      for (const k of keys) if (!['battle', 'hold', 'max', 'team', 'mustWin'].includes(k)) err(w + ': unknown battle key ' + k);
+      for (const k of keys) if (!['battle', 'hold', 'max', 'team', 'mustWin', 'minus'].includes(k)) err(w + ': unknown battle key ' + k);
     } else if (st.win || st.lose) {
       walk(st.win || [], w + '.win', b); walk(st.lose || [], w + '.lose', b);
       if (!steps[i - 1] || steps[i - 1].battle === undefined) err(w + ': win/lose not right after a battle');

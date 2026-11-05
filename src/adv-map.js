@@ -175,7 +175,7 @@ const ADVMAP = {
     const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
     if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
     const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
-    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level))), top = ADVW.partyTop(sv);   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + 1), top = ADVW.partyTop(sv);   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
     const sub = top < want ? `Train your team to about Lv ${want} (best: Lv ${top})` : left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;   // the trainers left count indoors and out
     return { x: g.x, y: g.y, line: `${g.town} Gym`, sub, g };
