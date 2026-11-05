@@ -1184,8 +1184,11 @@ function playerIntent(side, dt) {
   } else if (window.TOUCH?.on) {   // touch: no aim input, so face the foe
     const fe = foeOf(side)?.ent;
     if (fe) { const dx = fe.x - e.x, dy = fe.y - e.y, l = Math.hypot(dx, dy); if (l > 4) { e.aimX = dx / l; e.aimY = dy / l; } } e.aimIdle = 0;
+  } else if (typeof kbPlay === 'function' && kbPlay()) {   // PC on the keyboard alone (the mouse has not moved for a while): face the foe, as on touch
+    const fe = foeOf(side)?.ent;
+    if (fe) { const dx = fe.x - e.x, dy = fe.y - e.y, l = Math.hypot(dx, dy); if (l > 4) { e.aimX = dx / l; e.aimY = dy / l; } } e.aimIdle = 0;
   } else {
-    // PC: the cursor is always the aim
+    // PC: the cursor is the aim
     const w = screenToWorld(MOUSE.x, MOUSE.y), dx = w.x - e.x, dy = w.y - (e.y - 12 * SS), l = Math.hypot(dx, dy);
     if (l > 4) { e.aimX = dx / l; e.aimY = dy / l; } e.aimIdle = 0;
   }

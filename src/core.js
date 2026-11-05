@@ -113,6 +113,7 @@ const KEYS = {}, KEYS_HIT = {};
 window.addEventListener('keydown', e => { if (!KEYS[e.code]) KEYS_HIT[e.code] = true; KEYS[e.code] = true; INPUT.usingPad = false; if (['Space', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.code)) e.preventDefault(); unlockAudio(); });
 window.addEventListener('keyup', e => { KEYS[e.code] = false; });
 const MOUSE = { x: 0, y: 0, down: false, hit: false, hitR: false, downR: false, moved: 0, wheel: 0 };
+const kbPlay = () => !window.TOUCH?.on && !INPUT.usingPad && performance.now() - (MOUSE.moved || 0) > 2500;   // a PC player whose mouse has sat still a while is playing on the keyboard: fights aim at the foe for them
 cv.addEventListener('mousemove', e => { MOUSE.x = e.clientX; MOUSE.y = e.clientY; MOUSE.moved = performance.now(); });
 cv.addEventListener('mousedown', e => { if (e.button === 2) { MOUSE.downR = true; MOUSE.hitR = true; } else { MOUSE.down = true; MOUSE.hit = true; } INPUT.usingPad = false; unlockAudio(); });
 window.addEventListener('mouseup', e => { if (e.button === 2) MOUSE.downR = false; else MOUSE.down = false; });
@@ -143,7 +144,7 @@ const INPUT = {
     if (padActive) { this.usingPad = true; unlockAudio(); }
     if (window.TOUCH?.on) { for (const k in TOUCH.h) if (TOUCH.h[k]) b[k] = true; for (const k in TOUCH.p) b[k] = true; TOUCH.p = {}; if (b.LTRT) b.LT = b.RT = true; }   // touch.js: on-screen buttons use the pad names; p = pressed since the last poll, so a tap shorter than a frame still counts
     // battle actions: pad, or PC layout (LMB / RMB / Q / E, Space dodge, 1-6 swap, F mega)
-    b.M1 = b.A || MOUSE.down; b.M2 = b.B || MOUSE.downR; b.M3 = b.X || KEYS.KeyQ; b.M4 = b.Y || KEYS.KeyE;
+    b.M1 = b.A || MOUSE.down || KEYS.KeyJ; b.M2 = b.B || MOUSE.downR || KEYS.KeyK; b.M3 = b.X || KEYS.KeyQ || KEYS.KeyL; b.M4 = b.Y || KEYS.KeyE || KEYS.KeyI;   // J K L I: all four moves without a mouse (moves 1 and 2 were mouse-only)
     b.DODGE = b.LB || KEYS.Space || KEYS.ShiftLeft;
     b.MEGA = (b.LT && b.RT) || KEYS.KeyF;
     for (let k = 1; k <= 6; k++) b['S' + k] = KEYS['Digit' + k] || KEYS['Numpad' + k];

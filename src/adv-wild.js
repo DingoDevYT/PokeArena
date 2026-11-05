@@ -28,10 +28,12 @@ const ADVW = {
   },
   // the band for a badge count, held to at most UP levels over the player's strongest party member (top), so a fresh starter meets fair fights and the band is reached by training
   UP: 2,
-  band(badges, top) { let [a, b] = this.LV[Math.max(0, Math.min(8, badges | 0))]; if (top > 0 && b > top + this.UP) { b = Math.max(2, top + this.UP); a = Math.min(a, Math.max(2, b - 4)); } return [a, b]; },
+  band(badges, top) { let [a, b] = this.LV[Math.max(0, Math.min(8, badges | 0))]; const up = (badges | 0) ? this.UP : 0; if (top > 0 && b > top + up) { b = Math.max(2, top + up); a = Math.min(a, Math.max(2, b - 4)); } return [a, b]; },   // before the first badge wilds never top your level (classic routes sit a little under the starter)
   partyTop(sv = ADV.player) { return sv?.party?.length ? Math.max(...sv.party.map(m => m.level | 0)) : 0; },
-  level(band, badges = ADV.player?.badges | 0, top = this.partyTop()) { const [a, b] = this.band(badges, top); return a + Math.floor(this.rnd() * (b - a + 1)) + (this.BONUS[band] || 0); },
-  top(band, badges = ADV.player?.badges | 0, top = this.partyTop()) { return this.band(badges, top)[1] + (this.BONUS[band] || 0); }, // highest level of the band
+  // the level wild bands follow: before the second badge your lead's (one high catch made every wild near Goldacre harder for the starter, playtest 3), then your best
+  bandTop(sv = ADV.player) { if (!sv?.party?.length) return 0; if ((sv.badges | 0) >= 2) return this.partyTop(sv); const ld = sv.party.find(m => m.hp > 0) || sv.party[0]; return ld.level | 0; },
+  level(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { const [a, b] = this.band(badges, top); return a + Math.floor(this.rnd() * (b - a + 1)) + (this.BONUS[band] || 0); },
+  top(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { return this.band(badges, top)[1] + (this.BONUS[band] || 0); }, // highest level of the band
   // a Wooloo at 30 is a Dubwool: follow plain level evolutions (no item / trade / friendship / time) while the level allows
   evolve(id, lv) {
     for (;;) {
@@ -55,7 +57,7 @@ const ADVW = {
   spawnTry(P, view, Q = [P]) {
     const T = ADV.Tp(P.x), a = this.rnd() * 6.2832, d = (this.MIN + this.rnd() * (this.NEAR - this.MIN)) * T, x = P.x + Math.cos(a) * d, y = P.y + Math.sin(a) * d;
     const r = this.pickSpecies(this.zone(x, y)); if (!r) return null;
-    const pt = P.top !== undefined ? P.top : this.partyTop(), lv = this.level(r[1], P.badges, pt), id = this.evolve(r[0], lv), tm = this.tm(id), n = tm.group[0] + Math.floor(this.rnd() * (tm.group[1] - tm.group[0] + 1));
+    const pt = P.top !== undefined ? P.top : this.bandTop(), lv = this.level(r[1], P.badges, pt), id = this.evolve(r[0], lv), tm = this.tm(id), n = tm.group[0] + Math.floor(this.rnd() * (tm.group[1] - tm.group[0] + 1));
     const spot = (cx, cy, rad) => {
       const small = (window.DEX?.species[id]?.weightkg ?? 99) < 12; let any = null;
       for (let i = 0; i < 6; i++) {

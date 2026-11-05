@@ -831,7 +831,7 @@ function drawHUD() {
     // a card that just came off cooldown flashes once, so you can look at the fight instead of the bar
     const rdy = me.hudRdy || (me.hudRdy = []); if (cd > 0) rdy[i] = 0; else if (rdy[i] === 0) rdy[i] = B.time;
     rrect(x, y, W, H, 10 * S, ready ? '#1c1f26ee' : '#13151acc', ready ? tc : '#555', 3);
-    ctx.globalAlpha = cd > 0 ? 0.45 : 1; icon((pad ? PAD_ICONS : PC_ICONS)[i], x + 25 * S, y + H / 2, H >= 34 ? 32 : 16); ctx.globalAlpha = 1;
+    ctx.globalAlpha = cd > 0 ? 0.45 : 1; const ic = (pad ? PAD_ICONS : typeof kbPlay === 'function' && kbPlay() ? ['J', 'K', 'key_q', 'key_e'] : PC_ICONS)[i]; if (!icon(ic, x + 25 * S, y + H / 2, H >= 34 ? 32 : 16) && ic.length === 1) text(ic, x + 25 * S, y + H / 2 + 1, H >= 34 ? 18 : 12, '#fff', 'center', '#000'); ctx.globalAlpha = 1;   // keyboard play shows J and K (there are no icons for them)
     const room = W - 50 * S - (cd > 0 ? 46 * S : 8 * S); ctx.font = `${15 * S}px Bungee, "Arial Black", sans-serif`;
     const nsz = 15 * S * Math.min(1, room / Math.max(1, ctx.measureText(mv.name).width));
     text(mv.name, x + 50 * S, y + H / 2 - 7 * S, nsz, ready ? '#fff' : '#9a9aa4', 'left');

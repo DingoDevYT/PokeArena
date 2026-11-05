@@ -294,8 +294,8 @@ const ControlsScene = {
       hint('B back'); backButton(() => setScene(this.back || MenuScene)); return;
     }
     const rows = [
-      ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor, always']],
-      ['Move 1 / 2', ['xbox_a', ' ', 'xbox_b'], ['mouse_left', ' ', 'mouse_right']], ['Move 3 / 4', ['xbox_x', ' ', 'xbox_y'], ['key_q', ' ', 'key_e']],
+      ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor (still mouse: at the foe)']],
+      ['Move 1 / 2', ['xbox_a', ' ', 'xbox_b'], ['mouse_left', ' ', 'mouse_right', '  or J K']], ['Move 3 / 4', ['xbox_x', ' ', 'xbox_y'], ['key_q', ' ', 'key_e', '  or L I']],
       ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' hold, point a stick, release'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
       ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Items in a fight', ['xbox_back'], [' C']], ['Pause, forfeit', ['xbox_start'], ['key_esc', ' or P']],
       ['ADVENTURE', [], []],
