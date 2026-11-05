@@ -92,7 +92,7 @@ const TOUCH = window.TOUCH = (() => {
   // ---------- touches ----------
   let sid = null, ox = 0, oy = 0;
   const setStick = (x, y) => {
-    let dx = x - ox, dy = y - oy; const l = Math.hypot(dx, dy), m = Math.min(1, l / R);
+    let dx = x - ox, dy = y - oy; const l = Math.hypot(dx, dy), m = Math.pow(Math.min(1, l / R), 1.5);   // a curve: small pushes creep (to line up with someone), a full push is full speed
     if (l < 8) T.sx = T.sy = 0; else { T.sx = dx / l * m; T.sy = dy / l * m; }
     if (l > R) { dx = dx / l * R; dy = dy / l * R; }
     knob.style.transform = `translate(${dx}px,${dy}px)`;

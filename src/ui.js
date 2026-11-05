@@ -547,7 +547,7 @@ const TeamsScene = {
       if (teams.length > 1) { const bw = 100 * s; dangerButton(rx - bw, yy + (h - 34 * s) / 2, bw, 34 * s, this.st.del === i ? 'SURE?' : 'DELETE', () => { this.st.sel = i; this.del(i); }, this.st.del === i, () => this.st.sel = i); rx -= bw + 14 * s; }
       t.mons.forEach((m, k) => { const im = portrait(toId(m.species)); if (im) ctx.drawImage(im, rx - (t.mons.length - k) * (ps + 3 * s), yy + (h - ps) / 2, ps, ps); });
     });
-    hint(padUI() ? 'A edit   X delete team (press twice)   B back' : 'Click a team to edit it   DELETE button or Delete key removes it (press twice)'); backButton(() => setScene(MenuScene));
+    hint(padUI() ? 'A edit   X delete team (press twice)   B back' : 'Click a team to edit it   the DELETE button or Del removes it (press twice)'); backButton(() => setScene(MenuScene));
   },
 };
 const CopyScene = {
