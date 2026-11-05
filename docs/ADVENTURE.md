@@ -64,5 +64,7 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
 - People (2026-10-20): every NPC is drawn in the Ranger style (older sheets map to the Ranger person who plays the part, ADVN.ALIAS; anything else gets a character-creator look). Villagers face you when you are close, look about, a third of the outdoor ones potter round their spot, and now and then show a mood bubble. Trainers keep their facing (their line of sight).
 - Region rules from the bible: every town has a Centre and a Mart or local equivalent; gyms are category-based not type-based; encounter tables are time-based; no HMs, trainers learn Skills from NPCs.
 
+- Overnight brief (2026-11-05): Landon handed over the whole game to improve while he sleeps: playtest as a person, balance, fix ugly or confusing areas, controls, UI, menus, writing, story. Story and characters may be rewritten as needed (the bible is not in the repo any more; what ships in the game is now the source). Difficulty target: classic Pokemon (smooth for anyone, gyms are a real test, little grinding if you battle trainers on the way). Keep pushing to ridge-wip, never main.
+
 ## Waiting on Landon
 - Title.
