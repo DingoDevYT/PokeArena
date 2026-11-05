@@ -175,7 +175,7 @@ const AdventureScene = {
     if (ui) { ui.update(dt); return; }
     const p = this.p;
     ADV.update(p, dt);
-    if (this.msg && (this.msg.t -= dt) <= 0) this.msg = null;
+    if (this.msg && !this.dlg && (this.msg.t -= dt) <= 0) this.msg = null;   // a toast waits out a text box (the status reminder ran out under the prize lines)
     if (this.flash > 0) this.flash -= dt;
     if (this.itemCd > 0) this.itemCd -= dt;
     if (this.mode === 'battle') { this.battleStep(dt); return; }
@@ -1081,6 +1081,7 @@ const AdventureScene = {
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
+    this.persist();   // what the fight earned is kept (a reload after a lost gym fight undid a level)
     this.wake = [gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }

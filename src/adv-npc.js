@@ -44,7 +44,8 @@ const ADVN = {
   leaderTeam(who, badges = ADV.player?.badges | 0) {
     const r = window.ADV_ROSTERS?.[who]?.[this.bandKey(badges)] || [];
     const off = (badges | 0) === 0 ? 3 : (badges | 0) === 1 ? 1 : 0;   // the first gym 3 lower (11, 11, 12), the second 1 lower: classic first gyms, not Appendix A's 14-15 against a Lv5 starter
-    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: Math.max(2, m.level - off), moves: this.armed(m.species, Math.max(2, m.level - off), m.moves), ace: !!m.ace }));
+    const calm = mv => (badges | 0) || window.DEX?.moves?.[mv]?.status !== 'slp';   // before the first badge no leader puts you to sleep (Cleffa's Sing made Whitney a wall); armed() fills the slot
+    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: Math.max(2, m.level - off), moves: this.armed(m.species, Math.max(2, m.level - off), m.moves && m.moves.filter(calm)), ace: !!m.ace }));
   },
   // a roster's moves with the banned ones gone (data/dex.js) and, if fewer than two attacks are left, the mon's own best attacks for its level added back
   armed(sp, lv, moves = []) {

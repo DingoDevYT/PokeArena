@@ -26,7 +26,7 @@ const ADVUI = {
     const wrap = t => { const lines = []; let cur = ''; for (const wd of t.split(' ').filter(Boolean)) { const x = cur ? cur + ' ' + wd : wd; if (ctx.measureText(x).width > d.tw && cur) { lines.push(cur); cur = wd; } else cur = x; } if (cur) lines.push(cur); return lines; };
     const out = [], put = L => { if (!L.length) return; const pg = L.slice(0, 2); pg.chars = pg.join('').length; out.push(pg); };
     let cur = '';
-    for (const sn of String(s).match(/(?:"[^"]*"|[^.!?"]|")+[.!?]*["')]*\s*|\s+/g) || [String(s)]) {   // a quoted "!" stays inside its sentence
+    for (const sn of String(s).match(/[.!?]*(?:"[^"]*"|[^.!?"]|")+[.!?]*["')]*\s*|[.!?]+["')]*\s*|\s+/g) || [String(s)]) {   // a quoted "!" stays inside its sentence; a line may open with "..." (it used to be dropped)
       const t = (cur + sn).trim();
       if (wrap(t).length <= 2) { cur = t + ' '; continue; }
       if (cur.trim()) put(wrap(cur.trim()));
@@ -186,7 +186,8 @@ const ADVUI = {
     const stage = n => { st.stage = n; st.sel = 0; st.off = 0; uiBlip(880, 0.05); };
     const go = () => {
       const id = st.list[st.sel]; if (!id) return;
-      sc.begin(ADVS.fresh({ name: profileName(), avatar: profileAvatar(), outfit: st.outfit, home: st.home, starter: ADVP.mon(id, 5, { ot: profileName(), moves: ADVP.starterMoves(id) }) }));
+      const nm = profileName() === 'You' ? (avatarById(profileAvatar())?.name || 'Red') : profileName();   // no name typed: the portrait's ("You must be You." read oddly)
+      sc.begin(ADVS.fresh({ name: nm, avatar: profileAvatar(), outfit: st.outfit, home: st.home, starter: ADVP.mon(id, 5, { ot: nm, moves: ADVP.starterMoves(id) }) }));
     };
     const cols = () => Math.max(4, Math.floor((VW - 80) / (84 * S()))), rows = () => Math.max(1, Math.floor((VH - 250 * S()) / (84 * S())));
     const back = () => st.stage ? stage(st.stage - 1) : sc.close();

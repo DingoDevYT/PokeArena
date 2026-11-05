@@ -85,7 +85,8 @@ const ADVSTORY = {
 
   // ---------- running a beat ----------
   talk(sc, n) { const b = this.beats().find(x => x.id === n.def.story); if (!b || !this.open(sc.save).includes(b)) return sc.dialog([this.castOf(n.def.cast).name + ' is lost in thought.'], n, () => { n.busy = false; }); this.start(sc, b, n); },
-  start(sc, b) { const k = this.lost?.[b.id] ? b.script.findIndex(s => s.battle) : -1; this.run = { beat: b, steps: b.script.slice(), i: k > 0 ? k - 1 : 0 }; sc.p.moving = false; this.next(sc); },   // a retry after a lost must-win fight starts at the line before the battle, not the whole scene
+  start(sc, b) { const nb = this.lost?.[b.id] || 0, at = b.script.map((s, i) => s.battle ? i : -1).filter(i => i >= 0), k = nb ? (at[nb - 1] ?? -1) : -1;   // the battle you lost (Jet, not the grunt you had beaten)
+    this.run = { beat: b, steps: b.script.slice(), i: k > 0 ? k - 1 : 0, bn: k > 0 ? nb - 1 : 0 }; sc.p.moving = false; this.next(sc); },   // a retry after a lost must-win fight starts at the line before the battle, not the whole scene
   next(sc) {
     const r = this.run; if (!r) return; const sv = sc.save;
     while (r.i < r.steps.length) {
@@ -94,7 +95,7 @@ const ADVSTORY = {
         return sc.dialog([].concat(s.lines).map(l => this.fill(l, sv)), n || (s.say === 'player' ? { def: { name: sv.name } } : null), () => this.next(sc)); }   // your own lines carry your name plate
       if (s.battle) return this.fight(sc, s);
       if (s.win || s.lose) continue;   // only reached right after a battle (after() takes the branch)
-      if (s.give) { const it = ADVP.item(s.give), n = s.n || 1; ADVP.add(sv.bag, s.give, n); uiBlip(880, 0.05); return sc.dialog([`${sv.name} received ${n > 1 ? n + ' x ' : ''}${it.name}!`], null, () => this.next(sc)); }
+      if (s.give) { const it = ADVP.item(s.give), n = s.n || 1; ADVP.add(sv.bag, s.give, n); uiBlip(880, 0.05); return sc.dialog([`${sv.name} received ${n > 1 ? n + ' x ' : /^[AEIOU]/i.test(it.name) ? 'an ' : 'a '}${it.name}!`], null, () => this.next(sc)); }
       if (s.heal) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; continue; }
       if (s.flag) { this.st(sv).flags[s.flag] = 1; continue; }
       if (s.leave) { this.drop(s.leave); continue; }
@@ -103,7 +104,7 @@ const ADVSTORY = {
   },
   finish(sc) {
     const r = this.run; this.run = null; if (!r) return;
-    this.st(sc.save).done[r.beat.id] = 1;
+    this.st(sc.save).done[r.beat.id] = 1; if (this.lost) delete this.lost[r.beat.id];
     for (const k of [...this.cast.keys()]) this.drop(k);
     sc.persist(); this.wait = 0.2; sc.mode = 'walk';
   },
@@ -117,6 +118,7 @@ const ADVSTORY = {
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     if (s.max) team = team.slice(-s.max);
     if (s.minus) team = team.map(m => ({ ...m, level: Math.max(2, m.level - s.minus), moves: undefined }));   // a softer first meeting (moves follow the new level)
+    this.run.bn = (this.run.bn || 0) + 1;
     n.def.trainer = { cls: c.cls || '', name: c.name || s.battle, avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
     n.busy = true; this.run.fighting = true; sc.startTrainer(n);
   },
@@ -127,5 +129,5 @@ const ADVSTORY = {
     const s = r.steps[r.i]; if (s && (s.win || s.lose)) r.steps.splice(r.i, 1, ...((won ? s.win : s.lose) || []));
     this.next(sc);
   },
-  abort() { if (this.run?.fighting) (this.lost ||= {})[this.run.beat.id] = 1; this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
+  abort() { if (this.run?.fighting) (this.lost ||= {})[this.run.beat.id] = this.run.bn || 1; this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
 };

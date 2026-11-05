@@ -107,7 +107,7 @@ window.ADV_STORY = {
         { battle: 'ethan' },
         { win: [{ say: 'ethan', lines: ["Aw, man! You're catching up way too fast. Okay. Okay okay okay. I'll train harder."] }],
           lose: [{ say: 'ethan', lines: ["Another badge and a win! Today is a good day. Keep at it, you're close!"] }] },
-        { say: 'ethan', lines: ["Oh! Important tip. Life or death. Haven't been to Goldacre yet? Watch out for the Miltank.",
+        { say: 'ethan', lines: ["Oh! Important tip. Life or death. Never let a Miltank start rolling. Ask me how I know.",
           "In Johto a Miltank rolled over me for a whole afternoon. I still hear it in my dreams. Rolling."] },
         { leave: 'ethan' }
       ]
@@ -120,7 +120,7 @@ window.ADV_STORY = {
           "I'm Chad. Just Chad. I travel. Slowly, mostly. It's the only speed I own."] },
         { say: 'chad', lines: ["That Pokemon of yours looks at you before it looks at anything else. Did you know that?",
           "That's worth more than any badge. Keep it that way."] },
-        { say: 'chad', lines: ["A battle? No, no. I don't battle on holiday. I nap on holiday. Here, take these instead."] },
+        { say: 'chad', lines: ["Not a battler today, friend. I don't battle on holiday, I nap on holiday. Here, take these."] },
         { give: 'greatball', n: 5 },
         { say: 'chad', lines: ["Never rush a nap, a cup of tea or a battle, friend. All three go cold."] },
         { leave: 'chad' },
@@ -187,7 +187,7 @@ window.ADV_STORY = {
       where: { town: 'T6' }, trigger: 'talk', who: 'ethan', spot: { dx: 3, dy: 2 },
       goal: 'Talk to Ethan outside the Spindlewood Pokemon Center.',
       script: [
-        { say: 'ethan', lines: ["See that ship way out past the cove? It hasn't moved all day. It's just sitting there. Waiting.",
+        { say: 'ethan', lines: ["The dockhands say there's a ship way out past the cove. It hasn't moved all day. Just waiting.",
           "Can I tell you something? Back in Johto, I made it all the way to the League. The very end."] },
         { say: 'ethan', lines: ["And I froze. Couldn't pick a move. Couldn't even call my partner's name. I just stood there.",
           "So I came here to start over. I'm not freezing again. Ever. I'm going to get strong enough."] },
