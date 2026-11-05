@@ -708,7 +708,7 @@ const AdventureScene = {
   // The lead mon trails the player's path ADVF.FD tiles behind. Following eases toward that spot (so it brakes when you stop and never closer than ADVF.MIN tiles); walk vs idle comes from its real
   // speed with hysteresis and its facing turns in 45 degree steps (ADVF.loco / aim). After 2 s of standing still it has a life of its own (folIdle); the moment you move it snaps back to following.
   follow(dt) {
-    const p = this.p, f = this.f, T = ADV.Tp(p.x), g = (ADVF.trailPush(this.trail, p), ADVF.trailGoal(this.trail, ADVF.FD * T));
+    const p = this.p, f = this.f, T = ADV.Tp(p.x), g = (ADVF.trailPush(this.trail, p), ADVF.trailGoal(this.trail, ADVF.FD * T * (this.room ? 0.6 : 1)));   // closer indoors, so it comes in past the doormat
     const act = this.mode === 'walk' && !this.uis.length && !this.dlg && !this.mount && !this.inB && !p.hop;
     const x0 = f.x, y0 = f.y;
     f.animT += dt; f.at += dt; if (f.hopT > 0) f.hopT -= dt;

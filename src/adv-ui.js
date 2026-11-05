@@ -287,7 +287,7 @@ const ADVUI = {
       st, o,   // st.t0 / o are exposed for the screenshot harness
       update(dt) { runMenu(st, items(), dt); if (backHit()) sc.close(); },
       draw() {
-        bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout(), s = S(), rowH = 44, y0 = Y(86), x = X(930), w = L(560), it = items();
+        bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout(), s = S(), rowH = window.TOUCH?.on ? 48 : 44, y0 = Y(86), x = X(930), w = L(560), it = items();   // a little taller to tap on a phone
         text('YOUR LOOK', X(660), Y(40), L(40), '#ffde3b', 'center', '#1a2a6c');
         panel(X(40), Y(86), L(520), L(640), 'PREVIEW');
         // the preview walks each of the 8 directions for a while, then stands (breathing) a moment, rotating

@@ -122,6 +122,7 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - Writing: Ethan's Miltank tip works wherever your first badge was; "the friend in the red cap" is Ethan by name (his sprite has no cap); the Goldacre kid points at the gym's hall, the farmer's sheep graze calm, the granny's Goldenrod line makes sense, the festival sisters look like two people, and Longshore's beach-party man stands by the path. Signs: "the Statue of Umbra", exits with no route say where the road goes, gym signs name the leader's ace type.
 - Third playtest fixes (2026-11-05):
   - Keyboard-only PC play: J and K are moves 1 and 2 (they were mouse-only; L and I double Q and E), and when the mouse has sat still for 2.5 s fights aim at the foe, as on touch (the aim followed a cursor parked in a corner: 24 damage instead of 87). The move bar shows J and K then.
+  - Indoors the follower keeps closer (it stopped on the doormat in a short room).
   - Before the first badge wilds never top your level ([level - 4, level]); before the second they follow your lead's level, not your best (catching one Lv10 made every wild near Goldacre Lv7-12 for a Lv8 starter).
 - Phone stick (2026-11-05): speed follows the push on a gentle curve, so a small push creeps (lining up to face someone took several tries) and a full push is full speed; pushed to the rim it runs.
 - Settings (2026-11-05): Text speed (Slow, Normal, Fast, Instant) everywhere; on a phone also Full push runs and Touch buttons (Small, Normal, Large: every button's size and distance from the corner scale together).
