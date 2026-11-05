@@ -68,7 +68,11 @@ const ADVP = {
     const sp = DEX.species[id], nat = Object.keys(DEX.natures);
     const s = { species: id, level: lv, moves: this.moves(id, lv), ability: this.ability(id), item: '', nature: this.cap(nat[Math.floor(this.rnd() * nat.length)]),
       status: '', exp: this.expFor(this.rate(id), lv), friend: 70, ball: 'pokeball', nickname: '', ot: '', ...o };
-    if (!s.moves.length) s.moves = makeMon({ species: id, level: lv }).moves.map(m => m.id); // no level-up moves in the data: the sim's default pick
+    if (!s.moves.length) {   // nothing learnt by this level in the data: its first weak level-up moves, never the sim's competitive set (a Lv3 Bounsweet came with Leaf Storm and Solar Beam)
+      const weak = m => DEX.moves[m] && !(DEX.moves[m].basePower > 60), hits = m => DEX.moves[m]?.category !== 'Status' && DEX.moves[m]?.basePower > 0;
+      s.moves = [...new Set((this.info(id).levelMoves || []).map(x => x[1]).filter(weak))].slice(0, 2);
+      if (!s.moves.some(hits)) s.moves.push('tackle');
+    }
     s.hp = s.hp ?? this.max(s);
     return s;
   },

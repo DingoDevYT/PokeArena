@@ -111,6 +111,7 @@ const ADVN = {
     const e = n.e, d = n.def, T = ADV.Tp(e.x), near = e.lv === P.lv && Math.hypot(e.x - P.x, e.y - P.y) < 2.2 * T, h = this.hash(n.id);
     const fresh = d.trainer && !this.beaten(n);   // a trainer still waiting for a battle
     if (near && !n.go && !fresh) { n.face = dirFromVec(P.x - e.x, P.y - e.y); n.look = 2; return; }
+    if (d.cast) return;   // the story cast (adv-story.js) stay where they were put, with their own "!": no pottering off, no mood bubbles
     if (fresh) { if (h % 2 === 0 && (n.look = (n.look ?? 2 + h % 3) - dt) <= 0) { n.look = 2.5 + Math.random() * 3; n.face = n.face === (d.face | 0) ? ((d.face | 0) + (h % 4 < 2 ? 2 : 6)) % 8 : d.face | 0; } return; }   // half of them glance a quarter turn and back, like the classic trainers
     if (d.trainer) return;
     if (d.move === 'still' && !d.room && h % 3 === 0 && n.pot === undefined) n.pot = true;   // a third of the outdoor villagers potter about (d.r 1)

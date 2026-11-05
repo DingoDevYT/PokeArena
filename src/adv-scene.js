@@ -279,8 +279,9 @@ const AdventureScene = {
   },
   netStep(dt) {
     const n = this.net; if (!n) return;
-    const N = n.N, p = this.p, mv = p.moving ? (this.running ? 2 : 1) : 0, busy = this.mode !== 'walk' || !!this.uis.length || !!this.dlg;
-    N.local({ x: p.x, y: p.y, z: p.z, face: p.face, mv, room: this.room ? this.room.id : 0, b: this.save.badges | 0, busy, view: this.view(), ent: p });
+    const N = n.N, p = this.p, mv = p.moving ? (this.running ? 2 : 1) : 0, busy = this.mode !== 'walk' || !!this.uis.length || !!this.dlg || performance.now() < (ADVW.calmA || 0);   // calmA: a few seconds after a fight no pack notices you (one charged the moment a level-up panel closed)
+    const now = performance.now(); if (busy) this.busyT = now;   // and for 3 s after any menu, text box or fight, so nothing pounces the moment it closes
+    N.local({ x: p.x, y: p.y, z: p.z, face: p.face, mv, room: this.room ? this.room.id : 0, b: this.save.badges | 0, busy: busy || now - (this.busyT || 0) < 3000, view: this.view(), ent: p });
     N.tick(dt); N.world(dt);
     if (this.tst && (this.tst.t -= dt) <= 0) this.tst = null;
   },
@@ -816,6 +817,9 @@ const AdventureScene = {
   // touching a wild mon (or being touched) starts the fight
   touch() {
     const p = this.p, f = this.f, T = ADV.Tp(p.x), flat = (x, y) => !ADV.STAIR[ADV.kind(Math.floor(x / T), Math.floor(y / T))];
+    if (!this.save.seenFlee && ADVW.groups.some(g => g.m.some(w => w.st === 'flee' && Math.hypot(w.e.x - p.x, w.e.y - p.y) < 8 * T))) {   // once per save: the first mon that bolts says how to catch one
+      this.save.seenFlee = 1; this.msg = { s: `Skittish Pokemon run away. Run after them (${window.TOUCH?.on ? 'push the stick to its rim' : typeof padUI === 'function' && padUI() ? 'hold B' : 'hold Shift'}): they tire after a few seconds.`, t: 6 };
+    }
     if (!this.loaded || p.hop || !flat(p.x, p.y) || !flat(f.x, f.y) || Math.abs(f.z - Math.round(f.z / T) * T) > 1) return;
     for (const g of ADVW.groups) for (const w of g.m) {
       const e = w.e; if (w.st === 'fight' || w.st === 'wait' || w.cool > 0 || e.hop || e.lv !== p.lv || Math.abs(e.x - p.x) > 80 || Math.abs(e.y - p.y) > 80 || !flat(e.x, e.y)) continue;
@@ -1046,7 +1050,7 @@ const AdventureScene = {
     this.step = null; if (!tr) this.endClaim(msg === 'Got away safely!' ? 'fled' : caught >= 0 ? 'caught' : 'won', dead); else this.net.N.bv([]);
     if (msg !== 'Got away safely!' && window.ADV_MUSIC) this.vic = ADVM.to(tr ? ADV_MUSIC.battle.winTrainer : ADV_MUSIC.battle.winWild, true);   // the win fanfare plays over the zone, which resumes after it
     if (set) { const box = party.length >= 6; (box ? this.save.box : party).push(set); if (box) msg += ' Sent to the PC box.'; }
-    this.msg = msg && { s: msg, t: 3 }; this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000;   // no grass ambush straight after a fight
+    this.msg = msg && { s: msg, t: 3 }; this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
     this.refreshLead(); this.persist();
     if (ev.length) this.grow(ev);
     if (tr && tr.t.story) { const sv = this.save, pay = ADVN.pay(tr.t, tr.team); sv.money += pay; this.persist(); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], tr.n, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
@@ -1056,7 +1060,7 @@ const AdventureScene = {
     }
   },
   // giving up a trainer battle: a loss like any other (a story battle that need not be won carries on, anything else is a blackout)
-  forfeit() { if (!B || B.over) return; if (this.tr?.t.story && !this.tr.t.mustWin) return this.storyLoss(); this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; },
+  forfeit() { if (!B || B.over) return; if (this.tr?.t.story && !this.tr.t.mustWin) return this.storyLoss(); this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; this.gaveUp = true; },
   // a story battle lost that the story does not need you to win (the rival before the League): no blackout, the party is healed and the script goes on
   storyLoss() {
     const ar = B.arena, s0 = B.sides[0], f = this.f, ev = this.settle(); f.x = ar.ox + s0.ent.x; f.y = ar.oy + s0.ent.y; this.back = true;
@@ -1069,10 +1073,10 @@ const AdventureScene = {
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
     const sv = this.save, lost = (sv.badges | 0) ? Math.min(Math.floor(sv.money / 4), 2000) : 0, t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
-    sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
+    const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
-    this.wake = [`Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
+    this.wake = [gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }
   useBag(id, i) {

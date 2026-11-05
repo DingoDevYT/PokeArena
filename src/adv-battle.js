@@ -43,6 +43,10 @@ const ADVB = {
   },
   // clampToArena for the world: an entity (e.px, e.py = where it was) slides along solid cells axis by axis; a bare point goes to the nearest open cell centre
   clamp(ar, x, y, pad, e) {
+    if (e && e.px !== undefined) {   // a fast mover (a Rollout) could jump a thin wall in one frame: walk the step in pieces and stop at the first solid one
+      const dx = x - e.px, dy = y - e.py, n = Math.ceil(Math.hypot(dx, dy) / 6);
+      if (n > 1 && !this.solidAt(ar, e.px, e.py, pad)) for (let i = 1; i < n; i++) { const qx = e.px + dx * i / n, qy = e.py + dy * i / n; if (this.solidAt(ar, qx, qy, pad)) { x = qx; y = qy; break; } }
+    }
     if (!this.solidAt(ar, x, y, pad)) return [x, y];
     if (e && e.px !== undefined) {
       let nx = x, ny = y;

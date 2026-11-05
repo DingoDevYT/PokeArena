@@ -63,6 +63,7 @@ for (const d of W.doors || []) {
 // hand-placed notices where the review found players stuck (data tiles: the sign's tile, the place it belongs to)
 const NOTES = [
   { n: 'rg_sign_board', px: 2896, py: 23615, town: 'T7', lines: ['Longshore Pier. Open all hours. Mind the Wingull.', 'Cast a line off the far end. Chinchou bite out there.'] },
+  { x: 590, y: 888, town: 'T8', lines: ['Route 103 ends at the stony shore.', 'Chinchou bite off the end of the jetty.'] },
   { x: 363, y: 501, town: 'G4', lines: ['Claystone Landing. Fine fishing off the jetty.', 'No ferry here. Route 133 runs west, Route 132 east.'] },
 ];
 for (const o of NOTES) out.push({ n: o.n || 'signGreen', x: o.px ?? (o.x + 0.5) * T, y: o.py ?? (o.y + 1) * T - 1, town: o.town, note: 1, lines: o.lines });   // px, py: an exact spot (a board the chunk used to carry)

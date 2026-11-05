@@ -79,7 +79,8 @@ const TOUCH = window.TOUCH = (() => {
     for (const k in els) {
       const e = els[k], w = e.dataset.when, pad = m && T.padOn && k !== 'PADT';   // on screens A, B and the d-pad only show when PAD is on
       const on = (w === 'bag' && bag) || (w === 'all' && (!m || pad)) || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m && (k === 'PADT' || pad));
-      e.style.display = on ? 'flex' : 'none';
+      const megaNo = k === 'LTRT' && !(typeof B !== 'undefined' && B?.sides?.[0] && !B.sides[0].megaUsed && typeof megaTarget === 'function' && megaTarget(activeMon(B.sides[0])));   // MEGA only when your mon can mega evolve (it sat over the item wheel for nothing)
+      e.style.display = on && !megaNo ? 'flex' : 'none';
       const l = m ? e.dataset.ml : e.dataset.l; if (e.textContent !== l) { e.textContent = l; e.classList.toggle('sm', l.length > 1); }
     }
     base.classList.toggle('on', sid !== null); if (sid === null) { const ok = stickOK(); base.style.display = ok ? 'block' : 'none'; base.style.left = '28px'; base.style.top = innerHeight - 64 - R * 2 + 'px'; }

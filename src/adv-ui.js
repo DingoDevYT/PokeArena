@@ -143,7 +143,7 @@ const ADVUI = {
     const st = ADVP.stats(s), names = [['hp', 'HP'], ['atk', 'ATK'], ['def', 'DEF'], ['spa', 'SPA'], ['spd', 'SPD'], ['spe', 'SPE']], cw = (w - L(48)) / 6;
     names.forEach(([k, n], i) => {
       const col = nat.plus === k && nat.plus !== nat.minus ? '#7be07b' : nat.minus === k && nat.plus !== nat.minus ? '#ff8a8a' : '#fff';
-      text(n, x + L(24) + cw * (i + 0.5), y + L(268), L(12), '#9aa6c0', 'center', null, 'Silkscreen'); text(String(st[k]), x + L(24) + cw * (i + 0.5), y + L(294), L(20), col, 'center', null);
+      text(n, x + L(24) + cw * (i + 0.5), y + L(268), L(12), '#9aa6c0', 'center', null, 'Silkscreen'); text(String(k === 'hp' ? ADVP.max(s) : st[k]), x + L(24) + cw * (i + 0.5), y + L(294), L(20), col, 'center', null);
     });
     for (let i = 0; i < 4; i++) { if (s.moves[i]) this.moveRow(s.moves[i], x + L(24), y + L(320) + i * L(46), w - L(48), L(40)); else rrect(x + L(24), y + L(320) + i * L(46), w - L(48), L(40), L(10), '#ffffff08', '#ffffff18', 1); }
     ADVUI.icon(s.ball || 'pokeball', x + L(40), y + h - L(28), L(12)); text(`OT ${s.ot || '?'}   ${ADVP.item(s.ball || 'pokeball').name}   Friendship ${s.friend | 0}`, x + L(72), y + h - L(26), L(13), '#9aa6c0', 'left', null);
@@ -354,6 +354,7 @@ const ADVUI = {
         drawMenu(its, st, X(870), Y(top), L(500), rowH);
         if (note.s) text(note.s, X(870), Y(top + H + 24), L(15), note.bad ? '#ff9a9a' : '#9f9', 'center', null);
         hint(padUI() ? 'A select   B resume' : 'Enter or click select   Esc resume');
+        backButton(() => sc.close());   // like every other screen: a corner button back to the game
       },
     };
   },
@@ -447,10 +448,10 @@ const ADVUI = {
 
   // ---------- bag ----------
   bag(sc) {
-    const st = { cat: 0, sel: 0, off: 0, note: '', bad: false }, B_ = () => sc.save.bag;
+    const st = { cat: ADVUI.bagCat | 0, sel: 0, off: 0, note: '', bad: false }, B_ = () => sc.save.bag;   // the bag reopens on the tab you last used
     const list = () => Object.keys(B_()).filter(id => ADVP.item(id).cat === ADVP.CATS[st.cat][0]).sort();
     const say = (s, bad) => { st.note = s; st.bad = !!bad; };
-    const tab = d => { st.cat = (st.cat + d + ADVP.CATS.length) % ADVP.CATS.length; st.sel = 0; st.off = 0; uiBlip(700, 0.03); };
+    const tab = d => { st.cat = ADVUI.bagCat = (st.cat + d + ADVP.CATS.length) % ADVP.CATS.length; st.sel = 0; st.off = 0; uiBlip(700, 0.03); };
     const use = id => {
       const it = ADVP.item(id);
       if (it.ball) return say('Balls are thrown in a wild battle (press C or Y).', true);
@@ -515,6 +516,12 @@ const ADVUI = {
 
   // ---------- level-up pages after a fight ----------
   // events: { t: 'msg', s } | { t: 'lv', s, from, to, before, after } | { t: 'learn', s, mv } | { t: 'forget', s, mv } | { t: 'evo', s, to }; done() runs when the last page closes
+  // a mon drawn from its overworld sheet (first frame, facing you), feet at (x, y), h px tall; white = a plain white silhouette
+  fig(id, x, y, h, white) {
+    const sp = spriteOf(DEX.species[id]?.sprite), a = sp?.anims?.Walk || sp?.anims?.Idle, im = a && img(a.file); if (!im) return;
+    const k = h / a.fh, w = a.fw * k; ctx.save(); ctx.imageSmoothingEnabled = false; if (white) ctx.filter = 'brightness(0) invert(1)';
+    ctx.drawImage(im, 0, 0, a.fw, a.fh, Math.round(x - w / 2), Math.round(y - h), Math.round(w), Math.round(h)); ctx.restore();
+  },
   grow(sc, events, done) {
     const ev = events.slice(), st = { e: null, t: 0, sel: 0, txt: '', fin: false };
     const next = () => {
@@ -525,7 +532,7 @@ const ADVUI = {
         : e.t === 'forget' ? `${n} wants to learn ${DEX.moves[e.mv].name}, but already knows four moves. Forget one?` : `What? ${n} is evolving!`;
     };
     const finish = e => {
-      if (e.t === 'evo') { const old = ADVP.name(e.s); ADVP.evolve(e.s, e.to); sc.refreshLead(); sc.warm(); ev.unshift({ t: 'msg', s: `Congratulations! ${old} evolved into ${DEX.species[e.to].name}!` }); }
+      if (e.t === 'evo') { const old = ADVP.name(e.s); ADVP.evolve(e.s, e.to); sc.refreshLead(); sc.warm(); ev.unshift({ t: 'msg', s: `Congratulations! ${old} evolved into ${DEX.species[e.to].name}!`, sp: e.to }); }
     };
     next();
     return {
@@ -544,16 +551,18 @@ const ADVUI = {
       },
       draw() {
         const e = st.e; if (!e) return; const { X, Y, L } = layout();
-        ctx.fillStyle = e.t === 'evo' ? '#000d' : '#0006'; ctx.fillRect(0, 0, VW, VH);
+        ctx.fillStyle = e.t === 'evo' || e.sp ? '#000d' : '#0006'; ctx.fillRect(0, 0, VW, VH);
+        if (e.t === 'msg' && e.sp) ADVUI.fig(e.sp, VW / 2, Y(470), L(280), false);   // the evolved form, on its congratulations page
         if (e.t === 'evo') {
-          const o = toId(e.s.species), a = portrait(o), b = portrait(e.to), k = st.t, fl = k > 0.8 && k < 3 ? Math.floor(k * (4 + k * 3)) % 2 : 0, sz = L(300);
-          const im = k >= 3 ? b : fl ? b : a;
-          if (im) { if (k > 0.8 && k < 3.1) { ctx.filter = 'brightness(8)'; } ctx.drawImage(im, VW / 2 - sz / 2, Y(160), sz, sz); ctx.filter = 'none'; }
+          const o = toId(e.s.species), k = st.t, fl = k > 0.8 && k < 3 ? Math.floor(k * (4 + k * 3)) % 2 : 0;
+          ADVUI.fig(k >= 3 || fl ? e.to : o, VW / 2, Y(470), L(280), k > 0.8 && k < 3.1);   // the mon itself, a white silhouette while it changes (the square portrait went blank white)
           if (k > 2.9 && k < 3.4) { ctx.fillStyle = `rgba(255,255,255,${1 - Math.abs(k - 3.1) / 0.3})`; ctx.fillRect(0, 0, VW, VH); }
         } else if (e.t === 'lv') {
           const w = L(420), x = VW / 2 - w / 2; panel(x, Y(120), w, L(330), ADVP.name(e.s).toUpperCase(), `Lv ${e.from} to ${e.to}`);
+          const hpB = ADVP.maxes({ ...e.s, level: e.from }).max, hpA = ADVP.maxes({ ...e.s, level: e.to }).max, v = (k, o, w) => k === 'hp' ? w : o[k];   // HP as the bars show it (x7), not the raw stat
           [['hp', 'HP'], ['atk', 'ATK'], ['def', 'DEF'], ['spa', 'SPA'], ['spd', 'SPD'], ['spe', 'SPE']].forEach(([k, n], i) => {
-            text(n, x + L(40), Y(190) + i * L(40), L(20), '#fff', 'left', null); text(`${e.before[k]}  >  ${e.after[k]}`, x + L(250), Y(190) + i * L(40), L(20), '#9aa6c0', 'center', null); text('+' + (e.after[k] - e.before[k]), x + w - L(30), Y(190) + i * L(40), L(20), '#7be07b', 'right', null);
+            const b0 = v(k, e.before, hpB), a0 = v(k, e.after, hpA);
+            text(n, x + L(40), Y(190) + i * L(40), L(20), '#fff', 'left', null); text(`${b0}  >  ${a0}`, x + L(250), Y(190) + i * L(40), L(20), '#9aa6c0', 'center', null); text('+' + (a0 - b0), x + w - L(30), Y(190) + i * L(40), L(20), '#7be07b', 'right', null);
           });
         } else if (e.t === 'forget') {
           const w = L(520), x = VW / 2 - w / 2; panel(x, Y(120), w, L(380), 'FORGET WHICH MOVE?');
@@ -679,7 +688,7 @@ const ADVUI = {
   },
   wheelDraw(sc) {
     const its = this.wheelItems(sc), n = its.length, w = sc.wh; if (!n || !w) return;
-    const { L } = layout(), cx = VW / 2, cy = VH / 2 + L(10), R = L(190), cd = sc.itemCd > 0;
+    const { L } = layout(), tch = !!window.TOUCH?.on, R = L(tch ? 170 : 190), cx = tch ? Math.min(VW / 2, VW * 0.53 - R - L(80)) : VW / 2, cy = VH / 2 + L(10), cd = sc.itemCd > 0;   // phone: left of the SWAP / MEGA / DODGE buttons
     ctx.fillStyle = '#0006'; ctx.fillRect(0, 0, VW, VH);
     ctx.beginPath(); ctx.arc(cx, cy, R + L(80), 0, 6.283); ctx.fillStyle = '#0b1020cc'; ctx.fill();
     its.forEach((id, k) => {
@@ -693,6 +702,6 @@ const ADVUI = {
     const sel = its[w.sel]; if (sel) {
       const it = ADVP.item(sel); text(it.name, cx, cy - L(18), L(24), '#fff', 'center'); text(cd ? `Ready in ${Math.ceil(sc.itemCd)}` : it.info, cx, cy + L(16), L(13), cd ? '#ff9a9a' : '#9aa6c0', 'center', null);
     }
-    hint(window.TOUCH?.on ? 'Tap an item to use it   B close' : padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close');
+    hint(window.TOUCH?.on ? 'Tap an item to use it   B close' : padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close', Math.min(VH - 26, Math.round(cy + R + L(52))), true);   // in the wheel's lower rim, on a pill: the move bar owns the bottom row
   },
 };

@@ -194,7 +194,7 @@ const ADVR = {
   },
   // during an Adventure fight: does this prop's picture (x, y, w, h) cover one of the two fighters standing behind it (north of its foot)?
   seeThrough(p, x, y, w, h) {
-    if (typeof B === 'undefined' || !B?.arena?.world || p.b) return false;
+    if (typeof B === 'undefined' || !B?.arena?.world || (p.b && B.arena.bld)) return false;   // buildings too (a house roof hid a fighter), unless the fight is indoors, where the cutaway already shows the room
     const ar = B.arena; for (const s of B.sides) { const e = s.ent; if (!e) continue; const fx = ar.ox + e.x, fy = ar.oy + e.y; if (fy < p.y && fx > x && fx < x + w && fy - 20 > y && fy - 20 < y + h) return true; }
     return false;
   },

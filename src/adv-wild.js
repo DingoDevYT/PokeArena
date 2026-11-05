@@ -160,8 +160,8 @@ const ADVW = {
         return;
       case 'flee':
         if (d < 7 * T) w.t = Math.max(w.t, 1.2);
-        this.go(w, g, e.x - dx, e.y - dy, 105, dt); if (!w.moving) this.go(w, g, e.x - dy, e.y + dx, 105, dt); // cornered: slide sideways
-        if ((w.ft = (w.ft || 0) + dt) > 4) { w.st = 'wander'; w.cool = 6; w.wait = 4; w.go = null; w.ft = 0; g.home = { x: e.x, y: e.y }; return; }   // out of breath after 4 s: it stops, and a chaser can reach it (they ran for ever)
+        this.go(w, g, e.x - dx, e.y - dy, 95, dt); if (!w.moving) this.go(w, g, e.x - dy, e.y + dx, 95, dt); // cornered: slide sideways (95: a little under walking pace)
+        if ((w.ft = (w.ft || 0) + dt) > 4) { w.st = 'wander'; w.cool = 9; w.wait = 7; w.go = null; w.ft = 0; g.home = { x: e.x, y: e.y }; return; }   // out of breath after 4 s: it stops, and a chaser can reach it (they ran for ever)
         if ((w.t -= dt) <= 0) { w.st = 'wander'; w.wait = 1; w.ft = 0; g.home = { x: e.x, y: e.y }; }
         return;
       case 'wait': // queued behind a fight: walk to the spot at the edge and watch
