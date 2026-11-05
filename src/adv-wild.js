@@ -175,7 +175,7 @@ const ADVW = {
   // the target first, then its group mates of the same species within JOIN tiles, nearest first; those are the wild side's team in order
   queue(w) {
     const e = w.e, d = o => Math.hypot(o.e.x - e.x, o.e.y - e.y);
-    return [w, ...w.g.m.filter(o => o !== w && o.id === w.id && o.st !== 'fight' && d(o) <= this.JOIN * 32).sort((a, b) => d(a) - d(b)).slice(0, this.PACK - 1)];   // at most PACK in one fight
+    return [w, ...w.g.m.filter(o => o !== w && o.id === w.id && o.st !== 'fight' && d(o) <= this.JOIN * 32).sort((a, b) => d(a) - d(b)).slice(0, this.packFor(ADV.player ? ADV.player.badges | 0 : 8) - 1)];   // at most PACK in one fight
   },
   // where a queued mon waits: out along its own bearing from the fight centre, 7..8 legacy tiles (224..256 px, the picture and the fight box keep their world px size) away
   edge(w, cx, cy) {
@@ -188,6 +188,7 @@ const ADVW = {
   // the player walked d px: every 32 px in tall grass at ground level has a 1.2 % chance to pop an aggressive mon 1.5 tiles ahead (null or the new wild mon);
   // none for GRACE seconds after a fight ends (balance pass 2026-11-05: it was 3 % with no grace, an ambush every 5 to 9 s of walking in grass)
   PACK: 3, GRACE: 20, calm: 0,
+  packFor(badges) { return badges >= 2 ? this.PACK : badges + 1; },   // how many of a group join one fight: 1 before the first badge, 2 before the second (playtest 2: packs of 4 flattened a Lv7)
   grass(P, d) {
     const T = ADV.Tp(P.x), c = Math.floor(P.x / T), r = Math.floor(P.y / T);
     if (ADV.palette[ADV.over(c, r)] !== 'tallgrass' || Math.abs(P.z - ADV.h(c, r) * T) > 1) { this.gd = 0; return null; }

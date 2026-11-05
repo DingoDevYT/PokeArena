@@ -1050,13 +1050,18 @@ const AdventureScene = {
     this.step = null; if (!tr) this.endClaim(msg === 'Got away safely!' ? 'fled' : caught >= 0 ? 'caught' : 'won', dead); else this.net.N.bv([]);
     if (msg !== 'Got away safely!' && window.ADV_MUSIC) this.vic = ADVM.to(tr ? ADV_MUSIC.battle.winTrainer : ADV_MUSIC.battle.winWild, true);   // the win fanfare plays over the zone, which resumes after it
     if (set) { const box = party.length >= 6; (box ? this.save.box : party).push(set); if (box) msg += ' Sent to the PC box.'; }
-    this.msg = msg && { s: msg, t: 3 }; this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
+    this.msg = msg && { s: msg, t: 3 };
+    if (!this.msg) { const sm = this.save.party.find(m => m.status && !ADVP.fainted(m)), W = { par: ['paralysed', 'A Paralyze Heal'], psn: ['poisoned', 'An Antidote'], tox: ['badly poisoned', 'An Antidote'], brn: ['burned', 'A Burn Heal'], slp: ['asleep', 'An Awakening'], frz: ['frozen', 'An Ice Heal'] }[sm?.status];
+      if (W) this.msg = { s: `${ADVP.name(sm)} is still ${W[0]}. ${W[1]} or a Pokemon Center fixes it.`, t: 4.5 }; }   // a status outlives the fight: say so (a tester walked into a gym battle still paralysed)
+    this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
     this.refreshLead(); this.persist();
     if (ev.length) this.grow(ev);
-    if (tr && tr.t.story) { const sv = this.save, pay = ADVN.pay(tr.t, tr.team); sv.money += pay; this.persist(); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], tr.n, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
+    if (tr && tr.t.story) { const sv = this.save, pay = ADVN.pay(tr.t, tr.team); sv.money += pay; this.persist(); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
-      this.dialog([...[].concat(tr.t.lose), `${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])], tr.n);
+      const prize = [`${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])];
+      const reward = () => { if (r.badge) { [660, 880, 1320].forEach((f, i) => setTimeout(() => uiBlip(f, 0.14), i * 150)); this.flash = 0.5; } this.dialog(prize, null); };   // prizes in their own box, not under the trainer's name plate; a badge gets a little fanfare
+      this.dialog([].concat(tr.t.lose), tr.n, reward);
     }
   },
   // giving up a trainer battle: a loss like any other (a story battle that need not be won carries on, anything else is a blackout)
@@ -1072,7 +1077,7 @@ const AdventureScene = {
   wakeUp() { const w = this.wake; this.wake = null; if (w) this.dialog(w, null); },
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
-    const sv = this.save, lost = (sv.badges | 0) ? Math.min(Math.floor(sv.money / 4), 2000) : 0, t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
+    const sv = this.save, lost = (sv.badges | 0) ? Math.min(Math.floor(sv.money / 8), 1500) : 0,   /* an eighth, at most $1500 (a quarter stung on every gym retry) */ t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());

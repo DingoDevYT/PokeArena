@@ -235,7 +235,7 @@ window.ADV_TEMPER = {
   klefki: { t: 'territorial', group: [1, 1] },
   klink: { t: 'territorial', group: [2, 4] },
   klinklang: { t: 'territorial', group: [1, 1] },
-  krabby: { t: 'skittish', group: [2, 5], swims: true },
+  krabby: { t: 'passive', group: [1, 3] },   // a beach crab you can walk up to (was skittish and water-only: Longshore had nothing a Normal starter could fight, playtest 2)
   krokorok: { t: 'aggressive', group: [2, 4] },
   krookodile: { t: 'aggressive', group: [1, 1] },
   lairon: { t: 'territorial', group: [2, 3] },
@@ -274,7 +274,7 @@ window.ADV_TEMPER = {
   mantine: { t: 'passive', group: [2, 4], swims: true },
   mantyke: { t: 'passive', group: [2, 4], swims: true },
   mareanie: { t: 'passive', group: [2, 4], swims: true },
-  mareep: { t: 'skittish', group: [2, 5] },
+  mareep: { t: 'passive', group: [2, 4] },   // the Goldacre farmer says they come and find you
   marill: { t: 'passive', group: [2, 4] },
   marshtomp: { t: 'passive', group: [1, 1], swims: true },
   masquerain: { t: 'passive', group: [1, 2], flies: true },
@@ -520,7 +520,7 @@ window.ADV_TEMPER = {
   wingull: { t: 'skittish', group: [2, 5], flies: true },
   wobbuffet: { t: 'passive', group: [1, 1] },
   woobat: { t: 'skittish', group: [2, 4], flies: true },
-  wooloo: { t: 'skittish', group: [2, 5] },
+  wooloo: { t: 'passive', group: [2, 4] },   // sheep graze and let you come close (Goldacre's other easy target)
   wooper: { t: 'passive', group: [2, 4], swims: true },
   wormadam: { t: 'passive', group: [1, 1] },
   wormadamsandy: { t: 'passive', group: [1, 1] },

@@ -13,7 +13,7 @@ window.ADV_STORY = {
     inkwell: { name: 'Inkwell', sprite: 'enemy2-enemy-leader-2', avatar: 'giovanni', cls: 'Umbra Leader' },
     wash: { name: 'Wash', sprite: 'elita-elita', avatar: 'iono', cls: 'Lieutenant' },
     surveyor: { name: 'Surveyor', sprite: 'npc4-blonde-girl-brown', avatar: 'shauna', cls: 'Surveyor' },
-    soot: { name: 'Soot', sprite: 'south-headband', avatar: 'bruno', cls: 'Lieutenant' },
+    soot: { name: 'Soot', sprite: 'south-headband', avatar: 'bruno', cls: 'Trainer' },   // no rank on his name plate: the story reveals who he works for
     jet: { name: 'Jet', sprite: 'solana-solana', avatar: 'skyla', cls: 'Lieutenant' },
     grunt: { name: 'Umbra Grunt', sprite: 'gorock-grunt-male', avatar: 'magmagrunt', cls: 'Grunt' },
     vesper: { name: 'Vesper', sprite: 'alia-alia', avatar: 'fantina', cls: 'Gym Leader' },
@@ -107,7 +107,7 @@ window.ADV_STORY = {
         { battle: 'ethan' },
         { win: [{ say: 'ethan', lines: ["Aw, man! You're catching up way too fast. Okay. Okay okay okay. I'll train harder."] }],
           lose: [{ say: 'ethan', lines: ["Another badge and a win! Today is a good day. Keep at it, you're close!"] }] },
-        { say: 'ethan', lines: ["Oh! Important tip. Life or death. If you go to Goldacre, watch out for the Miltank.",
+        { say: 'ethan', lines: ["Oh! Important tip. Life or death. Haven't been to Goldacre yet? Watch out for the Miltank.",
           "In Johto a Miltank rolled over me for a whole afternoon. I still hear it in my dreams. Rolling."] },
         { leave: 'ethan' }
       ]
@@ -154,7 +154,7 @@ window.ADV_STORY = {
         { say: 'linden', lines: ["{player}! Oh, good, I hoped I'd catch you. I've been collecting odd things, as promised.",
           "Wild Pokemon are going missing along the coast. And the dockhands at Spindlewood talk of a boat.",
           "It leaves the cove at night, full of crates, and sails out to a ship that never comes to port."] },
-        { say: 'linden', lines: ["I told your friend in the red cap. He ran off toward Spindlewood before I'd finished my sentence.",
+        { say: 'linden', lines: ["I told your friend Ethan. He ran off toward Spindlewood before I'd finished my sentence.",
           "Could you go after him? Gently. Spindlewood is the timber dock town in the south-east."] },
         { leave: 'linden' }
       ]
@@ -375,7 +375,7 @@ window.ADV_STORY = {
       script: [
         { say: 'chad', lines: ["Wash called them fearless. She's half right. A Pokemon that can't be afraid can't be brave either.",
           "Brave is being scared and staying anyway. Those poor things can't stay. They can't do anything."] },
-        { say: 'chad', lines: ["Your friend in the red cap has one of them now, doesn't he? I saw it on your face.",
+        { say: 'chad', lines: ["Your friend Ethan has one of them now, doesn't he? I saw it on your face.",
           "He'll need you, sooner or later. Be there when he does. Here, for the hard days ahead."] },
         { give: 'ultraball', n: 5 },
         { leave: 'chad' }
@@ -471,7 +471,7 @@ window.ADV_STORY = {
         { win: [{ say: 'soot', lines: ["Hah. Yeah. You're ready."] }],
           lose: [{ say: 'soot', lines: ["Not ready. Rest. Come back. I'll still be here."] }] },
         { say: 'soot', lines: ["I quit. There. Said it. Felt good. Houndoom, we're done with this.",
-          "Kid in a red cap ran straight past me a minute ago. Brave or daft. Both, probably. Go on."] },
+          "A kid with wild hair ran straight past me a minute ago. Brave or daft. Both, probably. Go on."] },
         { leave: 'soot' },
         { say: 'vesper', lines: ["Stand still a moment, child. Bronzong will hum, and you will feel rested."] },
         { heal: true },

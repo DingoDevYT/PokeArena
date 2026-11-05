@@ -284,11 +284,11 @@ ok(ADVW.groups.every(g => g.m.every(w => w.level >= 44 && w.level <= 50)), 'and 
 const mk = (id, pts) => ADVW.group(id, 5, pts[0], pts), at = (dx, dy = 0) => ({ x: P.x + dx * T, y: P.y + dy * T });
 const run = (secs, mode = 'walk') => { for (let i = 0; i < secs * 60; i++) ADVW.update(1 / 60, P, mode); };
 const dist = w => Math.hypot(w.e.x - P.x, w.e.y - P.y);
-eq(ADV_TEMPER.wooloo.t, 'skittish', 'wooloo is skittish'); eq(ADV_TEMPER.houndour.t, 'aggressive', 'houndour is aggressive'); eq(ADV_TEMPER.bouffalant.t, 'territorial', 'bouffalant is territorial'); eq(ADV_TEMPER.bidoof.t, 'passive', 'bidoof is passive');
+eq(ADV_TEMPER.ponyta.t, 'skittish', 'ponyta is skittish'); eq(ADV_TEMPER.houndour.t, 'aggressive', 'houndour is aggressive'); eq(ADV_TEMPER.bouffalant.t, 'territorial', 'bouffalant is territorial'); eq(ADV_TEMPER.bidoof.t, 'passive', 'bidoof is passive');
 P.x = 48 * T; P.y = 48 * T; P.lv = 0;
-ADVW.reset(); let g = mk('wooloo', [at(4.5, 0), at(5, 1), at(5.5, -1)]);
+ADVW.reset(); let g = mk('ponyta', [at(4.5, 0), at(5, 1), at(5.5, -1)]);
 run(0.1); ok(g.m.every(w => w.st === 'flee'), 'a skittish herd flees when the player comes within 5 tiles'); run(2); ok(g.m.every(w => dist(w) > 7 * T), 'and keeps running away'); run(6); ok(g.m.every(w => w.st === 'wander'), 'then calms down and wanders again');
-ADVW.reset(); g = mk('wooloo', [at(7, 0), at(7.5, 1)]); run(3); ok(g.m.every(w => w.st === 'wander'), 'a herd 7 tiles away just wanders');
+ADVW.reset(); g = mk('ponyta', [at(7, 0), at(7.5, 1)]); run(3); ok(g.m.every(w => w.st === 'wander'), 'a herd 7 tiles away just wanders');
 ADVW.reset(); g = mk('bidoof', [at(2, 0), at(2, 1)]); run(3); ok(g.m.every(w => w.st === 'wander') && g.m.every(w => dist(w) > 20), 'passive mons ignore the player');
 ADVW.reset(); g = mk('houndour', [at(5.5, 0), at(5.5, 1), at(6, -1)]); g.m.forEach(w => { w.face = 6; });                      // looking at the player (west)
 ADVW.fx = []; run(0.1); ok(g.m.every(w => w.st === 'alert') && ADVW.fx.filter(f => f.k === '!').length === g.m.length, 'an aggressive pack notices the player in its facing cone: "!" for each');
@@ -303,8 +303,10 @@ P.x += 6 * T; run(0.1); ok(g.m.every(w => w.st === 'alert'), 'and charge once th
 // pile-on queue: same species within 10 legacy tiles (320 world px: the fight box keeps its size), nearest first, target first
 ADVW.reset(); g = mk('houndour', [{ x: 20 * T, y: 20 * T }, { x: 20 * T + 3 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 2 * DT }, { x: 20 * T + 8 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 11 * DT }, { x: 20 * T + DT, y: 20 * T + DT }, { x: 20 * T - DT, y: 20 * T }]);
 const [tg, m3, m2, m8, m11, m1, m1b] = g.m; m1b.id = 'rockruff'; m1.st = 'fight';
+const pl0 = ADV.player; ADV.player = { ...(pl0 || {}), badges: 3 };
 const q = ADVW.queue(tg);
 ok(q.length === ADVW.PACK && q[0] === tg && q[1] === m2 && q[2] === m3, 'queue = target, then group mates nearest first, at most ADVW.PACK (3) in one fight');
+ADV.player.badges = 0; eq(ADVW.queue(tg).length, 1, 'before the first badge a wild fight is one mon'); ADV.player.badges = 1; eq(ADVW.queue(tg).length, 2, 'before the second badge, two'); ADV.player = pl0;
 ok(!q.includes(m11) && !q.includes(m1) && !q.includes(m1b), 'mates 11 legacy tiles away, mates already fighting and other species stay out');
 const cx = 20 * T + 1.5 * DT, cy = 20 * T, es = q.slice(1).map(w => ADVW.edge(w, cx, cy));
 ok(es.every(s => Math.hypot(s.x - cx, s.y - cy) >= 7 * DT - 0.01 && Math.hypot(s.x - cx, s.y - cy) <= 8 * DT + 0.01), 'queued mons wait 7-8 legacy tiles (224-256 px) from the fight centre');
@@ -452,7 +454,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   // band table: Appendix A caps; wild cap-8..cap-4, route trainers cap-5..cap-2, gym trainers cap-3..cap-1
   eq(ADVW.CAPS.join(), '15,19,24,29,34,38,42,46,52', 'level caps per badge count: 15 19 24 29 34 38 42 46, True Team 52');
   CAPS_EXPECT.forEach((c, b) => {
-    eq(ADVN.range('wild', b).join(), [c - 8, c - 4].join(), `badges ${b}: wild ${c - 8}-${c - 4}`); eq(ADVN.range('route', b).join(), [c - 5, c - 2].join(), `badges ${b}: route trainers ${c - 5}-${c - 2}`); eq(ADVN.range('gym', b).join(), [c - 3, c - 1].join(), `badges ${b}: gym trainers ${c - 3}-${c - 1}`);
+    eq(ADVN.range('wild', b).join(), [c - 8, c - 4].join(), `badges ${b}: wild ${c - 8}-${c - 4}`); eq(ADVN.range('route', b).join(), [c - 5, c - 2].join(), `badges ${b}: route trainers ${c - 5}-${c - 2}`); eq(ADVN.range('gym', b).join(), (b ? [c - 3, c - 1] : [c - 6, c - 4]).join(), `badges ${b}: gym trainers ${c - 3}-${c - 1}`);
   });
   eq(ADVN.range('route', 99).join(), '47,50', 'badges clamp at 8'); eq(ADVN.bandKey(0), 'b1', 'arriving with 0 badges = Badge 1 band'); eq(ADVN.bandKey(7), 'b8', '7 badges = Badge 8'); eq(ADVN.bandKey(8), 'true', '8 badges = True Team');
   ok(ADVN.SIZE.every(([a, z], b) => a <= z && (b < 2 ? z <= 2 : b < 4 ? a >= 2 && z <= 3 : b < 6 ? a >= 3 && z <= 4 : a === 4 && z === 6)), 'trainer team size by badges: 1-2, 2-3, 3-4, 4-6');
@@ -500,7 +502,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
     ok(tm.every(m => m.level >= a && m.level <= z), `badges ${b}: levels inside ${a}-${z}`);
   }
   ok(ADVN.team(t6, 'x1', 8).some(m => m.species === 'dubwool') && ADVN.team(t6, 'x1', 0).every(m => m.species === 'wooloo' || m.species === 'bunnelby'), 'at 8 badges a Wooloo is a Dubwool, at 0 it is not');
-  eq(ADVN.pay({ money: 16 }, [{ level: 10 }, { level: 12 }]), 192, 'payout = money x the strongest level'); eq(ADVN.team({ team: [['wooloo', 0]], gym: true }, 'g', 0)[0].level, 12, 'gym trainers use cap-3 (12 at badge 0)');
+  eq(ADVN.pay({ money: 16 }, [{ level: 10 }, { level: 12 }]), 192, 'payout = money x the strongest level'); eq(ADVN.team({ team: [['wooloo', 0]], gym: true }, 'g', 0)[0].level, 9, 'gym trainers before the first badge use cap-6 (9 at badge 0)'); eq(ADVN.team({ team: [['wooloo', 0]], gym: true }, 'g', 1)[0].level, 16, 'and cap-3 after it (16 at badge 1)');
   eq(ADVN.avatar({ cls: 'Hiker' }), 'hiker', 'class picks its portrait');
 
   // placements on the real world: every NPC stands on free ground in the right zone, trainers see the road along their face

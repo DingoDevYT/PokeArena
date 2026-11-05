@@ -120,7 +120,7 @@ const ADVMAP = {
         ctx.fillStyle = '#0b1020'; ctx.fillRect(0, VH - 44, VW, 44);
         text('WORLD MAP', X(660), Y(40), L(36), '#ffde3b', 'center', '#1a2a6c');
         const [cc, cr] = cur(), sea = !!im && A.sea(im, cc, cr), zn = sea ? '' : (A.placeAt((cc + 0.5) * T, (cr + 0.5) * T) || '');
-        const sub = `${sea ? '' : A.tiles(sc, (cc + 0.5) * T, (cr + 0.5) * T) + ' tiles from you   '}Zoom x${A.ZS[st.zi]}   Waypoints ${w.length}/${A.MAX}`; ctx.font = '11px Silkscreen';
+        const tn = sea ? 0 : A.tiles(sc, (cc + 0.5) * T, (cr + 0.5) * T), sub = `${sea ? '' : tn + (tn === 1 ? ' tile' : ' tiles') + ' from you   '}Zoom x${A.ZS[st.zi]}   Waypoints ${w.length}/${A.MAX}`; ctx.font = '11px Silkscreen';
         const bw = Math.round(Math.max(210, L(250), ctx.measureText(sub).width + 28)), bh = Math.round(Math.max(54, L(70))), bx = Math.round(12 * Math.max(s, 0.7)), by = VH - bh - Math.round(Math.max(52, 60 * s));
         rrect(bx, by, bw, bh, 10, '#0b1020ee', '#ffffff40', 2);
         text(zn || 'Open sea', bx + 14, by + bh * 0.36, Math.max(14, L(21)), '#fff', 'left', null);

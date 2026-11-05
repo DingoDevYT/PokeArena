@@ -17,10 +17,11 @@ function updateCamera(dt) {
   z = ar.world ? ADVR.zoomFor() : clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
   c.punch = Math.max(0, c.punch - dt * 0.8);
   c.z = lerp(c.z, z, 1 - Math.pow(0.02, dt));
-  if (ar.world && window.TOUCH?.on) mx += VW * 0.07 / Math.max(0.1, c.z);   // a phone in an Adventure fight: the fighters sit a little left of centre, clear of the buttons on the right
+  const tb = ar.world && window.TOUCH?.on ? VW * 0.1 / Math.max(0.1, c.z) : 0;   // a phone in an Adventure fight: the fighters sit left of centre, clear of the buttons on the right
+  mx += tb;
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
   const hw = VW / 2 / c.z, hh = VH / 2 / c.z;
-  c.x = ar.w > hw * 2 ? clamp(c.x, hw, ar.w - hw) : ar.w / 2;
+  c.x = ar.w > hw * 2 ? clamp(c.x, hw, ar.w - hw + tb) : ar.w / 2 + tb;   // the world goes on past the fight box, so the phone's shift may look past its right edge (a gym's east wall put the fight under the buttons)
   c.y = ar.h > hh * 2 ? clamp(c.y, hh, ar.h - hh) : ar.h / 2;
   c.shake = Math.max(0, c.shake - dt * 30);
 }

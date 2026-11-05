@@ -36,14 +36,15 @@ const ADVN = {
 
   // ---------- level bands (Appendix A caps, keyed by badge count; 8 badges = the True Team cap) ----------
   // wild: cap-8..cap-4, route trainers: cap-5..cap-2, gym trainers: cap-3..cap-1
-  range(kind, badges) { const c = ADVW.CAPS[Math.max(0, Math.min(8, badges | 0))], o = { wild: [8, 4], route: [5, 2], gym: [3, 1] }[kind]; return [c - o[0], c - o[1]]; },
+  range(kind, badges) { const c = ADVW.CAPS[Math.max(0, Math.min(8, badges | 0))], o = { wild: [8, 4], route: [5, 2], gym: (badges | 0) ? [3, 1] : [6, 4] }[kind]; return [c - o[0], c - o[1]]; },   // the first gym's trainers sit 3 lower (9-11): classic pacing, a starter arrives about Lv11 (playtest 2: Lv12 trainers flattened a Lv5)
   bandKey: badges => badges >= 8 ? 'true' : 'b' + (badges + 1),   // a leader's roster for a challenger with this many badges
   hash(s) { let h = 7; for (const ch of String(s)) h = Math.imul(h, 31) + ch.charCodeAt(0) | 0; return h >>> 0; },
   // the trainer's team for a challenger: first N of its list (N by band, fixed per trainer), levels from the band, species evolved to match
   // a leader's team for a challenger with this many badges: its Appendix A roster for that band (data/adv/rosters.js), the ace sent out last
   leaderTeam(who, badges = ADV.player?.badges | 0) {
     const r = window.ADV_ROSTERS?.[who]?.[this.bandKey(badges)] || [];
-    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: m.level, moves: this.armed(m.species, m.level, m.moves), ace: !!m.ace }));
+    const off = (badges | 0) === 0 ? 3 : (badges | 0) === 1 ? 1 : 0;   // the first gym 3 lower (11, 11, 12), the second 1 lower: classic first gyms, not Appendix A's 14-15 against a Lv5 starter
+    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: Math.max(2, m.level - off), moves: this.armed(m.species, Math.max(2, m.level - off), m.moves), ace: !!m.ace }));
   },
   // a roster's moves with the banned ones gone (data/dex.js) and, if fewer than two attacks are left, the mon's own best attacks for its level added back
   armed(sp, lv, moves = []) {

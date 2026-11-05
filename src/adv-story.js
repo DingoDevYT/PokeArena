@@ -87,7 +87,7 @@ const ADVSTORY = {
     while (r.i < r.steps.length) {
       const s = r.steps[r.i++];
       if (s.say) { const n = this.speaker(sc, s.say); if (n) { n.busy = true; n.bub = null; if (n.e && Math.hypot(n.e.x - sc.p.x, n.e.y - sc.p.y) > 5 * ADV.T) this.near(sc, n); if (n.e) { n.face = dirFromVec(sc.p.x - n.e.x, sc.p.y - n.e.y); sc.p.face = dirFromVec(n.e.x - sc.p.x, n.e.y - sc.p.y); } }
-        return sc.dialog([].concat(s.lines).map(l => this.fill(l, sv)), n, () => this.next(sc)); }
+        return sc.dialog([].concat(s.lines).map(l => this.fill(l, sv)), n || (s.say === 'player' ? { def: { name: sv.name } } : null), () => this.next(sc)); }   // your own lines carry your name plate
       if (s.battle) return this.fight(sc, s);
       if (s.win || s.lose) continue;   // only reached right after a battle (after() takes the branch)
       if (s.give) { const it = ADVP.item(s.give), n = s.n || 1; ADVP.add(sv.bag, s.give, n); uiBlip(880, 0.05); return sc.dialog([`${sv.name} received ${n > 1 ? n + ' x ' : ''}${it.name}!`], null, () => this.next(sc)); }
@@ -109,7 +109,7 @@ const ADVSTORY = {
     let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, sv.badges | 0)   // an inline route-trainer team (grunts), held near the party
       : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace })) : ADVN.leaderTeam(s.battle, sv.badges | 0);
     if (!team.length) return this.next(sc);
-    if (sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle
+    if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     if (s.max) team = team.slice(-s.max);
     n.def.trainer = { cls: c.cls || '', name: c.name || s.battle, avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };

@@ -110,6 +110,15 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - The story cast stand still where they were put (a third of villagers potter about, and Linden was one of them).
   - Evolution shows the mon's own sprite, as a white silhouette while it changes (the square portrait went blank white), and the congratulations page shows the new form. A forfeit says you gave up, not that your team fainted. A fast mover (Whitney's Miltank in Rollout) can no longer jump a building wall in one frame. The desktop wheel hint sits in the wheel's rim, clear of the move bar. The first mon that bolts says how to catch a skittish one.
   - World: 144 flowers and grass tufts that sat on road tiles are gone (Route 1's grey road most of all); Route 103's road, which stopped dead on the stony shore, ends at a short jetty with a bench and a sign.
+- Early game retuned (2026-11-05, from the second playtest's first hours: Lv12 gym trainers against a Lv5 starter, packs of 4, 2 levels in 40 minutes, 4 blackouts):
+  - Before the first badge a wild fight is one mon, before the second two (ADVW.packFor); after that the pack of 3 as before.
+  - The first gym's trainers sit 3 lower (Lv9-11 instead of 12-14) and every leader's first band 3 lower (11, 11, 12); the second band 1 lower. The rosters keep their Appendix A numbers; ADVN.leaderTeam applies the offset.
+  - EXP before the first badge is x1.1 (it was x0.85). NEXT GOAL then asks for about Lv12, about 10 wild fights from Lv5.
+  - Krabby, Wooloo and Mareep are passive (Longshore had nothing a Normal starter could fight; Goldacre's sheep ran away).
+  - Prize lines (money, badge, TM) get their own box instead of the leader's name plate, and a badge gets a little fanfare. The map says "1 tile".
+  - A fight that ends with a mon still paralysed, poisoned, burned, asleep or frozen says so and names the cure. On a phone the fight camera may look past the fight box's right edge, so a fight by a gym's east wall is not under the buttons.
+  - A blackout after the first badge costs an eighth of your money, at most $1500 (it was a quarter, up to $2000, and stung on every gym retry). A story battle you must win starts with a healed team. Your own lines in story scenes carry your name plate; Soot's plate no longer gives away his rank. A tree canopy over you while walking goes see-through.
+  - Writing: Ethan's Miltank tip works wherever your first badge was; "the friend in the red cap" is Ethan by name (his sprite has no cap); the Goldacre kid points at the gym's hall, the farmer's sheep graze calm, the granny's Goldenrod line makes sense, the festival sisters look like two people, and Longshore's beach-party man stands by the path. Signs: "the Statue of Umbra", exits with no route say where the road goes, gym signs name the leader's ace type.
 - NPC writing pass (2026-11-05): 171 people rewritten with a voice per town, small arcs inside towns, a useful hint from about one in three (route exits from the signs, catch spots, Skill teachers, gym type tips) and quiet foreshadowing of the story. Lines pinned by STORY.md and the checks were kept.
 
 ## Waiting on Landon
