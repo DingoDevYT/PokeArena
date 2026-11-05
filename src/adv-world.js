@@ -122,9 +122,10 @@ const ADV = (() => {
       return false;
     },
     // one frame of the cutaway: the building the player stands in fades its exterior out in 3 hard steps, every other one fades back in; p = the player's entity (null: nobody is inside anything)
+    // p: the foot that opens a building (the player, or the middle of a fight inside one); a bad frame time never poisons the fade (one NaN once left every roof shut)
     cutTick(dt, p) {
-      const at = p && this.bldAt(p.x, p.y);
-      for (const b of this.blds) { b.f = Math.max(0, Math.min(1, b.f + (b === at ? 1 : -1) * dt / this.FADE)); b.k = Math.floor(b.f * 3 + 1e-6); }
+      const at = p && this.bldAt(p.x, p.y), s = Number.isFinite(dt) ? dt : 0;
+      for (const b of this.blds) { const f = Number.isFinite(b.f) ? b.f : 0; b.f = Math.max(0, Math.min(1, f + (b === at ? 1 : -1) * s / this.FADE)); b.k = Math.floor(b.f * 3 + 1e-6); }
     },
     // the people of every building as NPC defs standing at their tile offsets from the footprint origin (their room field is the building id)
     bldNpcs() { return this.blds.flatMap(b => (b.interior.npcs || []).map(({ dx, dy, ...n }) => ({ ...n, x: b.fx + dx - 0.5, y: b.fy + dy - 0.5, room: b.id }))); },

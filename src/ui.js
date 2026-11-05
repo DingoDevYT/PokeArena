@@ -154,7 +154,7 @@ function drawMenu(items, state, x, y, w, rowH = 54) {
 }
 
 const MenuScene = {
-  st: { sel: 0 },
+  st: { sel: 1 },   // Adventure, the main mode, is picked to begin with
   enter() { AUDIO.playMusic(MUSIC.menu); },
   items() {
     return [
@@ -280,28 +280,29 @@ const ControlsScene = {
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
     if (window.TOUCH?.on) {   // a phone: the on-screen controls, not the pad and keyboard tables (they do not fit)
       const L = [['Move', 'drag on the left half'], ['Moves 1 to 4', 'A  B  X  Y'], ['Dodge roll', 'DODGE'], ['Swap', 'hold SWAP, aim the stick, let go'], ['Mega Evolve', 'MEGA'],
-        ['Items', 'BAG, then d-pad and A'], ['Talk', 'A'], ['Run', 'hold B'], ['Menu', 'MENU, or tap B'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B'], ['Bottom icons', 'are buttons too']];
+        ['Items', 'BAG in a fight, B closes it'], ['Forfeit, run', 'MENU in a fight'], ['Talk, read signs', 'A'], ['Run', 'hold B'], ['Menu', 'MENU, or tap B'], ['Map', 'tap the minimap'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B']];
       const rh = Math.max(18, (VH - 130 * s - 60) / L.length), fs = Math.max(11, Math.min(18, rh * 0.5)), x0 = Math.max(VW * 0.08, 175), x1 = x0 + Math.max(VW * 0.22, 130);   // right of the d-pad
       L.forEach(([a, b], i) => { const y = 110 * s + i * rh; text(a, x0, y, fs, '#ffde3b', 'left', null); text(b, x1, y, fs, '#fff', 'left', null); });
       hint('B back'); backButton(() => setScene(this.back || MenuScene)); return;
     }
     const rows = [
-      ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor, always']],
-      ['Move 1', ['xbox_a'], ['mouse_left']], ['Move 2', ['xbox_b'], ['mouse_right']], ['Move 3', ['xbox_x'], ['key_q']], ['Move 4', ['xbox_y'], ['key_e']],
+      ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor, always']],
+      ['Move 1 / 2', ['xbox_a', ' ', 'xbox_b'], ['mouse_left', ' ', 'mouse_right']], ['Move 3 / 4', ['xbox_x', ' ', 'xbox_y'], ['key_q', ' ', 'key_e']],
       ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' hold, point a stick, release'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
-      ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Pause', ['xbox_start'], ['key_esc', ' or P']],
+      ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Items in a fight', ['xbox_back'], [' C']], ['Pause, forfeit', ['xbox_start'], ['key_esc', ' or P']],
+      ['ADVENTURE', [], []],
+      ['Talk, read signs', ['xbox_a'], ['key_enter', ' or ', 'key_e']], ['Run', ['xbox_b', ' hold'], ['key_shift', ' hold']], ['Map', [' pause menu'], ['M']],
+      ['Fish', ['xbox_x'], ['key_f']], ['Ride, bike, fly', ['xbox_back'], ['R', ' V ', 'G']],
     ];
-    const RH = Math.max(36, 40 * s), ih = 32;
+    const RH = Math.max(24, Math.min(40 * s, (VH - 230 * s) / rows.length)), ih = Math.min(32, RH - 4);
     text('ACTION', VW / 2 - 400 * s, 110 * s, 16 * s, '#9ab', 'left'); text('CONTROLLER', VW / 2 - 200 * s, 110 * s, 16 * s, '#7fd0e8', 'left'); text('KEYBOARD + MOUSE', VW / 2 + 150 * s, 110 * s, 16 * s, '#7be07b', 'left');
-    rows.forEach(([a, p, k], i) => { const y = 145 * s + i * RH; text(a, VW / 2 - 400 * s, y, 16 * s, '#fff', 'left', null); iconRow(p, VW / 2 - 200 * s, y, ih, 13 * s, '#cde'); iconRow(k, VW / 2 + 150 * s, y, ih, 13 * s, '#cde'); });
+    rows.forEach(([a, p, k], i) => { const y = 145 * s + i * RH; if (!p.length) return text(a, VW / 2 - 400 * s, y, 14 * s, '#ffde3b', 'left', null); text(a, VW / 2 - 400 * s, y, 16 * s, '#fff', 'left', null); iconRow(p, VW / 2 - 200 * s, y, ih, 13 * s, '#cde'); iconRow(k, VW / 2 + 150 * s, y, ih, 13 * s, '#cde'); });
     text('Hold a move button to fire it the moment its cooldown ends. Pressing a little early is buffered.', VW / 2, 145 * s + rows.length * RH + 6 * s, 14 * s, '#ffe7a8', 'center', null);
     // live controller readout, so a pad that isn't being read is obvious
     const y0 = 145 * s + rows.length * RH + 46 * s, pads = INPUT.pads || [];
     if (!pads.length) {
       const slots = navigator.getGamepads ? [...navigator.getGamepads()] : null;
-      text('No controller detected. Press any button on it while this window is focused.', VW / 2, y0, 15 * s, '#ff9a9a', 'center', null);
-      text(`Browser check: gamepad API ${slots ? 'yes' : 'NO'}, secure page ${window.isSecureContext ? 'yes' : 'NO'} (${location.protocol}), slots ${slots ? slots.length : '-'} all empty, connect events ${PAD_EVENTS.n}${PAD_EVENTS.last ? ' (' + PAD_EVENTS.last.slice(0, 40) + ')' : ''}`, VW / 2, y0 + 22 * s, 12 * s, '#ccd', 'center', null);
-      text('Open hardwaretester.com/gamepad in this same browser. If it sees nothing either, Windows or Steam is hiding the pad from the browser, not the game.', VW / 2, y0 + 42 * s, 12 * s, '#ccd', 'center', null);
+      text('No controller connected (keyboard works fine). Using a pad? Press any button on it now.', VW / 2, y0, 15 * s, '#9aa6c0', 'center', null);
     }
     pads.forEach((p, i) => {
       const pressed = p.buttons.map((b, k) => b.pressed || b.value > 0.5 ? k : -1).filter(k => k >= 0);

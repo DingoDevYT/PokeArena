@@ -17,6 +17,7 @@ function updateCamera(dt) {
   z = ar.world ? ADVR.zoomFor() : clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
   c.punch = Math.max(0, c.punch - dt * 0.8);
   c.z = lerp(c.z, z, 1 - Math.pow(0.02, dt));
+  if (ar.world && window.TOUCH?.on) mx += VW * 0.07 / Math.max(0.1, c.z);   // a phone in an Adventure fight: the fighters sit a little left of centre, clear of the buttons on the right
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
   const hw = VW / 2 / c.z, hh = VH / 2 / c.z;
   c.x = ar.w > hw * 2 ? clamp(c.x, hw, ar.w - hw) : ar.w / 2;
@@ -802,7 +803,7 @@ function drawSideHUD(s, right) {
   B.callouts.filter(c => c.side === s.idx).forEach((c, i) => {
     const a = clamp(Math.min(c.t * 8, (1.6 - c.t) * 4), 0, 1), y = ty + T + 40 * S + i * 36 * S;
     ctx.globalAlpha = a; ctx.font = `italic 20px Bungee, "Arial Black", sans-serif`;
-    const w = ctx.measureText(c.s).width * S + 34 * S, x = right ? VW - pad - w : pad;
+    const w = ctx.measureText(c.s).width * S + 34 * S, tc = !!window.TOUCH?.on, x = tc ? (right ? VW / 2 + 8 * S : VW / 2 - 8 * S - w) : right ? VW - pad - w : pad;   // on a phone, in the open middle under the clock: the corners are under the BAG and MENU buttons
     rrect(x, y, w, 30 * S, 15 * S, '#fff6dd', '#2a2010', 3);
     text(c.s, x + w / 2, y + 15 * S + 1, 18 * S, '#111', 'center', null);
     ctx.globalAlpha = 1;

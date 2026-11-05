@@ -20,11 +20,20 @@ const ADVUI = {
   },
   font: fs => fs + 'px Bungee, "Arial Black", sans-serif',
   // text -> boxes of two lines that fit the talk box
+  // text in boxes of two lines; a box ends at the end of a sentence when the next one would not fit, so no box holds one stray word ("luck!")
   pages(s) {
-    const d = this.dlg(), lines = []; ctx.font = this.font(d.fs);
-    let cur = ''; for (const wd of String(s).split(' ')) { const t = cur ? cur + ' ' + wd : wd; if (ctx.measureText(t).width > d.tw && cur) { lines.push(cur); cur = wd; } else cur = t; }
-    if (cur) lines.push(cur);
-    const out = []; for (let i = 0; i < lines.length; i += 2) { const pg = lines.slice(i, i + 2); pg.chars = pg.join('').length; out.push(pg); }
+    const d = this.dlg(); ctx.font = this.font(d.fs);
+    const wrap = t => { const lines = []; let cur = ''; for (const wd of t.split(' ').filter(Boolean)) { const x = cur ? cur + ' ' + wd : wd; if (ctx.measureText(x).width > d.tw && cur) { lines.push(cur); cur = wd; } else cur = x; } if (cur) lines.push(cur); return lines; };
+    const out = [], put = L => { if (!L.length) return; const pg = L.slice(0, 2); pg.chars = pg.join('').length; out.push(pg); };
+    let cur = '';
+    for (const sn of String(s).match(/[^.!?]+[.!?]*["')]*\s*|\s+/g) || [String(s)]) {
+      const t = (cur + sn).trim();
+      if (wrap(t).length <= 2) { cur = t + ' '; continue; }
+      if (cur.trim()) put(wrap(cur.trim()));
+      let L = wrap(sn.trim()); while (L.length > 2) { put(L.slice(0, 2)); L = wrap(L.slice(2).join(' ')); }
+      cur = L.join(' ') + ' ';
+    }
+    if (cur.trim()) put(wrap(cur.trim()));
     return out.length ? out : [Object.assign([''], { chars: 0 })];
   },
   // one box of text, typed out to vis characters; who = the speaker's name tab; next = the bouncing arrow
@@ -210,7 +219,7 @@ const ADVUI = {
           text('NEW GAME', X(660), Y(60), L(44), '#ffde3b', 'center', '#1a2a6c');
           panel(X(380), Y(110), L(560), L(300), 'YOUR TRAINER'); avatarTile(profileAvatar(), X(410), Y(160), L(200), '#ffde3b');
           text(profileName(), X(640), Y(220), L(30), '#fff', 'left', null); text((avatarById(profileAvatar())?.name || '').toUpperCase(), X(640), Y(262), L(15), '#9aa6c0', 'left', null);
-          text('Your name and portrait come from the Profile.', X(410), Y(380), L(13), '#9aa6c0', 'left', null);
+          text('Name and portrait: from your Profile.', X(410), Y(380), L(13), '#9aa6c0', 'left', null);
           drawMenu(dlgItems(), st, X(660), Y(450), L(560), 62);
           hint(padUI() ? 'A select   B back' : 'Click to select   Esc back'); backButton(() => sc.close());
         } else if (st.stage === 1) {
@@ -223,7 +232,8 @@ const ADVUI = {
             text(t.name, X(404), y + (per - 6) / 2, L(22), on ? '#1a1a2a' : '#fff', 'left', null);
             text(t.id[0] === 'G' ? 'GYM CITY' : 'TOWN', X(916), y + (per - 6) / 2, L(13), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
           });
-          text('You wake at its Pokemon Center after a blackout.', X(660), Y(700), L(14), '#9aa6c0', 'center', null);
+          text('Tip: a GYM CITY has a gym right there, the easiest place to start.', X(660), Y(686), L(14), '#ffde3b', 'center', null);
+          text('Professor Linden meets you at its Pokemon Center.', X(660), Y(712), L(13), '#9aa6c0', 'center', null);
           hint(padUI() ? 'A pick   B back' : 'Click a town   Esc back'); backButton(back);
         } else if (st.stage === 2) {
           const sz = 84 * s, ids = st.list, c = cols(), r = rows(), y0 = 150 * s;
@@ -323,7 +333,7 @@ const ADVUI = {
       { label: 'Settings', act: () => sc.open(ADVUI.settings(sc)) },
       { label: 'Save', act: () => sc.saveFile(say) },
       { label: 'Load', act: () => sc.loadFile(m => say(m, true)) },
-      { label: 'Test', act: () => sc.open(ADVDBG.panel(sc)) },
+      ...(/[?&]debug\b/.test(location.search) ? [{ label: 'Test', act: () => sc.open(ADVDBG.panel(sc)) }] : []),   // the test panel (free money, levels, warps) only with ?debug in the address; F9 still opens it on a keyboard
       { label: 'Quit to menu', act: () => { sc.persist(); setScene(MenuScene); } },
     ];
     return {
@@ -662,7 +672,7 @@ const ADVUI = {
     if (INPUT.menu === 'right' || INPUT.menu === 'down') { w.sel = (w.sel + 1) % n; uiBlip(600, 0.03); }
     for (let k = 1; k <= Math.min(6, n); k++) if (INPUT.hit('S' + k)) { w.sel = k - 1; return sc.useItem(its[w.sel]); }
     if (okHit()) sc.useItem(its[w.sel]);
-    if (INPUT.hit('BACKK') || sc.cHit || INPUT.hit('Y')) sc.wh = null;
+    if (INPUT.hit('BACKK') || sc.cHit || INPUT.hit('ITEM') || INPUT.hit('BACK')) sc.wh = null;
   },
   wheelDraw(sc) {
     const its = this.wheelItems(sc), n = its.length, w = sc.wh; if (!n || !w) return;

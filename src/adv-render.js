@@ -192,12 +192,20 @@ const ADVR = {
     g.globalCompositeOperation = 'source-in'; g.fillStyle = '#0c0a14'; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = 'source-over'; g.drawImage(sh, sx, sy, sw, shh, 1, 1, sw, shh);
     m.set(k, c); return c;
   },
+  // during an Adventure fight: does this prop's picture (x, y, w, h) cover one of the two fighters standing behind it (north of its foot)?
+  seeThrough(p, x, y, w, h) {
+    if (typeof B === 'undefined' || !B?.arena?.world || p.b) return false;
+    const ar = B.arena; for (const s of B.sides) { const e = s.ent; if (!e) continue; const fx = ar.ox + e.x, fy = ar.oy + e.y; if (fy < p.y && fx > x && fx < x + w && fy - 20 > y && fy - 20 < y + h) return true; }
+    return false;
+  },
   propFn(p, def) {
     const sh = ADV.sheet(ADV.originOf(def)), S = ADV.dk(def, p.x);
     const ph = def.frames ? ((p.x * 7 + p.y * 13) >> 4) & 255 : 0;   // animated props (def.frames, def.fps): frame k = source rect shifted right by k * sw, out of step per instance
     return g => {
       if (!sh) return; const sx = def.sx + (def.frames ? (Math.floor(this.t * def.fps) + ph) % def.frames * def.sw : 0), x = Math.round(p.x - def.ax * S), y = Math.round(p.y - p.z - def.ay * S);
+      const see = this.seeThrough(p, x, y, def.sw * S, def.sh * S), a0 = g.globalAlpha; if (see) g.globalAlpha = a0 * 0.4;   // a tree or hut in front of a fighter goes see-through for the fight
       if (def.noOutline) g.drawImage(sh, sx, def.sy, def.sw, def.sh, x, y, def.sw * S, def.sh * S); else g.drawImage(this.olRect(sh, sx, def.sy, def.sw, def.sh), x - S, y - S, (def.sw + 2) * S, (def.sh + 2) * S);   // outlined like the sprites
+      if (see) g.globalAlpha = a0;
       if (!this.sun) return;
       if (this.shade) { const a = g.globalAlpha; g.globalAlpha = a * this.shade; g.drawImage(this.tinted(sh, sx, def.sy, def.sw, def.sh), x, y, def.sw * S, def.sh * S); g.globalAlpha = a; }   // standing in a shadow
       else if (this.sun.face && this.caster(def, p.n) === 'box') {   // a building's front wall faces south, away from a north sun
@@ -569,7 +577,7 @@ const ADVR = {
     if (cut) { g.save(); g.beginPath(); g.rect(ox, oy, vw, vh); g.rect(cut.x0, cut.y0 - 64, cut.x1 - cut.x0, cut.y1 - cut.y0 + 64); g.clip('evenodd'); g.fillStyle = `rgba(0,0,0,${0.1 * cut.k})`; g.fillRect(ox, oy, vw, vh); g.restore(); }   // the world outside dims one stepped notch per step
     if (this.dark) this.darken(g, vw, vh, ox, oy);
     if (WA) WA.lamps(g, this, t);   // lamp light streaks on the water at night
-    if (WX) WX.drawFx(g, this.view, t);   // rain, snow, sand, fog and lightning over everything
+    if (WX) { if (cut) { g.save(); g.beginPath(); g.rect(ox, oy, vw, vh); g.rect(cut.x0, cut.y0 - 64, cut.x1 - cut.x0, cut.y1 - cut.y0 + 64); g.clip('evenodd'); } WX.drawFx(g, this.view, t); if (cut) g.restore(); }   // rain, snow, sand, fog and lightning over everything but the inside of the building you are in
     ctx = screenCtx;
     screenCtx.setTransform(1, 0, 0, 1, 0, 0); screenCtx.imageSmoothingEnabled = false;   // device px, nearest neighbour only: every art px comes out a whole 1-4 device px
     screenCtx.drawImage(cv, 0, 0, cw, ch, 0, 0, cw * zm, ch * zm);

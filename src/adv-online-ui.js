@@ -4,7 +4,7 @@
 Object.assign(ADVUI, {
   // after a save is chosen: how do you want to play it
   mode(sc, save) {
-    const st = { sel: 0 }, items = () => [
+    const st = { sel: 3 }, items = () => [   // Offline is picked to begin with: most people play alone
       { label: 'Play Online', act: () => sc.go(save, { kind: 'auto' }) },
       { label: 'Server List', act: () => sc.open(ADVUI.servers(sc, save)) },
       { label: 'Join Friend', act: () => sc.open(ADVUI.friend(sc, save)) },
@@ -75,8 +75,8 @@ Object.assign(ADVUI, {
     };
   },
   // a yes / no question; the screen closes first, then runs the answer
-  ask(sc, line, yes, no) {
-    const st = { sel: 0 }, items = () => [{ label: 'Accept', act: () => { sc.close(); yes(); } }, { label: 'Decline', act: () => { sc.close(); no(); } }];
+  ask(sc, line, yes, no = () => {}, labels = ['Accept', 'Decline']) {
+    const st = { sel: 0 }, items = () => [{ label: labels[0], act: () => { sc.close(); yes(); } }, { label: labels[1], act: () => { sc.close(); no(); } }];
     return {
       update(dt) { runMenu(st, items(), dt); if (backHit()) { sc.close(); no(); } },
       draw() {

@@ -71,5 +71,17 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
 - Balance pass (2026-11-05, from a sim and Monte Carlo analysis): EXP per fight falls with badges, ADVP.expPace = max(0.3, 0.85 / (1 + 0.2 x badges)), so a player who fights the trainers on the way arrives within about a level of each leader's ace (a flat rate always drifts ahead; the old 1.5 had also collided with ADVP.PACE, the speeds, and made every award NaN). Mons behind your best get up to +90% (ADVP.catchUp). Wild and trainer movesets are the three best attacks plus a status move, without an evolved form's strong level 1 moves; a new starter gets its level 8 kit plus its next attack. Adventure HP curve capped at 1.0 (Arena keeps 1.6), wild packs at most 3 per fight, tall grass ambush 1.2% per 32 px with 20 s grace after a fight, leaders' banned moves backfilled with real attacks, NEXT GOAL says train to the ace's level, blackout costs a quarter of your money (at most 2000), prizes x0.75 from 4 badges.
 - Signposts (2026-11-05): every town exit has a sign naming its route and where the road leads (tools/adv-build-signs.mjs follows the road to the next place; data/adv/signs.js; read with A).
 
+- Playtest fixes (2026-11-05, from a 95 minute phone and desktop playtest):
+  - Fights inside a building stay inside: the doorway is shut for the fight, the trainer keeps to the room, the roof stays open, you end indoors.
+  - MENU in a fight asks to forfeit (a trainer battle, counts as a loss) or to run (wild).
+  - The item wheel opens on C, BAG or Select/View; Y is always move 4; B closes the wheel.
+  - Talking reaches about a tile again (the reach was never scaled when the world doubled).
+  - A blackout is explained in a box once you are back on your feet; before the first badge it costs nothing.
+  - Saves hit by the NaN EXP bug are repaired on load. A worn-out team is healed before a story battle.
+  - Before the first badge route trainers send one mon, never over your best.
+  - The CPU lowers your stats only to -2. Fleeing wild mons tire after 4 s.
+  - Phones get the fight left of the buttons, callouts in the middle, lighter nights, and props in front of a fighter go see-through. No rain indoors.
+  - Main menu defaults to Adventure, Adventure to Offline. A hometown tip. Controls page covers Adventure. Sentence-aware text boxes. TEST only with ?debug. App icons.
+
 ## Waiting on Landon
 - Title.

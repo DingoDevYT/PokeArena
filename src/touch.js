@@ -74,7 +74,7 @@ const TOUCH = window.TOUCH = (() => {
     const p = play(), f = fight(), c = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && SCENE.chatOn && SCENE.chatOn();
     const r = adv() && SCENE.mode === 'walk' && !SCENE.uis.length && !SCENE.typing && !!SCENE.save && (!!SCENE.mount || !!ADVP.mountKind(SCENE.save, SCENE.save.party[SCENE.leadIdx()]));   // the mount button: anything to get on, or off
     const bag = adv() && SCENE.mode === 'battle' && !SCENE.wh && !!B && !B.over && typeof ADVUI !== 'undefined' && ADVUI.wheelItems(SCENE).length > 0;   // the item wheel (C on a keyboard)
-    const m = !stickOK() && !(typeof TitleScene !== 'undefined' && SCENE === TitleScene);   // a screen, not the world: the d-pad, A and B (the other buttons are the icons in its hint, ui.js)
+    const m = !stickOK() && !(typeof TitleScene !== 'undefined' && SCENE === TitleScene) && !(adv() && SCENE.wh);   // the item wheel keeps the battle buttons (B closes it)   // a screen, not the world: the d-pad, A and B (the other buttons are the icons in its hint, ui.js)
     root.classList.toggle('menu', m); root.classList.toggle('fight', f);
     for (const k in els) {
       const e = els[k], w = e.dataset.when, pad = m && T.padOn && k !== 'PADT';   // on screens A, B and the d-pad only show when PAD is on

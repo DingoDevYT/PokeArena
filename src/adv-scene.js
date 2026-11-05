@@ -85,7 +85,7 @@ const AdventureScene = {
   // start (or restart) the world from a save
   go(save, want) {
     const W = window.ADV_WORLD; this.uis.forEach(u => u.exit && u.exit()); this.uis = []; B = null;
-    HP_CAP = 1.0; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); });   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
+    HP_CAP = 1.0; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); if (!Number.isFinite(m.exp)) m.exp = ADVP.expFor(ADVP.rate(m.species), m.level); });   // and saves hit by the NaN EXP bug get their EXP back   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
     this.save = ADV.save = ADV.player = save; ADVF.fix(save); ADV.reset(); ADV.setWorld(W); ADV.fallback = false; ADVW.reset(); ADVN.load(); this.dlg = this.sp = this.tr = this.bang = this.room = this.heal = this.warpTo = null;
     this.startNet(want); this.ready = false; this.mode = 'walk'; this.inB = false; this.msg = null; this.back = false; this.fadeT = 9; this.step = null; this.bHeld = 0; this.wh = null; this.cs = this.iu = null; this.itemCd = 0; this.inDoor = ''; this.flash = 0; this.late = null; this.mount = ''; this.lent = null; this.alt = 0; this.landing = false; this.running = false;
     const ow = this.ow = this.pickOW(), files = [ow.file]; this.key = this.leadKey();
@@ -134,7 +134,7 @@ const AdventureScene = {
   // S2: the building the foot stands in (its interior shows through the fading exterior, adv-render.js cutaway); this.room says "indoors" for it too, as { id: the building id, door: { town }, d: { bld, mach } }. A legacy room map (other towns) is left alone.
   inside(dt) {
     const p = this.p, legacy = this.room && !this.room.d.bld, fly = this.mount === 'fly';
-    ADV.cutTick(dt, legacy || fly ? null : p); if (legacy) return;
+    ADV.cutTick(dt, legacy || fly ? null : this.fightIn() ? this.fightMid() : p); if (legacy) return;   // a fight inside a building keeps its roof open whoever wanders
     const b = fly ? null : ADV.bldAt(p.x, p.y);
     if (!b) this.room = null; else if (this.room?.d.bld !== b) this.room = { id: b.id, door: { town: b.town }, d: { bld: b, mach: b.mach } };
   },
@@ -162,7 +162,7 @@ const AdventureScene = {
     if (!this.ready) {
       const sk = ADV.key(Math.floor(this.p.x / (ADV.Tp(this.p.x) * ADV.CH)), Math.floor(this.p.y / (ADV.Tp(this.p.x) * ADV.CH)));
       if (ADV.missing[sk]) this.err = 'Missing world data';
-      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late; this.late = null; this.grow(l); } else if (!this.save.intro && !this.net?.N?.online) this.intro(); }
+      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late; this.late = null; this.grow(l, () => this.wakeUp()); } else if (this.wake) this.wakeUp(); else if (!this.save.intro && !this.net?.N?.online) this.intro(); }
       return;
     }
     const en = !!KEYS.Enter; this.enterHit = en && !this.enterPrev; this.enterPrev = en;
@@ -478,7 +478,7 @@ const AdventureScene = {
   fish() {
     const p = this.p, sv = this.save, T = ADV.Tp(p.x), v = DIR_VEC[p.face], no = s => { this.msg = { s, t: 2.5 }; };
     if (this.mount) return no('Get off first.');
-    if (!sv.skills.fishing || !sv.bag.fishingrod) return no(sv.skills.fishing ? 'You have no Fishing Rod.' : 'Someone has to teach you to fish first.');
+    if (!sv.skills.fishing || !sv.bag.fishingrod) return no(sv.skills.fishing ? 'You have no Fishing Rod.' : 'Someone has to teach you to fish first. The fishermen of Salt Bay could.');
     if (this.wet()) return no('You cannot fish from the water.');
     if (ADV.deck(Math.floor(p.x / T), Math.floor(p.y / T)) >= 0) return no('Fish from the shore.');
     let tx = 0, ty = 0;
@@ -857,6 +857,11 @@ const AdventureScene = {
   },
   // The trainer stays in the world during a fight (this.step): it walks to a spot ADV_KEEP tiles behind its own mon, a little off to one side, facing the fight, and sidesteps out of any
   // attack that is about to cover it (sidestepFrom in battle.js). It never takes damage: the sim does not know it exists. Walking uses ADV.move, so walls and props stop it like they stop you.
+  // the building a fight started in (B.arena.bld, set by startFight / startTrainer), and the middle of the two fighters in world px
+  fightIn() { return this.inB && B?.arena?.bld || null; },
+  fightMid() { const ar = B.arena, [a, b] = B.sides.map(q => q.ent); return { x: ar.ox + (a.x + b.x) / 2, y: ar.oy + (a.y + b.y) / 2 }; },
+  // keep a point inside a building's floor (its walls are BW thick, the back wall 8 px plus a tile of upright wall)
+  inRoom(b, x, y, m = 20) { return { x: Math.max(b.x0 + ADV.BW + m, Math.min(b.x1 - ADV.BW - m, x)), y: Math.max(b.y0 + 8 + m, Math.min(b.y1 - ADV.BW - m, y)) }; },
   trainerStep(dt) {
     const s = this.step, p = this.p, ar = B.arena, [a, b] = B.sides.map(q => q.ent), ox = ar.ox, oy = ar.oy, T = ar.T;
     if (!s) return;
@@ -874,11 +879,13 @@ const AdventureScene = {
       } else {
         let bx = a.x - b.x, by = a.y - b.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl;   // away from the foe, behind own mon
         const lat = (p.x - ox - a.x) * -by + (p.y - oy - a.y) * bx; if (Math.abs(lat) > 12) s.side = lat > 0 ? 1 : -1;   // keep to the side it is already on
-        const tx = ox + a.x + bx * ADV_KEEP * T - by * s.side * 1.5 * T, ty = oy + a.y + by * ADV_KEEP * T + bx * s.side * 1.5 * T;
+        let tx = ox + a.x + bx * ADV_KEEP * T - by * s.side * 1.5 * T, ty = oy + a.y + by * ADV_KEEP * T + bx * s.side * 1.5 * T;
+        const rb = this.fightIn(); if (rb) ({ x: tx, y: ty } = this.inRoom(rb, tx, ty));   // indoors: as far back as the room allows, never out of the door
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), go = d > (s.go ? 0.3 : 1) * T;   // starts walking past a tile off the spot, stops when it is close
         s.go = go; if (go) { const sp = Math.min(200, 60 + d * 1.6) * dt; ADV.move(p, dx / d * sp, dy / d * sp); }
       }
     }
+    { const rb = this.fightIn(); if (rb && ADV.bldAt(p.x, p.y) !== rb) { const q = this.inRoom(rb, p.x, p.y); p.x = q.x; p.y = q.y; } }   // a dodge never carries you out of the room
     const m = Math.hypot(p.x - x0, p.y - y0); p.moving = m > 0.01; p.walkD += m;
   },
   // the trainer sprite, lifted off the ground (its shadow stays) while it hops out of the way
@@ -896,8 +903,14 @@ const AdventureScene = {
     if (this.tr) { const [x, y] = ADVB.clamp(ar, this.tr.sx - ar.ox, this.tr.sy - ar.oy, 14); s1.team.forEach((m, k) => { if (k !== s1.cur && !m.fainted) m.at = { x, y }; }); } // the next mon enters from beside its trainer
     this.trainerStep(dt); if (this.iu && (this.iu.t += dt) > 1) this.iu = null;
     if (this.cs) { this.catchStep(dt); if (B) updateFxOnly(dt); if (B) { this.cam.x = ar.ox + B.cam.x; this.cam.y = ar.oy + B.cam.y - ar.lv * ar.T; } return; } // the sim waits for the ball
-    const was = !!this.wh; // C or Y opens it; once open, the same keys close it
-    if (!was && !B.over && !B.choose && (this.cHit || INPUT.hit('Y')) && ADVUI.wheelItems(this).length) this.wh = { sel: 0 };
+    // MENU: a trainer battle can be forfeited (it counts as a loss), a wild one run from; the battle waits while you choose
+    if (!B.over && !B.choose && !this.wh && INPUT.hit('START') && this.t - (this.askT || -9) > 0.4) {   // (Esc both closes the question and is MENU: a short wait stops it reopening)
+      const shut = () => { this.askT = this.t; };
+      if (this.tr) return this.open(ADVUI.ask(this, 'Forfeit this battle? It counts as a loss.', () => { shut(); this.forfeit(); }, shut, ['Forfeit', 'Keep fighting']));
+      return this.open(ADVUI.ask(this, 'Run from this battle?', () => { shut(); this.endFight('Got away safely!'); }, shut, ['Run away', 'Keep fighting']));
+    }
+    const was = !!this.wh; // the item wheel: C on a keyboard, BAG on touch, Select / View on a pad (Y is move 4); the same keys or B close it
+    if (!was && !B.over && !B.choose && (this.cHit || INPUT.hit('ITEM') || INPUT.hit('BACK')) && ADVUI.wheelItems(this).length) this.wh = { sel: 0 };
     s0.itemWheel = !!this.wh; if (was) ADVUI.wheelUpdate(this, dt); s0.itemWheel = !!this.wh;
     updateBattle(this.wh ? dt * 0.2 : dt); // slow motion while the item wheel is open
     if (!s0.team[s0.cur].fainted) this.part.add(s0.cur);
@@ -1018,6 +1031,7 @@ const AdventureScene = {
   // caught = queue index of the mon that was caught, set = its new party mon
   endFight(msg, caught = -1, set) {
     const ar = B.arena, s0 = B.sides[0], s1 = B.sides[1], we = s1.ent, f = this.f, party = this.save.party, ev = this.settle();
+    if (ar.bld && ADV.bldAt(this.p.x, this.p.y) !== ar.bld) { const q = this.inRoom(ar.bld, this.p.x, this.p.y); this.p.x = q.x; this.p.y = q.y; }   // a fight indoors ends with you indoors
     f.x = ar.ox + s0.ent.x; f.y = ar.oy + s0.ent.y; this.back = true;
     const tr = this.tr; this.tr = null; const dead = [];
     if (set) ADVF.note(this.save, 'catch', { nm: DEX.species[toId(set.species)]?.name || set.species });
@@ -1040,6 +1054,8 @@ const AdventureScene = {
       this.dialog([...[].concat(tr.t.lose), `${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])], tr.n);
     }
   },
+  // giving up a trainer battle: a loss like any other (a story battle that need not be won carries on, anything else is a blackout)
+  forfeit() { if (!B || B.over) return; if (this.tr?.t.story && !this.tr.t.mustWin) return this.storyLoss(); this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; },
   // a story battle lost that the story does not need you to win (the rival before the League): no blackout, the party is healed and the script goes on
   storyLoss() {
     const ar = B.arena, s0 = B.sides[0], f = this.f, ev = this.settle(); f.x = ar.ox + s0.ent.x; f.y = ar.oy + s0.ent.y; this.back = true;
@@ -1048,13 +1064,14 @@ const AdventureScene = {
     this.save.party.forEach(m => ADVP.heal(m)); this.refreshLead(); this.persist();
     const go = () => ADVSTORY.after(this, false); if (ev.length) this.grow(ev, go); else go();
   },
-  // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000)
+  wakeUp() { const w = this.wake; this.wake = null; if (w) this.dialog(w, null); },
+  // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
-    const sv = this.save, lost = Math.min(Math.floor(sv.money / 4), 2000), t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
+    const sv = this.save, lost = (sv.badges | 0) ? Math.min(Math.floor(sv.money / 4), 2000) : 0, t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
     sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
-    this.msg = { s: `You blacked out! Lost ${ADVUI.money(lost)}. You woke up at ${t.name}.`, t: 5 };
+    this.wake = [`Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }
   useBag(id, i) {
@@ -1239,7 +1256,7 @@ const AdventureScene = {
       if (k < 0.02) return { a: 0, tint: '14,6,34', lights: [], glow: { r: 0.6, a: 0, g: 0.25 } };   // a bright day: no veil, just a faint glow pool round each lamp
       out.push({ x: p.x, y: p.y - p.z - 22, r: 84, a: 0.55 }, { x: f.x, y: f.y - f.z - 8, r: 42, a: 0.3 });
       if (this.inB) out.push({ x: this.cam.x, y: this.cam.y, r: 300, a: 0.9 });
-      return { a: k * (0.46 + 0.32 * nf), tint: W.veil > 0.78 * nf && W.tint ? W.tint : '14,6,34', lights: out, glow: { r: 1 + 0.15 * lit, a: 0.55 + 0.45 * lit, g: 0.5 + 0.6 * lit } };
+      return { a: k * (0.46 + 0.32 * nf) * (window.TOUCH?.on ? 0.8 : 1), tint: W.veil > 0.78 * nf && W.tint ? W.tint : '14,6,34', lights: out, glow: { r: 1 + 0.15 * lit, a: 0.55 + 0.45 * lit, g: 0.5 + 0.6 * lit } };
     }
     if (!d || !d.dark) return null;
     if (this.inB) out.push({ x: this.cam.x, y: this.cam.y, r: 330, a: 1 }); else out.push({ x: p.x, y: p.y - p.z - 22, r: 150, a: 1 }, { x: f.x, y: f.y - f.z - 8, r: 64, a: 0.5 });

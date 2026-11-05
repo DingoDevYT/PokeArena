@@ -105,6 +105,7 @@ const ADVSTORY = {
     let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, sv.badges | 0)   // an inline route-trainer team (grunts), held near the party
       : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace })) : ADVN.leaderTeam(s.battle, sv.badges | 0);
     if (!team.length) return this.next(sc);
+    if (sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     if (s.max) team = team.slice(-s.max);
     n.def.trainer = { cls: c.cls || '', name: c.name || s.battle, avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };

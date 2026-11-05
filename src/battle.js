@@ -1797,7 +1797,7 @@ function moveValue(side, slot) {
   if (arch === 'trap' && mv.boosts) return 0.05;
   if (mv.target === 'foeSide') return B.hazards.filter(h => h.owner === side.idx).length < 3 ? 0.05 : 0;
   if (mv.boosts && SELF_TARGETS.has(mv.target)) return hp > 0.6 && Object.keys(mv.boosts).some(k => m.stages[k] < 2) ? 0.08 : 0;
-  if (mv.boosts) return 0.03;
+  if (mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -2 : (fm.stages[k] | 0) < 2) ? 0.03 : 0;   // Growl and the like: down to -2, no further (a CPU that could not hurt you stacked them to -6)
   if (mv.weather) return B.field.weather ? 0 : 0.04;
   if (mv.terrain) return B.field.terrain ? 0 : 0.04;
   if (mv.sideCondition) return side.screens[toId(mv.sideCondition)] > 0 ? 0 : 0.05;

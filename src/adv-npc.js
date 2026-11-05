@@ -3,7 +3,7 @@
 'use strict';
 const ADVN = {
   list: [], SIM: 40, SPEED: 40, TALK: 40, NEAR: 3.2,  // tiles an NPC thinks within the player, wander speed px/s, talk reach px, a spotting trainer stops this many tiles from you
-  SIZE: [[1, 2], [1, 2], [2, 3], [2, 3], [3, 4], [3, 4], [4, 6], [4, 6], [4, 6]],   // trainer team size by badges (min, max)
+  SIZE: [[1, 1], [1, 2], [2, 3], [2, 3], [3, 4], [3, 4], [4, 6], [4, 6], [4, 6]],   // trainer team size by badges (min, max); one mon before the first badge
   AVATAR: { youngster: 'youngster', lass: 'lass', picnicker: 'picnicker', hiker: 'hiker', fisherman: 'fisherman', rancher: 'cowgirl', farmer: 'cowgirl' },
   reset() { this.list = []; },
   load(defs = [...(window.ADV_NPCS || []), ...ADV.roomNpcs()]) {
@@ -65,6 +65,7 @@ const ADVN = {
     if (t.leader) return this.leaderTeam(t.leader, badges);
     const b = Math.max(0, Math.min(8, badges | 0)), [lo, hi] = this.SIZE[b], n = Math.min(t.team.length, lo + this.hash(id) % (hi - lo + 1)), [a, z] = this.range(t.gym ? 'gym' : 'route', b);
     let l0 = a, h1 = z; const top = ADVW.partyTop(); if (!t.gym && top > 0 && h1 > top + ADVW.UP) { h1 = Math.max(2, top + ADVW.UP); l0 = Math.min(l0, Math.max(2, h1 - 3)); }   // route trainers: held near the party like the wild; gym trainers keep the band
+    if (!t.gym && b === 0 && top > 0) { h1 = Math.min(h1, Math.max(2, top)); l0 = Math.min(l0, Math.max(2, h1 - 1)); }   // before the first badge no route trainer is over your best (a fresh starter lost every time)
     return t.team.slice(0, n).map(([sp, rel]) => { const lv = Math.min(h1, l0 + rel); return { species: ADVW.evolve(sp, lv), level: lv }; });
   },
   pay: (t, team) => Math.round(t.money * Math.max(...team.map(m => m.level)) * ((ADV.player?.badges | 0) >= 4 ? 0.75 : 1)),   // money stops mattering mid-game, so prizes are trimmed from 4 badges
@@ -148,7 +149,8 @@ const ADVN = {
     for (const n of this.list) {
       const e = n.e; if (!e || e.lv !== p.lv || !this.vis(n)) continue;
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
-      if (d < (n.def.reach || this.TALK) && d < bd && (d < 14 || (dx * v[0] + dy * v[1]) / d > 0.35)) { best = n; bd = d; }
+      const k = ADV.Tp(e.x) / 32;   // reach is in scale 1 px (a 32 px tile): the world is drawn ADV.OUT times bigger, so it grows with it (it did not, and you had to stand inside people to talk)
+      if (d < (n.def.reach || this.TALK) * k && d < bd && (d < 14 * k || (dx * v[0] + dy * v[1]) / d > 0.35)) { best = n; bd = d; }
     }
     return best;
   },
