@@ -311,7 +311,7 @@ window.ADV_TEMPER = {
   noivern: { t: 'aggressive', group: [1, 1], flies: true },
   nuzleaf: { t: 'aggressive', group: [1, 1] },
   octillery: { t: 'aggressive', group: [1, 1], swims: true },
-  oddish: { t: 'passive', group: [2, 4] },
+  oddish: { t: 'passive', group: [1, 2] },   // was [2, 4]: Route 1 packs beat most level 5 starters (balance pass 2026-11-05)
   oinkologne: { t: 'passive', group: [2, 3] },
   oinkolognef: { t: 'passive', group: [2, 3] },
   onix: { t: 'territorial', group: [1, 1] },

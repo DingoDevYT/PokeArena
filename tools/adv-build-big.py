@@ -65,11 +65,12 @@ def door(a, x0, y0, y1):
 # ---------------------------------------------------------------- the inn: two gables and a porch door; grown as a left half, mirrored for the right
 def inn_gym(): return inn('EggCGGe', 9)
 
-def seamless(a, bands, axis):
-    """every repeated band must join itself without a seam: the column (row) after it matches its first, the one before it its last"""
+def seamless(a, bands, axis, module=False):
+    """every repeated band must join itself without a seam: the column (row) after it matches its first, the one before it its last.
+    module=True: a whole unit (windows and a pillar) copied in after itself only needs its last column to match the column before its first"""
     b = a if axis == 'x' else a.transpose(1, 0, 2)
     for x, e, _ in bands:
-        err = np.abs(b[:, e].astype(int) - b[:, x]).mean() + np.abs(b[:, e - 1].astype(int) - b[:, x - 1]).mean()
+        err = np.abs(b[:, e - 1].astype(int) - b[:, x - 1]).mean() + (0 if module else np.abs(b[:, e].astype(int) - b[:, x]).mean())
         assert err < 1, (x, e, err)
 
 def stripes(st, w):
@@ -139,6 +140,28 @@ def mart(k, n):
     a = widen(a, [(0, 76, [(57, 77, k)]), (76, a.shape[0], [(93, 113, k)])]); a = deepen(a, [(44, 56, n)])
     return a, p['ax'], p['ay'] + 12 * n
 
+# ---------------------------------------------------------------- the official-style gyms the gym towns were drawn with, grown to gym size
+def gym_red(k, n):
+    """the red ribbed gym: k more two-window units each side of the door (22 px; the roof ribs repeat every 6, so 66 px of roof for 3 units),
+    the sign's bar stretched to match, n more 15 row periods of ribbed roof"""
+    a, p = src('gymRed'); a = keep_main(a); a[113:] = 0
+    assert (22 * k) % 6 == 0; r = 22 * k // 6
+    zones = [(0, 70, [(21, 27, r), (75, 81, r)]), (70, 82, [(34, 38, 22 * k // 4), (38, 40, (22 * k) % 4 // 2), (62, 64, (22 * k) % 4 // 2), (64, 68, 22 * k // 4)]),
+             (82, 94, [(20, 26, r), (74, 80, r)]), (94, a.shape[0], [(12, 34, k), (69, 91, k)])]
+    for y0, y1, bands in zones: seamless(a[y0:y1], bands, 'x', module=y0 == 94)
+    seamless(a, [(30, 45, n)], 'y')
+    return deepen(widen(a, zones), [(30, 45, n)]), 51 + 22 * k + 1, p['ay'] + 15 * n
+
+def gym_teal(k, n):
+    """the tall teal gym: its pyramid roof stretched into a hip roof through the middle (k x 16 px: the ridge, k more windows in the band, the awning,
+    doorway and stairs wider), n more 4 row periods through the ridge for depth"""
+    a, p = src('gymTealTall'); a = keep_main(a)
+    zones = [(0, 64, [(40, 46, 8 * k // 3), (40, 42, (16 * k) % 6 // 2)]), (64, 82, [(26, 42, k)]), (82, a.shape[0], [(48, 56, 2 * k)])]
+    for y0, y1, bands in zones: seamless(a[y0:y1], bands, 'x') if y1 <= 82 else None
+    seamless(a, [(19, 23, n)], 'y')
+    a = deepen(widen(a, zones), [(19, 23, n)])
+    return a, p['ax'] + 8 * k, p['ay'] + 4 * n
+
 # ---------------------------------------------------------------- colourways: the same art with its roof, walls or trim moved to another hue (value and contrast kept)
 def recolor(a, sel, to, keep=None):
     """pixels whose (hue deg, sat, val) pass sel get to(h, s, v) -> (h, s, v); keep(x, y) protects a spot (a door)"""
@@ -179,7 +202,21 @@ def hall_c(k, j, wins, glass):
     return f
 
 # the catalog: name -> (builder, source prop). Gyms first, then the town buildings: every family in several sizes and colourways
-BIG = {'hallGym': (hall_gym, 'hall'), 'innGym': (inn_gym, 'inn'), 'hotelGym': (lambda: hotel(3, 3, 2), 'hotelBlue'),
+TEAL = lambda h, s, v: 160 <= h <= 195 and s >= 0.25                                # the teal gym's roof, awning and wings
+REDROOF = lambda h, s, v: (h <= 12 or h >= 345) and s >= 0.45                        # the red gym's ribs and sign bar
+def recolored(fn, sel, to, keep=None):
+    def f():
+        a, cx, ay = fn(); k = keep(a, cx) if keep else None
+        return recolor(a, sel, to, k), cx, ay
+    return f
+EMBLEM = lambda a, cx: (lambda x, y: y >= 94 + 45 or (abs(x - cx) < 9 and 70 + 45 <= y < 82 + 45))   # the red gym's Poke Ball windows (below row 94) and the sign's emblem keep their red (n = 3: 45 rows more)
+GLASS_BAND = lambda a, cx: (lambda x, y: 64 + 24 <= y < 82 + 24 and int(a[y, x, :3].astype(int).sum()) > 480)   # the teal gym's window glass (light pixels of the window band; n = 6: 24 rows more) stays glass
+
+BIG = {'redGym': (lambda: gym_red(3, 3), 'gymRed'), 'tealGym': (lambda: gym_teal(6, 6), 'gymTealTall'),
+       'gymGreen': (recolored(lambda: gym_red(3, 3), REDROOF, lambda h, s, v: (128, s * 0.7, v * 0.82), EMBLEM), 'gymRed'),
+       'gymSand': (recolored(lambda: gym_teal(6, 6), TEAL, lambda h, s, v: (38, s * 0.85, v * 1.08), GLASS_BAND), 'gymTealTall'),
+       'gymIce': (recolored(lambda: gym_teal(6, 6), TEAL, lambda h, s, v: (205, s * 0.35, min(1, v * 1.22)), GLASS_BAND), 'gymTealTall'),
+       'hallGym': (hall_gym, 'hall'), 'innGym': (inn_gym, 'inn'), 'hotelGym': (lambda: hotel(3, 3, 2), 'hotelBlue'),
        'hallBig': (lambda: hall(1, 1), 'hall'), 'innBig': (lambda: inn('EgCGe', 3), 'inn'), 'hotelBlueBig': (lambda: hotel(1, 1), 'hotelBlue'), 'martBig': (lambda: mart(2, 2), 'warehouse')}
 for lay, n, tag in (('EgPGe', 2, 'inn4'), ('EgCGe', 3, 'inn5'), ('EggCGe', 3, 'inn6')):
     for roof, wall in (('red', 'lilac'), ('green', 'cream'), ('blue', 'white'), ('brown', 'rose'), ('slate', 'mint'), ('plum', 'sky')):

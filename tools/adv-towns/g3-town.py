@@ -60,7 +60,7 @@ for y in range(-11, 12):
 
 # ================================================================ buildings
 g.building('pokeCenterGrand', -1, -6, 'center'); g.building('martTower', 10, -6)
-g.lot('gymRed', -26, 18, street_y=19, beds=None)
+g.lot('gymGreen', -26, 18, street_y=19, role=['g3-gym', {'w': 7, 'd': 5, 'ex': 3}], beds=None)
 g.lot('rg_dome_green', 22, -10, beds=None)
 g.lot('barnRed', 24, -38, beds=None)
 g.lot('innBig', 38, 24, street_y=25, beds=None)

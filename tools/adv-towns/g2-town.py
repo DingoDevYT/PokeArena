@@ -28,7 +28,7 @@ g.exit(15, -48, 'N'); g.exit(14, 48, 'S'); g.exit(-48, 0, 'W')
 # ================================================================ the Center and the Mart on the square; the gym and the sawmill on the yard
 g.building('pokeCenterWhite', -12, -1, 'center'); g.rect(-12, -2, -12, -1, 'd')
 g.building('martWhite', -5, -1); g.rect(-5, -2, -5, -1, 'd')
-g.lot('gymTealTall', 26, -5, street_y=-4, beds=None)
+g.lot('gymIce', 26, -5, street_y=-4, role=['g2-gym', {'w': 6, 'd': 5, 'ex': 2}], beds=None)
 g.lot('sSilverWarehouse', 20, -5, street_y=-4, beds=None)
 g.lot('tavern', -29, -1, street_y=0, beds=None); g.lot('inn', -38, -1, street_y=0, beds=None); g.lot('cabinGreenWide', -20, -1, street_y=0)
 g.lot('sWoodPagoda', -31, 27, street_y=28, beds=None); g.lot('warehouse', 20, 28, street_y=29, beds=None); g.lot('rg_greenhouse', 36, 3, street_y=4, beds=None)

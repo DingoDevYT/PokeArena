@@ -19,7 +19,11 @@ const ADVP = {
   expFor(rate, n) { return n <= 1 ? 0 : Math.max(0, Math.floor(this.CURVE[rate](n))); }, // total EXP a mon of this growth rate has at level n
   levelFor(rate, exp) { for (let n = 100; n > 1; n--) if (exp >= this.expFor(rate, n)) return n; return 1; },
   // Gen 5 scaled formula; split = number of mons sharing it, a trainer fight pays 1.5x
-  PACE: 1.5,   // a real-time fight takes longer than a turn, so each one is worth half again the mainline EXP (applied where it is awarded, adv-scene.js)
+  // EXP per fight, x mainline. Wild and route trainers are held near your level, so a flat rate drifts ever further ahead of the gyms; falling with each badge keeps
+  // a player who fights the trainers on the way within about a level of each leader's ace (balance pass 2026-11-05: 0.85 at no badges down to 0.3).
+  // (It was PACE = 1.5 until then, which clashed with PACE the speeds below and made every award NaN: nothing levelled.)
+  expPace: badges => Math.max(0.3, 0.85 / (1 + 0.2 * (badges | 0))),
+  catchUp: (lv, top) => 1 + 0.15 * Math.min(6, Math.max(0, top - lv)),   // a mon behind your best catches up faster (no EXP Share): +15% per level behind, up to +90%
   expGain(base, foeLv, myLv, split = 1, trainer = false) { return Math.floor((trainer ? 1.5 : 1) * base * foeLv / (5 * split) * ((2 * foeLv + 10) / (foeLv + myLv + 10)) ** 2.5 + 1); },
 
   // ---------- catching ----------
@@ -42,10 +46,22 @@ const ADVP = {
   // ---------- mons ----------
   legalSet: id => new Set(legalMoves(DEX.species[id])),
   // the 4 latest level-up moves at or below lv
+  // a wild or trainer mon's moves at level lv: its three strongest attacks it knows by then (power x STAB x accuracy) and its newest status move. An evolved form's
+  // strong level 1 moves (over 60 power: the evolution move, e.g. Combusken's Flamethrower) are skipped: a real one never learned them on the way up.
   moves(id, lv) {
-    const ok = this.legalSet(id), out = [];
-    for (const [l, m] of this.info(id).levelMoves || []) if (l <= lv && ok.has(m)) { const i = out.indexOf(m); if (i >= 0) out.splice(i, 1); out.push(m); }
-    return out.slice(-4);
+    const ok = this.legalSet(id), I = this.info(id), evo = !!I.prevo, known = [], sp = DEX.species[id];
+    for (const [l, m] of I.levelMoves || []) if (l <= lv && ok.has(m) && !(evo && l <= 1 && (DEX.moves[m]?.basePower || 0) > 60)) { const i = known.indexOf(m); if (i >= 0) known.splice(i, 1); known.push(m); }
+    if (!known.length) for (const [l, m] of I.levelMoves || []) if (l <= lv && ok.has(m) && !known.includes(m)) known.push(m);   // nothing but level 1 moves: keep them
+    const mv = m => DEX.moves[m] || {}, score = m => (mv(m).basePower || 0) * (sp?.types?.includes(mv(m).type) ? 1.5 : 1) * ((mv(m).accuracy === true ? 100 : mv(m).accuracy || 100) / 100);
+    const atk = known.filter(m => mv(m).category !== 'Status' && (mv(m).basePower || 0) > 0).sort((a, b) => score(b) - score(a)).slice(0, 3), st = known.filter(m => mv(m).category === 'Status');
+    const pick = [...atk, ...st.slice(-Math.max(1, 4 - atk.length))].slice(0, 4);
+    return known.filter(m => pick.includes(m));   // in the order learned
+  },
+  // a new starter's moves: its level 8 kit, plus the first attack it would learn by 16 when that kit has only one (Cyndaquil, Turtwig, Togepi...)
+  starterMoves(id) {
+    const ms = this.moves(id, 8), atk = m => DEX.moves[m]?.category !== 'Status' && DEX.moves[m]?.basePower > 0, ok = this.legalSet(id);
+    if (ms.filter(atk).length < 2) { const nx = (this.info(id).levelMoves || []).find(([l, m]) => l > 8 && l <= 16 && ok.has(m) && atk(m) && !ms.includes(m)); if (nx) { if (ms.length >= 4) ms.splice(ms.findIndex(m => !atk(m)), 1); ms.push(nx[1]); } }
+    return ms;
   },
   ability(id) { const a = DEX.species[id].abilities, k = [0, 1].filter(i => a[i]); return a[k.length ? k[Math.floor(this.rnd() * k.length)] : 'H'] || a[0]; },
   mon(id, lv, o = {}) {

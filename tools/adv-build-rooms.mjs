@@ -361,7 +361,7 @@ const IN7 = [
   { id: 'g7-center', theme: 'center', C: 8, R: 5,
     items: [['winWide', 2, -0.45], ['winWide', 6, -0.45], ['paintingSea', 4, -0.6], ['pcBlue', 1, 1.7], ['counterRed', 3.9, 3], ['healMachine', 6.65, 2.6], ['sofaBlue', 1.5, 4.9], ['plantC', 7.4, 5]],
     npcs: [npc('g7-nurse', 3, 1, 'nurse', 0, null, { extra: { name: 'Nurse', script: 'nurse', reach: 66 } }), npc('g7-pc', 1, 2, null, 0, null, { extra: { script: 'pc', reach: 56 } }),
-      npc('g7-c-hallowmead', 6, 3, 'gswoman1', 6, ['Hallowmead is only a few roads from here, and Aldermere keeps swallowing it up.', 'Miss Whitney has opinions about that. Ask her, if you dare.'], { move: 'wander', r: 2 }),
+      npc('g7-c-hallowmead', 6, 3, 'gswoman1', 6, ['Hallowmead is a meadow village out east, and Aldermere keeps swallowing it up.', 'Miss Whitney has opinions about that. Ask her, if you dare.'], { move: 'wander', r: 2 }),
       npc('g7-c-boy', 2, 3, 'gsboy2', 0, ['The PC on the wall holds any Pokemon you cannot carry. Take them back out when you like.'], { move: 'wander', r: 1 })] },
   { id: 'g7-mart', theme: 'mart', C: 10, R: 5,
     items: [['winSmall', 2, -0.5], ['winSmall', 7.5, -0.5], ['shelfPotion', 1, 2.3], ['shelfGreen', 2.9, 2.3], ['counterRed', 7.6, 3], ['tableBrownSmall', 1.6, 4.9], ['plantA', 9.4, 5]],
@@ -454,3 +454,104 @@ for (const pre of MIGR) {
     return { id: s.id, theme: s.theme, C: t.C, R: t.R, items: t.items, npcs: s.npcs.map((n, i) => ({ ...n, x: t.slots[i][0], y: t.slots[i][1], ...(t.slots[i][2] === undefined ? {} : { face: t.slots[i][2] }) })) };
   }));
 }
+
+// ---------- the five gyms of the north and east (G1-G5), inside the big gym buildings (tools/adv-build-big.py). Floor C x R from the footprint in each town plan.
+// Each has its leader at the back, three gym trainers along the way and a guide by the door. Category gyms: what the leader cares about, not a type.
+const gt = (id, cls, name, sprite, face, av, team, say, lose, x, y) => npc(id, x, y, sprite, face, [lose], { extra: { trainer: { cls, name, avatar: av, gym: true, sight: 5, money: 30, team, say, lose } } });
+const leader = (id, sprite, x, y, name, key, av, badge, tm, after, lines, t) => npc(id, x, y, sprite, 0, lines, { extra: { name, trainer: { cls: 'Gym Leader', name, leader: key, avatar: av, gym: true, sight: 0, money: 80, tm, badge, after, ...t } } });
+const IN1 = [
+  { id: 'g1-gym', theme: 'cave', C: 10, R: 9,
+    items: [['winStained', 2.5, -0.45], ['winStained', 7.5, -0.45], ['torchPost', 0.7, 2.3], ['torchPost', 9.3, 2.3], ['statueBeast', 2.6, 2.4], ['statueBeast', 7.4, 2.4],
+      ['crystalBlue', 0.8, 6], ['crystalBlue', 9.2, 6], ['torchPost', 9.3, 8.6]],
+    npcs: [
+      leader('g1-vesper', 'alia-alia', 4, 1, 'Vesper', 'vesper', 'fantina', 'Dunereach Badge', 'tm_shadowball', ['g1-gym-ines', 'g1-gym-rami', 'g1-gym-dov'],
+        ['The caravans left things behind in this hall. Some of them are still here.', 'Come back any time. The lamps stay lit for travellers.'], {
+        wait: ['The keepers of this hall test everyone first. I am afraid that includes you.', 'Speak with all three, and I will be waiting.'],
+        say: ['Welcome to the old caravanserai. Every lamp here was left burning for someone.', 'My Pokemon guard what the desert would rather forget.', 'Let us see whether you are the sort of trainer they remember.'],
+        say2: ['You came back. The hall noticed. Shall we?'],
+        lose: ['There. The lamps burn a little brighter for you now.', 'Take the Dunereach Badge. Carry it gently. Old things are heavier than they look.'] }),
+      gt('g1-gym-ines', 'Hex Maniac', 'Ines', 'npc2-purple-hair-girl', 2, 'psychic', [['litwick', 0], ['sinistea', 0], ['duskull', 1], ['yamask', 1], ['sableye', 2], ['litwick', 2]],
+        'Every candle in here has a name. Want to hear them? Battle me first!', 'The candles say you can pass. They are never wrong.', 1, 5),
+      gt('g1-gym-rami', 'Ruin Maniac', 'Rami', 'npc1-explorer', 6, 'hiker', [['baltoy', 0], ['golett', 0], ['bronzor', 1], ['sigilyph', 1], ['golett', 2], ['baltoy', 2]],
+        'I have dug up half this desert. Now let me dig into your team!', 'Buried again. That happens a lot to me.', 8, 3),
+      gt('g1-gym-dov', 'Lamplighter', 'Dov', 'npc2-old-man', 6, 'gentleman', [['honedge', 0], ['yamask', 0], ['litwick', 1], ['golett', 1], ['honedge', 2], ['duskull', 2]],
+        'I light every lamp at dusk and I have never missed one. Mind the flame!', 'Snuffed out. Go on, Miss Vesper is waiting.', 7, 6),
+      npc('g1-gym-guide', 6, 7, 'gsman2', 0, ['Miss Vesper keeps the old relics of the caravans. Her Pokemon are slow, sturdy and hard to hurt.', 'Hit fast and hit often. Waiting games are what she wants.'])] },
+];
+const IN2 = [
+  { id: 'g2-gym', theme: 'barn', C: 10, R: 9,
+    items: [['winArch', 2.5, -0.4], ['winArch', 7.5, -0.4], ['stoveRed', 1, 2.3], ['logShort', 8.6, 2.4], ['barrelOrange', 9.3, 4.6], ['crateWide', 0.9, 6.6],
+      ['fallenLog', 8.4, 6.8], ['matRed', 5, 3.2]],
+    npcs: [
+      leader('g2-bjorn', 'npc2-bearded-man', 4, 1, 'Bjorn', 'bjorn', 'wulfric', 'Sprucevale Badge', 'tm_bodyslam', ['g2-gym-hedda', 'g2-gym-olaf', 'g2-gym-kari'],
+        ['Kettle is always on. Sit by the stove when the snow gets in your boots.', 'Strong and steady. That is all the mill asks of anyone.'], {
+        wait: ['Ha! Eager. I like it. But my crew get first go at you.', 'Three of them. Then come and warm your hands by my stove.'],
+        say: ['Welcome to the mill hall! Big, slow and warm, just like my team.', 'Nothing in Sprucevale hurries. Not the snow, not the saw, not my Pokemon.', 'Push as hard as you like. We will still be standing.'],
+        say2: ['Back for more? Good. Stamp the snow off and let us go.'],
+        lose: ['Ho! You knocked over a mountain. I felt that in my boots.', 'The Sprucevale Badge is yours. Now have some soup before you go.'] }),
+      gt('g2-gym-hedda', 'Mill Hand', 'Hedda', 'npc2-red-jacket-woman', 2, 'blackbelt', [['machop', 0], ['makuhita', 0], ['timburr', 1], ['teddiursa', 1], ['makuhita', 2], ['machop', 2]],
+        'I carry two logs at a time. My team carries four. Want to see?', 'Dropped them all. Go on, Bjorn will be pleased with you.', 1, 5),
+      gt('g2-gym-olaf', 'Bath Keeper', 'Olaf', 'npc2-old-man', 6, 'gentleman', [['slowpoke', 0], ['psyduck', 0], ['numel', 1], ['lotad', 1], ['slowpoke', 2], ['numel', 2]],
+        'The hot spring is open after you beat me. Not before.', 'Fine, fine. Towels are on the left.', 8, 3),
+      gt('g2-gym-kari', 'Sawyer', 'Kari', 'npc2-yellow-jacket-woman', 6, 'cowgirl', [['stufful', 0], ['munchlax', 0], ['drampa', 1], ['teddiursa', 1], ['stufful', 2], ['munchlax', 2]],
+        'My Pokemon are big softies. Big softies that hit very hard!', 'Timber. That was me falling over.', 7, 6),
+      npc('g2-gym-guide', 6, 7, 'gsman2', 0, ['Bjorn trains heavy Pokemon that shrug off hits. They wind up slowly, so make them chase you.', 'Keep moving and do not stand toe to toe with them.'])] },
+];
+const IN3 = [
+  { id: 'g3-gym', theme: 'farm', C: 12, R: 9,
+    items: [['winWide', 3, -0.45], ['winWide', 9, -0.45], ['statueBird', 3.6, 2.4], ['statueBird', 8.4, 2.4], ['plantA', 0.7, 2.6], ['plantB', 11.3, 2.6],
+      ['plantC', 0.7, 6.6], ['plantA', 11.3, 6.6], ['pebbles', 6, 5.2]],
+    npcs: [
+      leader('g3-thorn', 'north-hood-ranger', 5, 1, 'Thorn', 'thorn', 'alder', 'Fernwell Badge', 'tm_aerialace', ['g3-gym-wren', 'g3-gym-colt', 'g3-gym-maple'],
+        ['Every Pokemon in this park chose to stay. Nobody here is kept.', 'Look after your partners and they will look after you.'], {
+        wait: ['My wardens want to meet you first. They are good judges of character.', 'All three, then come and find me under the window.'],
+        say: ['Welcome to the park lodge. I am the warden here, and these are my partners.', 'We have walked every path in Fernwell together, rain or shine.', 'Show me how well you know your team. Not how strong. How well.'],
+        say2: ['Back again? The park is glad to see you. So am I.'],
+        lose: ['You and your team move like one creature. That is rare.', 'The Fernwell Badge is yours. You earned it together.'] }),
+      gt('g3-gym-wren', 'Falconer', 'Wren', 'npc1-green-top-girl', 2, 'pokemonranger', [['rufflet', 0], ['rowlet', 0], ['starly', 1], ['fletchling', 1], ['rufflet', 2], ['pidgey', 2]],
+        'My birds can see you from the other end of the park. No hiding!', 'They saw that coming. I did not.', 1, 5),
+      gt('g3-gym-colt', 'Dog Walker', 'Colt', 'npc1-blue-cap-boy', 6, 'camper', [['lillipup', 0], ['rockruff', 0], ['yamper', 1], ['growlithe', 1], ['lillipup', 2], ['rockruff', 2]],
+        'Six dogs, one lead, zero patience. Let us go!', 'Good walk. Good battle. Good dogs.', 10, 3),
+      gt('g3-gym-maple', 'Gardener', 'Maple', 'npc2-pink-top-girl', 6, 'picnicker', [['skiddo', 0], ['petilil', 0], ['eevee', 1], ['zorua', 1], ['skiddo', 2], ['petilil', 2]],
+        'Careful where you step. Everything in here is growing, including my team!', 'Pruned. Fair enough.', 9, 6),
+      npc('g3-gym-guide', 7, 7, 'gsman2', 0, ['Thorn raised every one of his Pokemon from the park. They read each other perfectly.', 'His birds come in from the air. Watch the shadows.'])] },
+];
+const IN4 = [
+  { id: 'g4-gym', theme: 'cave', C: 12, R: 9,
+    items: [['mapWorld', 6, -0.55], ['caveRock', 1, 2.4], ['rockBrownB', 11, 2.4], ['plinth', 3.4, 2.4], ['plinth', 8.6, 2.4], ['dirtMound', 1.2, 6.4], ['rockBrownSmall', 10.8, 6.2],
+      ['pebbles', 5, 4.6], ['rockDarkSmall', 7.6, 6.8]],
+    npcs: [
+      leader('g4-silas', 'npc1-explorer', 5, 1, 'Silas', 'silas', 'roark', 'Claystone Badge', 'tm_rockslide', ['g4-gym-petra', 'g4-gym-flint', 'g4-gym-ada'],
+        ['The clay pits gave up their bones to us. We look after them now.', 'Every fossil was alive once. Remember that when you dig.'], {
+        wait: ['Nobody skips the dig crew. Not even you.', 'Pass all three, then bring me what you have found.'],
+        say: ['Welcome to the kiln hall. Mind the trenches, we are still digging.', 'My Pokemon walked Kenora long before there were roads.', 'Old does not mean slow. Let me show you.'],
+        say2: ['Back already? The trenches are deeper since you left. Let us go.'],
+        lose: ['Well dug. You found something in that battle I had not seen in years.', 'The Claystone Badge is yours. Polish it now and then.'] }),
+      gt('g4-gym-petra', 'Digger', 'Petra', 'npc2-red-jacket-woman', 2, 'hiker', [['roggenrola', 0], ['onix', 0], ['cranidos', 1], ['shieldon', 1], ['roggenrola', 2], ['onix', 2]],
+        'I have a shovel and I am not afraid to use it!', 'Shovelled under. Silas is at the back.', 1, 5),
+      gt('g4-gym-flint', 'Ruin Maniac', 'Flint', 'npc1-camo-boy', 6, 'hiker', [['kabuto', 0], ['omanyte', 0], ['anorith', 1], ['lileep', 1], ['kabuto', 2], ['omanyte', 2]],
+        'These Pokemon are older than the hills. I asked the hills.', 'Ancient history. That would be me.', 10, 3),
+      gt('g4-gym-ada', 'Scientist', 'Ada', 'npc2-purple-top-woman', 6, 'scientist', [['archen', 0], ['tirtouga', 0], ['tyrunt', 1], ['amaura', 1], ['archen', 2], ['tirtouga', 2]],
+        'Every fossil in this room was revived in my lab. Behave!', 'Fascinating. You must let me write that up.', 9, 6),
+      npc('g4-gym-guide', 7, 7, 'gsman2', 0, ['Silas brings back Pokemon from fossils. They hit like boulders but some are slow to start.', 'Get your hits in before they wake up properly.'])] },
+];
+const IN5 = [
+  { id: 'g5-gym', theme: 'center', C: 10, R: 9,
+    items: [['paintingSea', 2.5, -0.6], ['paintingSea', 7.5, -0.6], ['crystalBlueTall', 0.8, 2.6], ['crystalBlueTall', 9.2, 2.6], ['plinth', 2.8, 2.4], ['plinth', 7.2, 2.4],
+      ['ropeRed', 2.5, 5], ['ropeRed', 7.5, 5], ['crystalBlue', 9.2, 7.2]],
+    npcs: [
+      leader('g5-sterling', 'npc2-yellow-suit-man', 4, 1, 'Sterling', 'sterling', 'byron', 'Aldermere Badge', 'tm_flashcannon', ['g5-gym-celeste', 'g5-gym-hugo', 'g5-gym-marigold'],
+        ['Aldermere was built on trade. This gym was built on everything that came with it.', 'Spend wisely. Battle boldly. Those are the only two rules.'], {
+        wait: ['Ah, a guest. My associates will see you first. Standard procedure.', 'All three, please. Then we can talk business.'],
+        say: ['Welcome to the gallery. Everything you see here was won, not bought.', 'My Pokemon are the finest collection in the east. Polished, sharp and priceless.', 'Impress me, and the most valuable thing in this room is yours.'],
+        say2: ['A repeat customer. Excellent. Let us begin.'],
+        lose: ['Marvellous! I have not been outbid like that in years.', 'The Aldermere Badge. Solid. I had it made by the best smith in the city.'] }),
+      gt('g5-gym-celeste', 'Lady', 'Celeste', 'npc2-dark-hair-woman', 2, 'lady', [['meowthalola', 0], ['purrloin', 0], ['espurr', 1], ['snubbull', 1], ['furfrou', 2], ['meowthalola', 2]],
+        'Shoes off at the door, darling. Oh, you have already walked in. Battle!', 'How rude of you to win. Go on, then.', 1, 5),
+      gt('g5-gym-hugo', 'Collector', 'Hugo', 'npc2-pink-suit-man', 6, 'gentleman', [['gimmighoul', 0], ['klefki', 0], ['carbink', 1], ['pawniard', 1], ['gimmighoul', 2], ['klefki', 2]],
+        'Every Pokemon I own is one of a kind. I checked!', 'I shall have to add you to my collection of regrets.', 8, 3),
+      gt('g5-gym-marigold', 'Smith', 'Marigold', 'npc2-yellow-jacket-woman', 6, 'blackbelt', [['tinkatink', 0], ['pawniard', 0], ['tinkatink', 1], ['klefki', 1], ['pawniard', 2], ['carbink', 2]],
+        'I forged Sterling his badge. Let me see if you are worth one!', 'Good metal. You will do.', 7, 6),
+      npc('g5-gym-guide', 6, 7, 'gsman2', 0, ['Sterling collects steel and treasure Pokemon. They are hard to scratch, so bring fire or a punch.', 'His last one is worth more than this whole street.'])] },
+];
+emit('G1', IN1); emit('G2', IN2); emit('G3', IN3); emit('G4', IN4); emit('G5', IN5);

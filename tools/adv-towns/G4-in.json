@@ -1,0 +1,255 @@
+{
+ "g4-gym": {
+  "floor": "i_cave_floor",
+  "walls": "i_cave",
+  "C": 12,
+  "R": 9,
+  "props": [
+   [
+    "mapWorld",
+    3.5,
+    -0.3063
+   ],
+   [
+    "caveRock2x",
+    1,
+    1.1687
+   ],
+   [
+    "rockBrownB2x",
+    6,
+    1.1687
+   ],
+   [
+    "plinth",
+    2.2,
+    1.1687
+   ],
+   [
+    "plinth",
+    4.8,
+    1.1687
+   ],
+   [
+    "dirtMound2x",
+    1.1,
+    3.1688
+   ],
+   [
+    "rockBrownSmall2x",
+    5.9,
+    3.0688
+   ],
+   [
+    "pebbles2x",
+    3,
+    2.2687
+   ],
+   [
+    "rockDarkSmall2x",
+    4.3,
+    3.3687
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "g4-silas",
+    "sprite": "npc1-explorer",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "The clay pits gave up their bones to us. We look after them now.",
+     "Every fossil was alive once. Remember that when you dig."
+    ],
+    "name": "Silas",
+    "trainer": {
+     "cls": "Gym Leader",
+     "name": "Silas",
+     "leader": "silas",
+     "avatar": "roark",
+     "gym": true,
+     "sight": 0,
+     "money": 80,
+     "tm": "tm_rockslide",
+     "badge": "Claystone Badge",
+     "after": [
+      "g4-gym-petra",
+      "g4-gym-flint",
+      "g4-gym-ada"
+     ],
+     "wait": [
+      "Nobody skips the dig crew. Not even you.",
+      "Pass all three, then bring me what you have found."
+     ],
+     "say": [
+      "Welcome to the kiln hall. Mind the trenches, we are still digging.",
+      "My Pokemon walked Kenora long before there were roads.",
+      "Old does not mean slow. Let me show you."
+     ],
+     "say2": [
+      "Back already? The trenches are deeper since you left. Let us go."
+     ],
+     "lose": [
+      "Well dug. You found something in that battle I had not seen in years.",
+      "The Claystone Badge is yours. Polish it now and then."
+     ]
+    },
+    "dx": 3.25,
+    "dy": 0.75
+   },
+   {
+    "id": "g4-gym-petra",
+    "sprite": "npc2-red-jacket-woman",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "Shovelled under. Silas is at the back."
+    ],
+    "trainer": {
+     "cls": "Digger",
+     "name": "Petra",
+     "avatar": "hiker",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "roggenrola",
+       0
+      ],
+      [
+       "onix",
+       0
+      ],
+      [
+       "cranidos",
+       1
+      ],
+      [
+       "shieldon",
+       1
+      ],
+      [
+       "roggenrola",
+       2
+      ],
+      [
+       "onix",
+       2
+      ]
+     ],
+     "say": "I have a shovel and I am not afraid to use it!",
+     "lose": "Shovelled under. Silas is at the back."
+    },
+    "dx": 1.25,
+    "dy": 2.75
+   },
+   {
+    "id": "g4-gym-flint",
+    "sprite": "npc1-camo-boy",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Ancient history. That would be me."
+    ],
+    "trainer": {
+     "cls": "Ruin Maniac",
+     "name": "Flint",
+     "avatar": "hiker",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "kabuto",
+       0
+      ],
+      [
+       "omanyte",
+       0
+      ],
+      [
+       "anorith",
+       1
+      ],
+      [
+       "lileep",
+       1
+      ],
+      [
+       "kabuto",
+       2
+      ],
+      [
+       "omanyte",
+       2
+      ]
+     ],
+     "say": "These Pokemon are older than the hills. I asked the hills.",
+     "lose": "Ancient history. That would be me."
+    },
+    "dx": 5.75,
+    "dy": 1.75
+   },
+   {
+    "id": "g4-gym-ada",
+    "sprite": "npc2-purple-top-woman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Fascinating. You must let me write that up."
+    ],
+    "trainer": {
+     "cls": "Scientist",
+     "name": "Ada",
+     "avatar": "scientist",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "archen",
+       0
+      ],
+      [
+       "tirtouga",
+       0
+      ],
+      [
+       "tyrunt",
+       1
+      ],
+      [
+       "amaura",
+       1
+      ],
+      [
+       "archen",
+       2
+      ],
+      [
+       "tirtouga",
+       2
+      ]
+     ],
+     "say": "Every fossil in this room was revived in my lab. Behave!",
+     "lose": "Fascinating. You must let me write that up."
+    },
+    "dx": 5.25,
+    "dy": 3.25
+   },
+   {
+    "id": "g4-gym-guide",
+    "sprite": "gsman2",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Silas brings back Pokemon from fossils. They hit like boulders but some are slow to start.",
+     "Get your hits in before they wake up properly."
+    ],
+    "dx": 4.25,
+    "dy": 3.75
+   }
+  ]
+ }
+}

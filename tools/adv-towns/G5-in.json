@@ -1,0 +1,255 @@
+{
+ "g5-gym": {
+  "floor": "i_center_floor",
+  "walls": "i_center",
+  "C": 10,
+  "R": 9,
+  "props": [
+   [
+    "paintingSea",
+    1.75,
+    -0.3312
+   ],
+   [
+    "paintingSea",
+    4.25,
+    -0.3312
+   ],
+   [
+    "crystalBlueTall2x",
+    0.9,
+    1.2688
+   ],
+   [
+    "crystalBlueTall2x",
+    5.1,
+    1.2688
+   ],
+   [
+    "plinth",
+    1.9,
+    1.1687
+   ],
+   [
+    "plinth",
+    4.1,
+    1.1687
+   ],
+   [
+    "ropeRed",
+    1.75,
+    2.4688
+   ],
+   [
+    "ropeRed",
+    4.25,
+    2.4688
+   ],
+   [
+    "crystalBlue2x",
+    5.1,
+    3.5688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "g5-sterling",
+    "sprite": "npc2-yellow-suit-man",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Aldermere was built on trade. This gym was built on everything that came with it.",
+     "Spend wisely. Battle boldly. Those are the only two rules."
+    ],
+    "name": "Sterling",
+    "trainer": {
+     "cls": "Gym Leader",
+     "name": "Sterling",
+     "leader": "sterling",
+     "avatar": "byron",
+     "gym": true,
+     "sight": 0,
+     "money": 80,
+     "tm": "tm_flashcannon",
+     "badge": "Aldermere Badge",
+     "after": [
+      "g5-gym-celeste",
+      "g5-gym-hugo",
+      "g5-gym-marigold"
+     ],
+     "wait": [
+      "Ah, a guest. My associates will see you first. Standard procedure.",
+      "All three, please. Then we can talk business."
+     ],
+     "say": [
+      "Welcome to the gallery. Everything you see here was won, not bought.",
+      "My Pokemon are the finest collection in the east. Polished, sharp and priceless.",
+      "Impress me, and the most valuable thing in this room is yours."
+     ],
+     "say2": [
+      "A repeat customer. Excellent. Let us begin."
+     ],
+     "lose": [
+      "Marvellous! I have not been outbid like that in years.",
+      "The Aldermere Badge. Solid. I had it made by the best smith in the city."
+     ]
+    },
+    "dx": 2.75,
+    "dy": 0.75
+   },
+   {
+    "id": "g5-gym-celeste",
+    "sprite": "npc2-dark-hair-woman",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "How rude of you to win. Go on, then."
+    ],
+    "trainer": {
+     "cls": "Lady",
+     "name": "Celeste",
+     "avatar": "lady",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "meowthalola",
+       0
+      ],
+      [
+       "purrloin",
+       0
+      ],
+      [
+       "espurr",
+       1
+      ],
+      [
+       "snubbull",
+       1
+      ],
+      [
+       "furfrou",
+       2
+      ],
+      [
+       "meowthalola",
+       2
+      ]
+     ],
+     "say": "Shoes off at the door, darling. Oh, you have already walked in. Battle!",
+     "lose": "How rude of you to win. Go on, then."
+    },
+    "dx": 1.25,
+    "dy": 2.75
+   },
+   {
+    "id": "g5-gym-hugo",
+    "sprite": "npc2-pink-suit-man",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "I shall have to add you to my collection of regrets."
+    ],
+    "trainer": {
+     "cls": "Collector",
+     "name": "Hugo",
+     "avatar": "gentleman",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "gimmighoul",
+       0
+      ],
+      [
+       "klefki",
+       0
+      ],
+      [
+       "carbink",
+       1
+      ],
+      [
+       "pawniard",
+       1
+      ],
+      [
+       "gimmighoul",
+       2
+      ],
+      [
+       "klefki",
+       2
+      ]
+     ],
+     "say": "Every Pokemon I own is one of a kind. I checked!",
+     "lose": "I shall have to add you to my collection of regrets."
+    },
+    "dx": 4.75,
+    "dy": 1.75
+   },
+   {
+    "id": "g5-gym-marigold",
+    "sprite": "npc2-yellow-jacket-woman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Good metal. You will do."
+    ],
+    "trainer": {
+     "cls": "Smith",
+     "name": "Marigold",
+     "avatar": "blackbelt",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "tinkatink",
+       0
+      ],
+      [
+       "pawniard",
+       0
+      ],
+      [
+       "tinkatink",
+       1
+      ],
+      [
+       "klefki",
+       1
+      ],
+      [
+       "pawniard",
+       2
+      ],
+      [
+       "carbink",
+       2
+      ]
+     ],
+     "say": "I forged Sterling his badge. Let me see if you are worth one!",
+     "lose": "Good metal. You will do."
+    },
+    "dx": 4.25,
+    "dy": 3.25
+   },
+   {
+    "id": "g5-gym-guide",
+    "sprite": "gsman2",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Sterling collects steel and treasure Pokemon. They are hard to scratch, so bring fire or a punch.",
+     "His last one is worth more than this whole street."
+    ],
+    "dx": 3.75,
+    "dy": 3.75
+   }
+  ]
+ }
+}

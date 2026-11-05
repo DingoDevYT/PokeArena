@@ -114,7 +114,7 @@ OLD = SM + BIG + BIG + LARGE
 g.building('pokeCenterOrange', 3, -2, 'center'); g.rect(3, -3, 3, 0, 'd')
 g.building('martWave', 11, -2); g.rect(11, -3, 11, 0, 'd')
 g.lot('rg_dome_blue', 13, -9, street_y=-8, beds=None); g.lot('rg_dome_green', 19, -9, street_y=-8, beds=None)
-g.rect(33, -15, 43, -15, 't'); g.building('gymTeal', 38, -15, 'house'); g.rect(38, -16, 38, -14, 'd')
+g.rect(33, -15, 43, -15, 't'); g.building('gymSand', 38, -15, ['g1-gym', {'w': 6, 'd': 5, 'ex': 2}]); g.rect(38, -16, 38, -14, 'd')
 g.lot('rg_sandhall', -5, 5, street_y=6, beds=BEDS)
 
 # ================================================================ the oasis: the spring, a ring of date palms, reeds, the promenade benches

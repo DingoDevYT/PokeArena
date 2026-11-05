@@ -43,7 +43,15 @@ const ADVN = {
   // a leader's team for a challenger with this many badges: its Appendix A roster for that band (data/adv/rosters.js), the ace sent out last
   leaderTeam(who, badges = ADV.player?.badges | 0) {
     const r = window.ADV_ROSTERS?.[who]?.[this.bandKey(badges)] || [];
-    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace }));
+    return [...r.filter(m => !m.ace), ...r.filter(m => m.ace)].map(m => ({ species: m.species, level: m.level, moves: this.armed(m.species, m.level, m.moves), ace: !!m.ace }));
+  },
+  // a roster's moves with the banned ones gone (data/dex.js) and, if fewer than two attacks are left, the mon's own best attacks for its level added back
+  armed(sp, lv, moves = []) {
+    const ok = moves.filter(m => DEX.moves[m] && !DEX.moves[m].banned), atk = m => DEX.moves[m]?.category !== 'Status' && DEX.moves[m]?.basePower > 0;
+    if (ok.filter(atk).length >= 2) return ok;
+    const add = ADVP.moves(sp, lv).filter(m => atk(m) && !ok.includes(m)), out = [...ok];
+    while (out.filter(atk).length < 2 && add.length) out.splice(out.length >= 4 ? out.findIndex(m => !atk(m)) : out.length, out.length >= 4 ? 1 : 0, add.shift());
+    return out.slice(0, 4);
   },
   // beating trainer n: pays, remembers it, and a leader hands out the badge and the TM the first time only. Returns { pay, badge?, tm? }
   win(sv, n, team) {
@@ -53,12 +61,13 @@ const ADVN = {
     return r;
   },
   team(t, id, badges = ADV.player?.badges | 0) {
+    if (t.fixed) return t.fixed;   // a story battle's team, made by adv-story.js
     if (t.leader) return this.leaderTeam(t.leader, badges);
     const b = Math.max(0, Math.min(8, badges | 0)), [lo, hi] = this.SIZE[b], n = Math.min(t.team.length, lo + this.hash(id) % (hi - lo + 1)), [a, z] = this.range(t.gym ? 'gym' : 'route', b);
     let l0 = a, h1 = z; const top = ADVW.partyTop(); if (!t.gym && top > 0 && h1 > top + ADVW.UP) { h1 = Math.max(2, top + ADVW.UP); l0 = Math.min(l0, Math.max(2, h1 - 3)); }   // route trainers: held near the party like the wild; gym trainers keep the band
     return t.team.slice(0, n).map(([sp, rel]) => { const lv = Math.min(h1, l0 + rel); return { species: ADVW.evolve(sp, lv), level: lv }; });
   },
-  pay: (t, team) => t.money * Math.max(...team.map(m => m.level)),
+  pay: (t, team) => Math.round(t.money * Math.max(...team.map(m => m.level)) * ((ADV.player?.badges | 0) >= 4 ? 0.75 : 1)),   // money stops mattering mid-game, so prizes are trimmed from 4 badges
   avatar: t => t.avatar || ADVN.AVATAR[t.cls.toLowerCase()] || 'youngster',
 
   // ---------- line of sight ----------

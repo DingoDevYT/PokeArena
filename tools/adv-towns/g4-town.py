@@ -103,7 +103,7 @@ for x0 in (6, 11, 16, 24, 33, 38): field(x0, -31, x0 + 3, -29, 'rg_sunflowers' i
 # the east street: the inn, the gym
 g.lot('inn', 17, -6, street_y=-6, beds=None)
 g.lot('rg_house_wood_c', 27, -12, street_x=30); g.lot('rg_house_red_b', 35, -13, street_y=-12); g.lot('rg_house_wood_a', 40, -13, street_y=-12)
-g.building('gymRed', 36, -2, 'house'); g.rect(36, -3, 36, 0, 'p'); g.props('rg_lamp', [(33, -1), (39, -1)]); g.props('rg_planter_pink', [(34, -2), (38, -2)])
+g.building('redGym', 36, -2, ['g4-gym', {'w': 7, 'd': 5, 'ex': 3}]); g.rect(36, -3, 36, 0, 'p'); g.props('rg_lamp', [(33, -1), (39, -1)]); g.props('rg_planter_pink', [(34, -2), (38, -2)])
 # ================================================================ the brickworks
 g.rect(-35, -5, -17, 9, 'd'); g.rect(-30, -5, -23, -2, '.')
 g.building('maHallOrange', -27, -1)

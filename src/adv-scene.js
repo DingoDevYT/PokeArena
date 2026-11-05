@@ -46,7 +46,7 @@ const AdventureScene = {
     ADVW.hourSet = tm ? (tm === 'night' ? 23 : tm === 'day' ? 12 : +tm) : null;
     if (W) { this.open(this.resume || ADVUI.start(this)); this.resume = null; }
   },
-  exit() { ADVR.dark = null; this.persist(); this.closeChat(); this.stopNet(); this.uis.forEach(u => u.exit && u.exit()); this.uis = []; ADV.reset(); ADVW.reset(); ADVN.reset(); ADV.player = null; if (this.inB) B = null; ADVM.stop(); this.vic = null; },
+  exit() { HP_CAP = 1.6; ADVR.dark = null; this.persist(); this.closeChat(); this.stopNet(); this.uis.forEach(u => u.exit && u.exit()); this.uis = []; ADV.reset(); ADVW.reset(); ADVN.reset(); ADV.player = null; if (this.inB) B = null; ADVM.stop(); this.vic = null; },
   // the track this moment wants: a fight, a win fanfare still playing, a room, else the zone (the night table after dark); '' = silence
   musicName() {
     const M = window.ADV_MUSIC, p = this.p;
@@ -85,6 +85,7 @@ const AdventureScene = {
   // start (or restart) the world from a save
   go(save, want) {
     const W = window.ADV_WORLD; this.uis.forEach(u => u.exit && u.exit()); this.uis = []; B = null;
+    HP_CAP = 1.0; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); });   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
     this.save = ADV.save = ADV.player = save; ADVF.fix(save); ADV.reset(); ADV.setWorld(W); ADV.fallback = false; ADVW.reset(); ADVN.load(); this.dlg = this.sp = this.tr = this.bang = this.room = this.heal = this.warpTo = null;
     this.startNet(want); this.ready = false; this.mode = 'walk'; this.inB = false; this.msg = null; this.back = false; this.fadeT = 9; this.step = null; this.bHeld = 0; this.wh = null; this.cs = this.iu = null; this.itemCd = 0; this.inDoor = ''; this.flash = 0; this.late = null; this.mount = ''; this.lent = null; this.alt = 0; this.landing = false; this.running = false;
     const ow = this.ow = this.pickOW(), files = [ow.file]; this.key = this.leadKey();
@@ -182,6 +183,7 @@ const AdventureScene = {
     if (this.mode === 'fade' || this.mode === 'warp') return;
     if (this.mode === 'fish') { this.fishStep(dt); return; }
     if (this.mode === 'talk' || this.mode === 'spot' || this.mode === 'heal') { this.peopleStep(dt); return; }
+    if (typeof ADVSTORY !== 'undefined') { ADVSTORY.update(this, dt); if (this.mode !== 'walk' || this.dlg) return; }   // the story (adv-story.js): cast by the Center, beats that run when you arrive
     const zd = window.TOUCH?.on ? 0 : MOUSE.wheel ? (MOUSE.wheel < 0 ? 1 : -1) : (INPUT.hit('RB') ? 1 : 0) - (INPUT.hit('LB') ? 1 : 0); if (zd) ADVR.zoomBy(zd);   // mouse wheel / shoulders: overworld zoom tiers 1-6 (Farthest to Closest)
     if (this.skipStart) this.skipStart = false;
     else if (INPUT.hit('START') || (INPUT.hit('BACKK') && !padB) || tapB) { this.open(ADVUI.pause(this)); return; }
@@ -303,6 +305,12 @@ const AdventureScene = {
   },
   closeChat() { if (this.kf) window.removeEventListener('keydown', this.kf, true); this.kf = null; this.typing = null; this.skipStart = true; this.noTap = true; this.enterPrev = true; },
   // A / E facing another player: the player menu; near somebody else's fight: co-op is not built yet
+  // a signpost at a town exit you face, within a tile and a half: it reads out which route starts there and where it leads (data/adv/signs.js)
+  readSign() {
+    const p = this.p, v = DIR_VEC[p.face] || [0, 1], k = ADV.OUT; if (this.room) return false;
+    const s = (window.ADV_SIGNS || []).find(s => { const dx = s.x * k - p.x, dy = s.y * k - 8 - p.y, d = Math.hypot(dx, dy); return d < 1.5 * ADV.T && dx * v[0] + dy * v[1] > 0.3 * d; });
+    if (!s) return false; p.moving = false; uiBlip(600, 0.03); this.dialog(s.lines, null); return true;
+  },
   playerAct() {
     const n = this.net; if (!n || this.room && !n.N.vis.size) return;
     const v = n.N.target(this.p);
@@ -447,7 +455,7 @@ const AdventureScene = {
     const p = this.p; ADVN.update(dt, p); ADVN.push(p);
     if (p.hop || !this.loaded) return;
     const n = ADVN.spot(p); if (n) return this.spotted(n);
-    if (this.talkHit()) { const t = ADVN.target(p); if (t) this.talk(t); else if (this.folNear()) this.talkFollower(); else this.playerAct(); }
+    if (this.talkHit()) { const t = ADVN.target(p); if (t) this.talk(t); else if (this.readSign()) {} else if (this.folNear()) this.talkFollower(); else this.playerAct(); }
   },
   // while talking or spotted the world idles and the dialogue / approach runs
   peopleStep(dt) {
@@ -509,6 +517,7 @@ const AdventureScene = {
     if (s === 'clerk') return this.dialog(n.def.market ? n.def.lines : ['Welcome! How may I help you?'], n, () => this.open(ADVUI.shop(this, !!n.def.market)));   // market: the Tradeway trader, rare stock that changes by the day
     if (s === 'barter') return this.dialog(n.def.lines, n, () => this.open(ADVUI.barter(this)));
     if (s === 'pc') return this.dialog(['You booted up the PC.'], n, () => this.open(ADVUI.box(this)));
+    if (s === 'story') return ADVSTORY.talk(this, n);
     if (s === 'class' || s === 'coach') return this.lessonTalk(n);
     if (s === 'rent') return this.dialog(n.def.lines, n, () => this.open(ADVUI.ask(this, 'Rent a supply mount for ' + ADVUI.money(ADVP.SUPPLY_FEE) + '?', () => this.rent(), () => {})));
     if (s === 'teach') {   // a Skill teacher: the offer, then the skill (and the rod with fishing); once known she only chats
@@ -642,6 +651,7 @@ const AdventureScene = {
   intro() {
     const sv = this.save, m = sv.party[0], mon = m ? ADVP.name(m) : 'your partner', home = ADVS.town(sv.home)?.name || 'home', touch = !!window.TOUCH?.on; sv.intro = 1;
     this.dialog([`Welcome to Kenora, ${sv.name}! You and ${mon} are setting out from ${home}.`,
+      'Professor Linden is waiting outside the Pokemon Center with your League Pass. Go and say hello! Look for the "!" over his head.',
       'Gym Leaders across the region award Badges to trainers who beat them. The NEXT GOAL panel at the top left always says where to go next, and what to do first.',
       `The minimap shows the way: the red pin is your goal and the orange dots are trainers waiting to battle. ${touch ? 'Tap' : 'Click'} it for the full map. Good luck!`], null);
   },
@@ -894,7 +904,7 @@ const AdventureScene = {
     s1.team.forEach((m, k) => { if (m.fainted && !m.paid) { m.paid = true; this.award(m); } });
     this.cam.x = ar.ox + B.cam.x; this.cam.y = ar.oy + B.cam.y - ar.lv * ar.T; // streaming follows the fight
     this.bvTick(dt);
-    if (B.over) { if (B.winner === 0 ? B.endT > 0.3 : B.endT > 1.2) { if (B.winner === 0) this.endFight(''); else { this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; } } return; }
+    if (B.over) { if (B.winner === 0 ? B.endT > 0.3 : B.endT > 1.2) { if (B.winner === 0) this.endFight(''); else if (this.tr?.t.story && !this.tr.t.mustWin) this.storyLoss(); else { this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; } } return; }
     // running away (wild fights only): the wild mon keeps up with you, so besides gaining ADV_FLEE px on it for ADV_FLEE_T s you can run out through the edge of the fight box (ADV_EDGE px in, held ADV_EDGE_T s)
     const I = s0.intent, out = a.x < ADV_EDGE && I.mx < -0.3 || a.x > ar.w - ADV_EDGE && I.mx > 0.3 || a.y < ADV_EDGE && I.my < -0.3 || a.y > ar.h - ADV_EDGE && I.my > 0.3;
     this.far = Math.hypot(a.x - b.x, a.y - b.y) > ADV_FLEE ? this.far + dt : 0; this.edge = out ? this.edge + dt : 0;
@@ -915,7 +925,7 @@ const AdventureScene = {
   award(m) {
     const s0 = B.sides[0], alive = [...this.part].filter(k => !s0.team[k].fainted); if (!alive.length) return;
     const base = ADVP.info(m.sp.id).baseExp ?? 100;
-    alive.forEach(k => { const i = this.order[k], n = Math.round(ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr) * ADVP.PACE); this.gain[i] = (this.gain[i] | 0) + n; if (k === s0.cur) callout({ idx: -1 }, `${ADVP.name(this.save.party[i])} +${n} EXP`); });
+    alive.forEach(k => { const i = this.order[k], n = Math.round(ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr) * ADVP.expPace(this.save.badges) * ADVP.catchUp(this.save.party[i].level, ADVW.partyTop(this.save))); this.gain[i] = (this.gain[i] | 0) + n; if (k === s0.cur) callout({ idx: -1 }, `${ADVP.name(this.save.party[i])} +${n} EXP`); });
   },
   // writes the fight back into the party (hp, status) and turns the EXP into the level-up pages
   settle() {
@@ -1021,18 +1031,27 @@ const AdventureScene = {
     this.step = null; if (!tr) this.endClaim(msg === 'Got away safely!' ? 'fled' : caught >= 0 ? 'caught' : 'won', dead); else this.net.N.bv([]);
     if (msg !== 'Got away safely!' && window.ADV_MUSIC) this.vic = ADVM.to(tr ? ADV_MUSIC.battle.winTrainer : ADV_MUSIC.battle.winWild, true);   // the win fanfare plays over the zone, which resumes after it
     if (set) { const box = party.length >= 6; (box ? this.save.box : party).push(set); if (box) msg += ' Sent to the PC box.'; }
-    this.msg = msg && { s: msg, t: 3 }; this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null;
+    this.msg = msg && { s: msg, t: 3 }; this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000;   // no grass ambush straight after a fight
     this.refreshLead(); this.persist();
     if (ev.length) this.grow(ev);
+    if (tr && tr.t.story) { const sv = this.save, pay = ADVN.pay(tr.t, tr.team); sv.money += pay; this.persist(); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], tr.n, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
       this.dialog([...[].concat(tr.t.lose), `${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])], tr.n);
     }
   },
-  // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus half the money
+  // a story battle lost that the story does not need you to win (the rival before the League): no blackout, the party is healed and the script goes on
+  storyLoss() {
+    const ar = B.arena, s0 = B.sides[0], f = this.f, ev = this.settle(); f.x = ar.ox + s0.ent.x; f.y = ar.oy + s0.ent.y; this.back = true;
+    this.tr = null; Object.assign(f, { free: false, beh: 'follow', plan: null, hopT: 0, doing: '', idleT: 0 });
+    this.step = null; this.net.N.bv([]); this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null;
+    this.save.party.forEach(m => ADVP.heal(m)); this.refreshLead(); this.persist();
+    const go = () => ADVSTORY.after(this, false); if (ev.length) this.grow(ev, go); else go();
+  },
+  // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000)
   blackout() {
-    const sv = this.save, lost = Math.floor(sv.money / 2), t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
-    sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []);
+    const sv = this.save, lost = Math.min(Math.floor(sv.money / 4), 2000), t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
+    sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
     this.msg = { s: `You blacked out! Lost ${ADVUI.money(lost)}. You woke up at ${t.name}.`, t: 5 };
@@ -1205,7 +1224,7 @@ const AdventureScene = {
   },
   // the cave is dim: a soft radius of light around you (around the fight while one is on), your lead, every torch and crystal near, daylight at both mouths
   // the glowing zones (G8 Sporehaven and its routes) lie under a dim canopy, darker at night; Route 101's fungus thins toward Duskmoss. The level eases in and out as you cross a zone edge.
-  GLOOM: { sporehaven: 1, route2: 1, route101: 0.7 },
+  GLOOM: { sporehaven: 0.55, route2: 0.8, route101: 0.6 },   // lighter since the 2026-11-05 world review: Sporehaven read as murky even at noon
   gloom() {
     const p = this.p, z = ADVW.zone(p.x, p.y) || '', g = this.GLOOM[z] || 0, W = window.ADV_WORLD;
     const k = z === 'route101' ? g * clamp(1 - (p.x - W.towns.G8.x - 1400 * ADV.OUT) / (2800 * ADV.OUT), 0.2, 1) : g, dt = Math.min(0.1, this.t - (this.glT ?? this.t));

@@ -167,7 +167,7 @@ st(-38, -12, -33, -8, 'p'); st(-37, -11, -34, -9, 't')                          
 lot('maHallGrey', -12, 1, street_y=2, walk='t', beds=PL)                                  # the museum hall
 lot('clockTower', -2, 1, street_y=2, walk='t', beds=PL)                                   # the clock
 lot('pokeCenterWave', 3, 1, street_y=2, walk='t', role='center', beds=PL)                 # the Center, by the plaza
-lot('gymTealTall', 26, 1, street_y=2, walk='t', beds=PL)                                  # the gym: the tall hall on the plaza's east side
+lot('tealGym', 26, 1, street_y=2, walk='t', role=['g5-gym', {'w': 6, 'd': 5, 'ex': 2}], beds=PL)                                  # the gym: the tall hall on the plaza's east side
 lot('martTower', 16, -6, street_y=-5, walk='t', beds=PL)                                  # the market tower, north of the plaza
 lot('domeHall', 6, -6, street_y=-5, walk='t', beds=PL)
 lot('hotelBlue', 38, 1, street_y=2, walk='t', beds=PL)

@@ -1,0 +1,250 @@
+{
+ "g2-gym": {
+  "floor": "i_barn_floor",
+  "walls": "i_barn",
+  "C": 10,
+  "R": 9,
+  "props": [
+   [
+    "winArch",
+    1.75,
+    -0.2313
+   ],
+   [
+    "winArch",
+    4.25,
+    -0.2313
+   ],
+   [
+    "stoveRed",
+    1,
+    1.1187
+   ],
+   [
+    "logShort2x",
+    4.8,
+    1.1687
+   ],
+   [
+    "barrelOrange2x",
+    5.15,
+    2.2687
+   ],
+   [
+    "crateWide2x",
+    0.95,
+    3.2687
+   ],
+   [
+    "fallenLog2x",
+    4.7,
+    3.3687
+   ],
+   [
+    "matRed",
+    3,
+    1.5688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "g2-bjorn",
+    "sprite": "npc2-bearded-man",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Kettle is always on. Sit by the stove when the snow gets in your boots.",
+     "Strong and steady. That is all the mill asks of anyone."
+    ],
+    "name": "Bjorn",
+    "trainer": {
+     "cls": "Gym Leader",
+     "name": "Bjorn",
+     "leader": "bjorn",
+     "avatar": "wulfric",
+     "gym": true,
+     "sight": 0,
+     "money": 80,
+     "tm": "tm_bodyslam",
+     "badge": "Sprucevale Badge",
+     "after": [
+      "g2-gym-hedda",
+      "g2-gym-olaf",
+      "g2-gym-kari"
+     ],
+     "wait": [
+      "Ha! Eager. I like it. But my crew get first go at you.",
+      "Three of them. Then come and warm your hands by my stove."
+     ],
+     "say": [
+      "Welcome to the mill hall! Big, slow and warm, just like my team.",
+      "Nothing in Sprucevale hurries. Not the snow, not the saw, not my Pokemon.",
+      "Push as hard as you like. We will still be standing."
+     ],
+     "say2": [
+      "Back for more? Good. Stamp the snow off and let us go."
+     ],
+     "lose": [
+      "Ho! You knocked over a mountain. I felt that in my boots.",
+      "The Sprucevale Badge is yours. Now have some soup before you go."
+     ]
+    },
+    "dx": 2.75,
+    "dy": 0.75
+   },
+   {
+    "id": "g2-gym-hedda",
+    "sprite": "npc2-red-jacket-woman",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "Dropped them all. Go on, Bjorn will be pleased with you."
+    ],
+    "trainer": {
+     "cls": "Mill Hand",
+     "name": "Hedda",
+     "avatar": "blackbelt",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "machop",
+       0
+      ],
+      [
+       "makuhita",
+       0
+      ],
+      [
+       "timburr",
+       1
+      ],
+      [
+       "teddiursa",
+       1
+      ],
+      [
+       "makuhita",
+       2
+      ],
+      [
+       "machop",
+       2
+      ]
+     ],
+     "say": "I carry two logs at a time. My team carries four. Want to see?",
+     "lose": "Dropped them all. Go on, Bjorn will be pleased with you."
+    },
+    "dx": 1.25,
+    "dy": 2.75
+   },
+   {
+    "id": "g2-gym-olaf",
+    "sprite": "npc2-old-man",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Fine, fine. Towels are on the left."
+    ],
+    "trainer": {
+     "cls": "Bath Keeper",
+     "name": "Olaf",
+     "avatar": "gentleman",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "slowpoke",
+       0
+      ],
+      [
+       "psyduck",
+       0
+      ],
+      [
+       "numel",
+       1
+      ],
+      [
+       "lotad",
+       1
+      ],
+      [
+       "slowpoke",
+       2
+      ],
+      [
+       "numel",
+       2
+      ]
+     ],
+     "say": "The hot spring is open after you beat me. Not before.",
+     "lose": "Fine, fine. Towels are on the left."
+    },
+    "dx": 4.75,
+    "dy": 1.75
+   },
+   {
+    "id": "g2-gym-kari",
+    "sprite": "npc2-yellow-jacket-woman",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Timber. That was me falling over."
+    ],
+    "trainer": {
+     "cls": "Sawyer",
+     "name": "Kari",
+     "avatar": "cowgirl",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "stufful",
+       0
+      ],
+      [
+       "munchlax",
+       0
+      ],
+      [
+       "drampa",
+       1
+      ],
+      [
+       "teddiursa",
+       1
+      ],
+      [
+       "stufful",
+       2
+      ],
+      [
+       "munchlax",
+       2
+      ]
+     ],
+     "say": "My Pokemon are big softies. Big softies that hit very hard!",
+     "lose": "Timber. That was me falling over."
+    },
+    "dx": 4.25,
+    "dy": 3.25
+   },
+   {
+    "id": "g2-gym-guide",
+    "sprite": "gsman2",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Bjorn trains heavy Pokemon that shrug off hits. They wind up slowly, so make them chase you.",
+     "Keep moving and do not stand toe to toe with them."
+    ],
+    "dx": 3.75,
+    "dy": 3.75
+   }
+  ]
+ }
+}

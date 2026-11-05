@@ -1,0 +1,255 @@
+{
+ "g3-gym": {
+  "floor": "i_farm_floor",
+  "walls": "i_farm",
+  "C": 12,
+  "R": 9,
+  "props": [
+   [
+    "winWide",
+    2,
+    -0.2562
+   ],
+   [
+    "winWide",
+    5,
+    -0.2562
+   ],
+   [
+    "statueBird",
+    2.3,
+    1.1687
+   ],
+   [
+    "statueBird",
+    4.7,
+    1.1687
+   ],
+   [
+    "plantA",
+    0.85,
+    1.2688
+   ],
+   [
+    "plantB",
+    6.15,
+    1.2688
+   ],
+   [
+    "plantC",
+    0.85,
+    3.2687
+   ],
+   [
+    "plantA",
+    6.15,
+    3.2687
+   ],
+   [
+    "pebbles2x",
+    3.5,
+    2.5688
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "g3-thorn",
+    "sprite": "north-hood-ranger",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Every Pokemon in this park chose to stay. Nobody here is kept.",
+     "Look after your partners and they will look after you."
+    ],
+    "name": "Thorn",
+    "trainer": {
+     "cls": "Gym Leader",
+     "name": "Thorn",
+     "leader": "thorn",
+     "avatar": "alder",
+     "gym": true,
+     "sight": 0,
+     "money": 80,
+     "tm": "tm_aerialace",
+     "badge": "Fernwell Badge",
+     "after": [
+      "g3-gym-wren",
+      "g3-gym-colt",
+      "g3-gym-maple"
+     ],
+     "wait": [
+      "My wardens want to meet you first. They are good judges of character.",
+      "All three, then come and find me under the window."
+     ],
+     "say": [
+      "Welcome to the park lodge. I am the warden here, and these are my partners.",
+      "We have walked every path in Fernwell together, rain or shine.",
+      "Show me how well you know your team. Not how strong. How well."
+     ],
+     "say2": [
+      "Back again? The park is glad to see you. So am I."
+     ],
+     "lose": [
+      "You and your team move like one creature. That is rare.",
+      "The Fernwell Badge is yours. You earned it together."
+     ]
+    },
+    "dx": 3.25,
+    "dy": 0.75
+   },
+   {
+    "id": "g3-gym-wren",
+    "sprite": "npc1-green-top-girl",
+    "face": 2,
+    "move": "still",
+    "lines": [
+     "They saw that coming. I did not."
+    ],
+    "trainer": {
+     "cls": "Falconer",
+     "name": "Wren",
+     "avatar": "pokemonranger",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "rufflet",
+       0
+      ],
+      [
+       "rowlet",
+       0
+      ],
+      [
+       "starly",
+       1
+      ],
+      [
+       "fletchling",
+       1
+      ],
+      [
+       "rufflet",
+       2
+      ],
+      [
+       "pidgey",
+       2
+      ]
+     ],
+     "say": "My birds can see you from the other end of the park. No hiding!",
+     "lose": "They saw that coming. I did not."
+    },
+    "dx": 1.25,
+    "dy": 2.75
+   },
+   {
+    "id": "g3-gym-colt",
+    "sprite": "npc1-blue-cap-boy",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Good walk. Good battle. Good dogs."
+    ],
+    "trainer": {
+     "cls": "Dog Walker",
+     "name": "Colt",
+     "avatar": "camper",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "lillipup",
+       0
+      ],
+      [
+       "rockruff",
+       0
+      ],
+      [
+       "yamper",
+       1
+      ],
+      [
+       "growlithe",
+       1
+      ],
+      [
+       "lillipup",
+       2
+      ],
+      [
+       "rockruff",
+       2
+      ]
+     ],
+     "say": "Six dogs, one lead, zero patience. Let us go!",
+     "lose": "Good walk. Good battle. Good dogs."
+    },
+    "dx": 5.75,
+    "dy": 1.75
+   },
+   {
+    "id": "g3-gym-maple",
+    "sprite": "npc2-pink-top-girl",
+    "face": 6,
+    "move": "still",
+    "lines": [
+     "Pruned. Fair enough."
+    ],
+    "trainer": {
+     "cls": "Gardener",
+     "name": "Maple",
+     "avatar": "picnicker",
+     "gym": true,
+     "sight": 5,
+     "money": 30,
+     "team": [
+      [
+       "skiddo",
+       0
+      ],
+      [
+       "petilil",
+       0
+      ],
+      [
+       "eevee",
+       1
+      ],
+      [
+       "zorua",
+       1
+      ],
+      [
+       "skiddo",
+       2
+      ],
+      [
+       "petilil",
+       2
+      ]
+     ],
+     "say": "Careful where you step. Everything in here is growing, including my team!",
+     "lose": "Pruned. Fair enough."
+    },
+    "dx": 5.25,
+    "dy": 3.25
+   },
+   {
+    "id": "g3-gym-guide",
+    "sprite": "gsman2",
+    "face": 0,
+    "move": "still",
+    "lines": [
+     "Thorn raised every one of his Pokemon from the park. They read each other perfectly.",
+     "His birds come in from the air. Watch the shadows."
+    ],
+    "dx": 4.25,
+    "dy": 3.75
+   }
+  ]
+ }
+}

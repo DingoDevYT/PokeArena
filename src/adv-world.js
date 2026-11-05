@@ -130,6 +130,8 @@ const ADV = (() => {
     bldNpcs() { return this.blds.flatMap(b => (b.interior.npcs || []).map(({ dx, dy, ...n }) => ({ ...n, x: b.fx + dx - 0.5, y: b.fy + dy - 0.5, room: b.id }))); },
 
     // ---------- chunks ----------
+    // the signposts at the town exits (data/adv/signs.js, tools/adv-build-signs.mjs) that stand in chunk (cx, cy), as chunk props
+    signsIn(cx, cy) { return (typeof window !== 'undefined' && window.ADV_SIGNS || []).filter(s => Math.floor(s.x / (CH * T)) === cx && Math.floor(s.y / (CH * T)) === cy).map(s => [s.n, s.x, s.y]); },
     chunk(cx, cy, d) {
       d = { ...d, h: unrle(d.h), mat: unrle(d.mat), over: unrle(d.over), kind: unrle(d.kind), deck: d.deck && unrle(d.deck), bake: d.bake && unrle(d.bake), fbake: d.fbake && unrle(d.fbake), smask: d.smask && unrle(d.smask), obake: d.obake && unrle(d.obake) };
       const k = key(cx, cy), deck = new Int8Array(N).fill(-1), S = this.Tc(cx * CH) / T;
@@ -137,7 +139,7 @@ const ADV = (() => {
       const ch = { cx, cy, h: Int8Array.from(d.h), mat: Uint8Array.from(d.mat), over: Uint8Array.from(d.over), kind: Uint8Array.from(d.kind), deck, bake: d.bake ? Int16Array.from(d.bake) : null, fbake: d.fbake ? Int16Array.from(d.fbake) : null, smask: d.smask ? Int16Array.from(d.smask) : null, obake: d.obake ? Int16Array.from(d.obake) : null,   // obake: a map-lab tall grass cell's blades alone (region sheet tile), drawn over feet by ADVR.wade
           // smask: the cliff shadow outline of a raised map-lab cell (an index into the region sheet's cliffMasks; -1 = the full square)
           // bake: a tile id of the region sheet per cell (-1 = none), the ground of a map-lab zone
-        props: (d.props || []).map(p => { const o = { n: p[0], x: p[1] * S, y: p[2] * S, z: p[3] === undefined ? undefined : p[3] * S }, b = this.bk.get(o.n + '|' + o.x + '|' + o.y); if (b) o.b = b; return o; }),
+        props: [...(d.props || []), ...this.signsIn(cx, cy)].map(p => { const o = { n: p[0], x: p[1] * S, y: p[2] * S, z: p[3] === undefined ? undefined : p[3] * S }, b = this.bk.get(o.n + '|' + o.x + '|' + o.y); if (b) o.b = b; return o; }),
         tile: new Int16Array(N), role: new Uint8Array(N), otile: new Int16Array(N), orole: new Uint8Array(N) };
       this.chunks.set(k, ch); delete this.pending[k];
       for (const p of ch.props) if (p.z === undefined) p.z = this.heightAt(p.x, p.y);

@@ -177,7 +177,7 @@ const ADVUI = {
     const stage = n => { st.stage = n; st.sel = 0; st.off = 0; uiBlip(880, 0.05); };
     const go = () => {
       const id = st.list[st.sel]; if (!id) return;
-      sc.begin(ADVS.fresh({ name: profileName(), avatar: profileAvatar(), outfit: st.outfit, home: st.home, starter: ADVP.mon(id, 5, { ot: profileName() }) }));
+      sc.begin(ADVS.fresh({ name: profileName(), avatar: profileAvatar(), outfit: st.outfit, home: st.home, starter: ADVP.mon(id, 5, { ot: profileName(), moves: ADVP.starterMoves(id) }) }));
     };
     const cols = () => Math.max(4, Math.floor((VW - 80) / (84 * S()))), rows = () => Math.max(1, Math.floor((VH - 250 * S()) / (84 * S())));
     const back = () => st.stage ? stage(st.stage - 1) : sc.close();

@@ -156,10 +156,15 @@ const ADVMAP = {
     return this._gy;
   },
   goal(sc) {
+    const st = typeof ADVSTORY !== 'undefined' && ADVSTORY.goal(sc), gy = this.gymGoal(sc);
+    if (st) return { ...st, sub: gy.done ? gy.line : 'Also: ' + gy.line };   // the story leads (adv-story.js); the gym hunt carries on underneath
+    return gy;
+  },
+  gymGoal(sc) {
     const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
     if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
     const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
-    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)) - 2), top = ADVW.partyTop(sv);
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)))   // the ace's level: a starter two under it loses to Miltank in the sims (balance pass 2026-11-05), top = ADVW.partyTop(sv);
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
     const sub = inGym && left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : top < want ? `Train your team to about Lv ${want} (best: Lv ${top})` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;
     return { x: g.x, y: g.y, line: `${g.badge}: ${g.town}`, sub, g };
@@ -170,13 +175,15 @@ const ADVMAP = {
   goalBox(sc) {
     const G = this.goal(sc), fs = this.fs(), m = this.miniRect(), x = m.x + m.s + Math.round(fs * 0.6), y = m.y, padX = Math.round(fs * 0.8), pitch = Math.round(fs * 1.45);
     const l1 = G.line + (G.x !== undefined && !(sc.room && G.g && sc.room.id === G.g.b) ? '   ' + this.dir(sc, G.x, G.y) : ''), fs2 = Math.max(10, fs - 2);
-    const w = Math.round(Math.max(this.tw(l1, fs), this.tw(G.sub, fs2), this.tw('NEXT GOAL', fs2)) + 2 * padX), h = Math.round(3 * pitch + fs * 0.5);
     const maxW = VW - x - 240; if (maxW < 140) return;   // no room beside the clock panel
+    const wrap = (s, f) => { if (this.tw(s, f) + 2 * padX <= maxW) return [s]; const ws = s.split(' '), out = ['']; for (const w of ws) { const t = out[out.length - 1] ? out[out.length - 1] + ' ' + w : w; if (this.tw(t, f) + 2 * padX > maxW && out[out.length - 1]) out.push(w); else out[out.length - 1] = t; } return out.slice(0, 3); };   // long story goals take two lines on a phone
+    const L1 = wrap(l1, fs), L2 = wrap(G.sub, fs2), rows = 1 + L1.length + L2.length;
+    const w = Math.round(Math.max(...L1.map(s => this.tw(s, fs)), ...L2.map(s => this.tw(s, fs2)), this.tw('NEXT GOAL', fs2)) + 2 * padX), h = Math.round(rows * pitch + fs * 0.5);
     ctx.save(); if (w > maxW) { ctx.beginPath(); ctx.rect(x, y, maxW, h); ctx.clip(); }
     this.panel(x, y, Math.min(w, maxW), h, Math.round(fs * 0.7));
     text('NEXT GOAL', x + padX, y + pitch * 0.62, fs2, '#ffde3b', 'left', null);
-    text(l1, x + padX, y + pitch * 1.55, fs, '#fff', 'left', null);
-    text(G.sub, x + padX, y + pitch * 2.45, fs2, G.done ? '#7be07b' : '#7fd0e8', 'left', null);
+    L1.forEach((s, i) => text(s, x + padX, y + pitch * (1.55 + i), fs, '#fff', 'left', null));
+    L2.forEach((s, i) => text(s, x + padX, y + pitch * (1.55 + L1.length - 0.1 + i), fs2, G.done ? '#7be07b' : '#7fd0e8', 'left', null));
     ctx.restore();
   },
 

@@ -304,7 +304,7 @@ P.x += 6 * T; run(0.1); ok(g.m.every(w => w.st === 'alert'), 'and charge once th
 ADVW.reset(); g = mk('houndour', [{ x: 20 * T, y: 20 * T }, { x: 20 * T + 3 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 2 * DT }, { x: 20 * T + 8 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 11 * DT }, { x: 20 * T + DT, y: 20 * T + DT }, { x: 20 * T - DT, y: 20 * T }]);
 const [tg, m3, m2, m8, m11, m1, m1b] = g.m; m1b.id = 'rockruff'; m1.st = 'fight';
 const q = ADVW.queue(tg);
-ok(q.length === 4 && q[0] === tg && q[1] === m2 && q[2] === m3 && q[3] === m8, 'queue = target, then group mates nearest first');
+ok(q.length === ADVW.PACK && q[0] === tg && q[1] === m2 && q[2] === m3, 'queue = target, then group mates nearest first, at most ADVW.PACK (3) in one fight');
 ok(!q.includes(m11) && !q.includes(m1) && !q.includes(m1b), 'mates 11 legacy tiles away, mates already fighting and other species stay out');
 const cx = 20 * T + 1.5 * DT, cy = 20 * T, es = q.slice(1).map(w => ADVW.edge(w, cx, cy));
 ok(es.every(s => Math.hypot(s.x - cx, s.y - cy) >= 7 * DT - 0.01 && Math.hypot(s.x - cx, s.y - cy) <= 8 * DT + 0.01), 'queued mons wait 7-8 legacy tiles (224-256 px) from the fight centre');
@@ -318,7 +318,7 @@ ADVW.reset(); ADVW.fx = []; ADVW.hourSet = 12; P.x = 33.5 * T; P.y = 33.5 * T; P
 ADVW.rnd = () => 0.01; eq(ADVW.grass(P, 31), null, 'less than 32 px in the grass pops nothing'); let pop = ADVW.grass(P, 1);
 ok(pop && pop.st === 'pop' && pop.tm.t === 'aggressive', 'every 32 px has a chance to pop an aggressive mon'); ok(Math.abs(pop.e.x - (P.x + 1.5 * T)) < 0.5 && Math.abs(pop.e.y - P.y) < 0.5, 'it appears 1.5 tiles ahead');
 ok(ADVW.fx.some(f => f.k === '!' && f.w === pop) && ADVW.fx.some(f => f.k === 'rustle'), 'with a rustle and a "!"');
-ADVW.rnd = () => 0.5; ADVW.gd = 0; eq(ADVW.grass(P, 320), null, 'a roll over 3 % pops nothing');
+ADVW.rnd = () => 0.5; ADVW.gd = 0; eq(ADVW.grass(P, 320), null, 'a roll over 1.2 % pops nothing');
 ADVW.rnd = () => 0.01; ADVW.gd = 0; ADVW.reset(); pop = ADVW.grass(P, 96); ok(pop && ADVW.groups.length === 1, 'several steps at once pop at most one mon');
 ADVW.reset(); P.z = 32; eq(ADVW.grass(P, 64), null, 'not at ground level: no ambush'); P.z = 0; P.x = 5.5 * T; P.y = 1.5 * T; eq(ADVW.grass(P, 64), null, 'plain grass: no ambush');
 ADVW.rnd = seeded(7);
@@ -1133,7 +1133,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   {
     const W = window.ADV_WORLD; ADV.reset(); ADV.setWorld(W); ADV.fallback = false; ADVN.reset(); const bl = ADV.blds, GR = 8, loaded = new Set();
     for (const b of bl) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const k = `${(b.fx >> 5) + dx}_${(b.fy >> 5) + dy}`, f = new URL(`../data/adv/chunks/${k}.js`, import.meta.url); if (!loaded.has(k) && fs.existsSync(f)) { loaded.add(k); vm.runInThisContext(fs.readFileSync(f, 'utf8')); } }
-    eq(bl.length, 66, 'S2: 66 buildings to walk into (Goldacre 11, Salt Bay 8, Longshore 7, Tradeway 7, Pinegrove 9, Spindlewood 7, Sporehaven 9, Duskmoss 8)'); eq(ADV.bldNpcs().length, 158, 'with 158 people in them');
+    eq(bl.length, 71, 'S2: 71 buildings to walk into (Goldacre 11, Salt Bay 8, Longshore 7, Tradeway 7, Pinegrove 9, Spindlewood 7, Sporehaven 9, Duskmoss 8, and the gyms of Dunereach, Sprucevale, Fernwell Park, Claystone and Aldermere)'); eq(ADV.bldNpcs().length, 183, 'with 183 people in them');
     const flood = b => {   // cells a foot can reach, starting on the step outside the exit
       const w = Math.ceil((b.x1 - b.x0) / GR) + 20, h = Math.ceil((b.y1 - b.y0) / GR) + 20, ox = b.x0 - 80, oy = b.y0 - 40, seen = new Uint8Array(w * h), q = [[Math.floor(((b.gaps[0][0] + b.gaps[0][1]) / 2 - ox) / GR), Math.floor((b.y1 + 20 - oy) / GR)]];
       seen[q[0][1] * w + q[0][0]] = 1;

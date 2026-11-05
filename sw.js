@@ -1,5 +1,5 @@
 // Offline play (src/offline.js asks for it). Everything the game fetches is kept in one cache, keyed by path (the ?mute and similar query strings ignored).
-// Code (html, js, json) is fetched fresh while online and falls back to the cache offline; art and sound come from the cache first.
+// Code (html, js, json) is always fetched fresh while online and falls back to the cache only when the network fails (offline); art and sound come from the cache first.
 // 'pack' downloads offline.json's list (tools/offline-pack.mjs: all of Adventure mode) so a phone can go a whole flight with no connection.
 // Audio elements ask for byte ranges (Safari always does), so a cached file answers those with a 206 slice.
 const CACHE = 'pokearena', FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//, CODE = /\.(html|js|json|webmanifest)$|\/$/;
@@ -14,7 +14,6 @@ async function ranged(req, res) {
   return new Response(buf.slice(a, b + 1), { status: 206, statusText: 'Partial Content', headers: { 'content-type': res.headers.get('content-type') || '', 'content-range': `bytes ${a}-${b}/${n}`, 'content-length': String(b - a + 1), 'accept-ranges': 'bytes' } });
 }
 async function keep(k, res) { if (res && res.ok && res.status === 200) { const c = await caches.open(CACHE); await c.put(k, res.clone()); } return res; }
-const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('slow')), ms))]);
 
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
@@ -22,9 +21,9 @@ self.addEventListener('fetch', e => {
   if (FONTS.test(req.url)) { e.respondWith(caches.match(req.url).then(hit => hit || fetch(req).then(r => keep(req.url, r)))); return; }
   if (url.origin !== self.location.origin) return;
   const k = key(req.url), plain = new Request(k);
-  if (CODE.test(url.pathname) || req.mode === 'navigate') {   // fresh while online (a slow network gives up after 4 s), the cache when offline
+  if (CODE.test(url.pathname) || req.mode === 'navigate') {   // always fresh while online (however slow: a timeout would mix old and new code), the cache only when the network fails
     const nk = req.mode === 'navigate' && url.pathname.endsWith('/') ? k + 'index.html' : k;
-    e.respondWith(timeout(fetch(plain, { cache: 'no-cache' }), 4000).then(r => keep(nk, r)).catch(() => caches.match(nk).then(hit => hit || caches.match(key('index.html'))).then(hit => hit || new Response('Offline and not saved yet', { status: 503 }))));
+    e.respondWith(fetch(plain, { cache: 'no-cache' }).then(r => keep(nk, r)).catch(() => caches.match(nk).then(hit => hit || caches.match(key('index.html'))).then(hit => hit || new Response('Offline and not saved yet', { status: 503 }))));
     return;
   }
   // art and sound: from the cache first once the pack is saved (an update refreshes what changed); before that the network first, the cache if offline
