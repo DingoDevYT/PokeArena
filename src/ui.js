@@ -164,6 +164,7 @@ const MenuScene = {
       { label: 'Profile', value: profileName(), act: () => { ProfileScene.back = null; setScene(ProfileScene); } },
       { label: 'Team Builder', act: () => setScene(TeamsScene) },
       { label: 'Settings', act: () => { SettingsScene.back = null; setScene(SettingsScene); } },
+      ...(OFFLINE.st === 'unsupported' ? [] : [{ label: 'Play offline', value: OFFLINE.label(), act: () => OFFLINE.save() }]),   // src/offline.js: save Adventure mode for a flight
     ];
   },
   update(dt) { runMenu(this.st, this.items(), dt); if (backHit()) setScene(TitleScene); },
