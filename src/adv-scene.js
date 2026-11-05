@@ -1060,7 +1060,7 @@ const AdventureScene = {
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
       const prize = [`${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])];
-      const reward = () => { if (r.badge) { [660, 880, 1320].forEach((f, i) => setTimeout(() => uiBlip(f, 0.14), i * 150)); this.flash = 0.5; } this.dialog(prize, null); };   // prizes in their own box, not under the trainer's name plate; a badge gets a little fanfare
+      const reward = () => { if (!r.badge) return this.dialog(prize, null); [660, 880, 1320].forEach((f, i) => setTimeout(() => uiBlip(f, 0.14), i * 150)); this.flash = 0.5; this.open(ADVUI.badge(this, r.badge, tr.t, () => this.dialog(prize, null))); };   // prizes in their own box, not under the trainer's name plate; a badge gets a little fanfare
       this.dialog([].concat(tr.t.lose), tr.n, reward);
     }
   },

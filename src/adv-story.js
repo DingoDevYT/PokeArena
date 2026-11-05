@@ -69,7 +69,11 @@ const ADVSTORY = {
   },
   // a speaker left far away (a fight moved you off): they step up beside you so the scene plays on screen
   near(sc, n) { const p = sc.p, k = [...this.cast.values()].indexOf(n), at = this.free(p.x + (k % 2 ? 1 : -1) * ADV.T * (1.4 + 0.5 * k), p.y - ADV.T * 0.4); n.home = { x: at.x, y: at.y }; n.go = null; n.e = null; ADVN.place(n); },
-  label(c, who) { const nm = c.name || who; return c.cls && !nm.toLowerCase().includes(c.cls.toLowerCase().slice(0, 4)) ? c.cls + ' ' + nm : nm; },   // 'Rival Ethan', but 'Prof. Linden' not 'Professor Prof. Linden'
+  label(c, who) {
+    const nm = c.name || who, met = 'met-' + who;
+    if (this.beats().some(b => b.script.some(s => s.flag === met)) && !this.st().flags[met]) return nm;   // no 'Rival' on Ethan's plate before he has introduced himself (the story flags met-ethan)
+    return c.cls && !nm.toLowerCase().includes(c.cls.toLowerCase().slice(0, 4)) ? c.cls + ' ' + nm : nm;
+  },   // 'Rival Ethan', but 'Prof. Linden' not 'Professor Prof. Linden'
   drop(who) { const n = this.cast.get(who); if (n) { const i = ADVN.list.indexOf(n); if (i >= 0) ADVN.list.splice(i, 1); } this.cast.delete(who); },
   // a speaker for an 'enter' beat (or one who has not appeared yet) steps up near you
   speaker(sc, who) {

@@ -32,12 +32,16 @@ const TOUCH = window.TOUCH = (() => {
   const base = root.appendChild(Object.assign(document.createElement('div'), { className: 'st' })), knob = base.appendChild(Object.assign(document.createElement('div'), { className: 'kn' }));
   base.style.cssText = 'width:' + R * 2 + 'px;height:' + R * 2 + 'px;display:none';
   const els = {};
+  // button size (Settings, Touch buttons): every size and distance from the corner scales together, so the layout keeps its shape
+  const place = () => { const q = [0.85, 1, 1.2][clamp(STORE.get('touchSize', 1) | 0, 0, 2)];
+    for (const [k, label, sz0, r0, b0, when, col] of BTN) { const e = els[k], sz = sz0 * q, r = r0 * q, b = b0 * q;
+      const side = r < 0 ? `left:calc(env(safe-area-inset-left,0px) + ${-r - sz / 2}px);` : `right:calc(env(safe-area-inset-right,0px) + ${r - sz / 2}px);`;
+      e.style.cssText = `width:${sz}px;height:${sz}px;border-color:${col};` + side + (b0 ? `bottom:calc(env(safe-area-inset-bottom,0px) + ${b - sz / 2}px)` : 'top:calc(env(safe-area-inset-top,0px) + 10px)') + (e.style.display ? ';display:' + e.style.display : ''); } };
   for (const [k, label, sz, r, b, when, col, ml] of BTN) {
     const e = els[k] = root.appendChild(Object.assign(document.createElement('div'), { className: 'tb' + (label.length > 1 ? ' sm' : ''), textContent: label }));
-    const side = r < 0 ? `left:calc(env(safe-area-inset-left,0px) + ${-r - sz / 2}px);` : `right:calc(env(safe-area-inset-right,0px) + ${r - sz / 2}px);`;
     e.dataset.k = k; e.dataset.when = when; e.dataset.l = label; e.dataset.ml = ml || label; if (!b) e.classList.add('top');
-    e.style.cssText = `width:${sz}px;height:${sz}px;border-color:${col};` + side + (b ? `bottom:calc(env(safe-area-inset-bottom,0px) + ${b - sz / 2}px)` : 'top:calc(env(safe-area-inset-top,0px) + 10px)');
   }
+  place(); T.place = place;
   // turn the phone: every screen is laid out for landscape
   const rot = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'trot', textContent: 'Turn your phone sideways to play' }));
   // ---------- phone keyboard: a hidden input whose edits are replayed as keydown events, so every existing text field just works ----------

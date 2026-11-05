@@ -516,6 +516,24 @@ const ADVUI = {
 
   // ---------- level-up pages after a fight ----------
   // events: { t: 'msg', s } | { t: 'lv', s, from, to, before, after } | { t: 'learn', s, mv } | { t: 'forget', s, mv } | { t: 'evo', s, to }; done() runs when the last page closes
+  // the badge moment: the leader's portrait in a slow ring of light, the badge's name and your count (there is no badge art in the sheets, so the leader stands in for it)
+  badge(sc, name, t, done) {
+    const st = { t: 0 }, av = ADVN.avatar(t);
+    return {
+      update(dt) { st.t += dt; if (st.t > 0.7 && (okHit() || backHit() || MOUSE.hit)) { sc.close(); if (done) done(); } },
+      draw() {
+        const { L } = layout(), k = Math.min(1, st.t / 0.45), cx = VW / 2, cy = VH * 0.4, sz = L(150) * (0.7 + 0.3 * k);
+        ctx.fillStyle = `rgba(5,8,20,${0.8 * k})`; ctx.fillRect(0, 0, VW, VH);
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(st.t * 0.35); ctx.globalAlpha = 0.16 * k; ctx.fillStyle = '#ffde3b';
+        for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(L(460), -L(46)); ctx.lineTo(L(460), L(46)); ctx.fill(); }
+        ctx.restore();
+        avatarTile(av, cx - sz / 2, cy - sz / 2, sz, '#ffde3b');
+        text(String(name).toUpperCase(), cx, cy + sz / 2 + L(46), L(34), '#ffde3b', 'center', '#1a2a6c');
+        text(`You beat Gym Leader ${t.name}.   Badges: ${sc.save.badges | 0} of 8`, cx, cy + sz / 2 + L(86), L(16), '#dfe8f5', 'center', null);
+        if (st.t > 0.7) hint(padUI() ? 'A continue' : 'Enter or click continue');
+      },
+    };
+  },
   // a mon drawn from its overworld sheet (first frame, facing you), feet at (x, y), h px tall; white = a plain white silhouette
   fig(id, x, y, h, white) {
     const sp = spriteOf(DEX.species[id]?.sprite), a = sp?.anims?.Walk || sp?.anims?.Idle, im = a && img(a.file); if (!im) return;

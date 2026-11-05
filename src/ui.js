@@ -182,7 +182,8 @@ const settingsItems = () => [
   { label: 'Music Volume', value: Math.round(AUDIO.vol.music * 10), cycle: d => { AUDIO.vol.music = clamp(AUDIO.vol.music + d * 0.1, 0, 1); if (AUDIO.music) AUDIO.music.volume = AUDIO.vol.music; STORE.set('vol', AUDIO.vol); } },
   { label: 'SFX Volume', value: Math.round(AUDIO.vol.sfx * 10), cycle: d => { AUDIO.vol.sfx = clamp(AUDIO.vol.sfx + d * 0.1, 0, 1); STORE.set('vol', AUDIO.vol); uiBlip(700); } },
   { label: 'Text speed', value: TEXT_SPEED.names[TEXT_SPEED.i], cycle: d => STORE.set('textSpeed', clamp(TEXT_SPEED.i + d, 0, 3)) },
-  ...(window.TOUCH?.on ? [{ label: 'Full push runs', value: rimRun() ? 'On' : 'Off', cycle: () => STORE.set('rimRun', !rimRun()) }] : []),
+  ...(window.TOUCH?.on ? [{ label: 'Full push runs', value: rimRun() ? 'On' : 'Off', cycle: () => STORE.set('rimRun', !rimRun()) },
+    { label: 'Touch buttons', value: ['Small', 'Normal', 'Large'][clamp(STORE.get('touchSize', 1) | 0, 0, 2)], cycle: d => { STORE.set('touchSize', clamp((STORE.get('touchSize', 1) | 0) + d, 0, 2)); TOUCH.place?.(); } }] : []),
 ];
 const SettingsScene = {
   back: null, st: { sel: 0 },   // back = scene to return to; null = main menu
