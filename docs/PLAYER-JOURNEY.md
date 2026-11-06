@@ -78,3 +78,16 @@ A new player on a phone (Aldermere City, Pikachu, 60 minutes, touch only) reache
 
 Checked by the eighth playtest (Goldacre, Charmander, touch only): the first leader fight began 52 minutes after the title screen and the badge came at 57, with 2 blackouts, both in the first 12 minutes (a Growth-boosted Oddish and a charging Miltank, since softened). Lv5 to Lv13 took about 30 minutes and 18 wild wins; the tester beat Whitney at Lv14. Fighters stayed visible in town, in the gym and in a dense wood.
 
+## The second hour (ninth playtest)
+
+From a save just after the first badge in Goldacre (Charmeleon Lv17, Hoppip Lv12), touch only: the second badge came 67 minutes later (about 45 to 50 for a person; the rest was the tester's scripts), with 2 blackouts and one story loss.
+
+| Step | What happened | Now |
+|---|---|---|
+| Goldacre Mart | One tap on the first row bought the $4000 Bike. | A tap picks a row, a second tap buys; - and + set the amount on a phone. |
+| To Pinegrove (274 tiles east) | 3 to 5 minutes on the Bike; no fights or scenes on the way. | Same. |
+| Pinegrove: Surveyor, Soot, Ethan | Good writing; three bad matchups in a row for a Fire starter. After losing to Soot he vanished from NEXT GOAL and the town. | Soot's first fight brings two mons; a lost talk scene stays on screen and in NEXT GOAL. |
+| Training | About 15 wild fights a level at 0.71x EXP; trainers gave 300 to 400 EXP. | 0.92x EXP at one badge. |
+| The Mart's lower rows | Super Potion and Full Heal could not be reached by touch. | Long lists scroll with a finger. |
+| Aspen | Won at Lv20 after NEXT GOAL said "Challenge Aspen!". | Gym hints are one level lower; one short says "Close enough to try". |
+
