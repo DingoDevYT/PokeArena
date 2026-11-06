@@ -1064,12 +1064,13 @@ const AdventureScene = {
       if (W) this.msg = { s: `${ADVP.name(sm)} is still ${W[0]}. ${W[1]} or a Pokemon Center fixes it.`, t: 4.5 }; }   // a status outlives the fight: say so (a tester walked into a gym battle still paralysed)
     this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
     this.refreshLead(); this.persist();
-    if (ev.length) this.grow(ev); else if (got) this.dialog([msg], null);
-    if (tr && tr.t.story) { const sv = this.save, pay = tr.t.money ? ADVN.pay(tr.t, tr.team) : 0; sv.money += pay; this.persist(); if (!pay) return ADVSTORY.after(this, true); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
+    const grown = done => ev.length ? this.grow(ev, done) : done?.();   // a trainer's pages come first, then the EXP (a move prompt cut into Whitney's lines before her badge, playtest 8)
+    if (!tr) { if (ev.length) this.grow(ev); else if (got) this.dialog([msg], null); return; }
+    if (tr.t.story) { const sv = this.save, pay = tr.t.money ? ADVN.pay(tr.t, tr.team) : 0; sv.money += pay; this.persist(); if (!pay) return grown(() => ADVSTORY.after(this, true)); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => grown(() => ADVSTORY.after(this, true))); }   // a story battle: paid, then the script goes on
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
       const prize = [`${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])];
-      const reward = () => { if (!r.badge) return this.dialog(prize, null); [660, 880, 1320].forEach((f, i) => setTimeout(() => uiBlip(f, 0.14), i * 150)); this.open(ADVUI.badge(this, r.badge, tr.t, () => this.dialog(prize, null))); };   // prizes in their own box, not under the trainer's name plate; a badge gets a little fanfare
+      const reward = () => { if (!r.badge) return this.dialog(prize, null, () => grown()); [660, 880, 1320].forEach((f, i) => setTimeout(() => uiBlip(f, 0.14), i * 150)); this.open(ADVUI.badge(this, r.badge, tr.t, () => this.dialog(prize, null, () => grown()))); };   // prizes in their own box, not under the trainer's name plate; a badge gets a little fanfare
       this.dialog([].concat(tr.t.lose), tr.n, reward);
     }
   },

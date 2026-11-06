@@ -76,3 +76,5 @@ A new player on a phone (Aldermere City, Pikachu, 60 minutes, touch only) reache
 | Every Save was a .sav download on Android. | Save saves on the device; Save files exports or loads a .sav. |
 | Tiny menus: pause rows 22 px, move chips with 4 px type text. | Two columns of 40 px rows on the phone's pause menu; bigger move names only. |
 
+Checked by the eighth playtest (Goldacre, Charmander, touch only): the first leader fight began 52 minutes after the title screen and the badge came at 57, with 2 blackouts, both in the first 12 minutes (a Growth-boosted Oddish and a charging Miltank, since softened). Lv5 to Lv13 took about 30 minutes and 18 wild wins; the tester beat Whitney at Lv14. Fighters stayed visible in town, in the gym and in a dense wood.
+

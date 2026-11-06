@@ -239,8 +239,9 @@ const ADVUI = {
             const col = i < half ? 0 : 1, x = X(660) - cw - L(8) + col * (cw + L(16)), y = Y(100) + (i % half) * per, on = i === st.sel;
             hot(x, y, cw, per - 6, { hover: () => st.sel = i, click: () => { st.sel = i; st.home = t.id; stage(2); }, wheel: d => st.sel = clamp(st.sel + d, 0, towns.length - 1) });
             rrect(x, y, cw, per - 6, L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
-            text(t.name, x + L(18), y + (per - 6) / 2, L(20), on ? '#1a1a2a' : '#fff', 'left', null);
-            text(t.id[0] === 'G' ? ADVUI.farWild(t.id) ? 'GYM *' : 'GYM' : 'TOWN', x + cw - L(14), y + (per - 6) / 2, L(12), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
+            const tag = (t.id[0] === 'G' ? 'GYM' : 'TOWN') + (ADVUI.farWild(t.id) ? ' *' : ''); ctx.font = `${Math.max(L(12), TEXT_MIN)}px Silkscreen`; const tw = ctx.measureText(tag).width; ctx.font = `${Math.max(L(20), TEXT_MIN)}px Bungee`; const nw = ctx.measureText(t.name).width, room = cw - L(18) - L(14) - tw - L(10);
+            { const tm = TEXT_MIN; TEXT_MIN = 0; text(t.name, x + L(18), y + (per - 6) / 2, Math.max(L(20), tm) * Math.min(1, room / Math.max(1, nw)), on ? '#1a1a2a' : '#fff', 'left', null); TEXT_MIN = tm; }   // a long name shrinks to clear its tag (ALDERMERE CITY ran into GYM *)
+            text(tag, x + cw - L(14), y + (per - 6) / 2, L(12), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
           });
           text('Any town works: every gym and route matches the badges you hold.', X(660), Y(612), L(14), '#ffde3b', 'center', null);
           text('Linden meets you at its Pokemon Center. * A big city: wild Pokemon are a long walk out.', X(660), Y(640), L(13), '#9aa6c0', 'center', null);
