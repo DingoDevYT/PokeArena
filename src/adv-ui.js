@@ -9,7 +9,9 @@ const ADVUI = {
   bar(x, y, w, h, f, col) { rrect(x, y, w, h, h / 2, '#00000099'); if (f > 0) rrect(x + 1, y + 1, Math.max(h - 2, (w - 2) * clamp(f, 0, 1)), h - 2, (h - 2) / 2, col); },
   chip(label, x, y, h, col) { return hudChip(x, y, label, col, h); },
   // keeps the highlighted row inside the window of rows
-  scroll(st, n, rows) { st.sel = clamp(st.sel, 0, Math.max(0, n - 1)); st.off = clamp(st.off | 0, 0, Math.max(0, n - rows)); if (st.sel < st.off) st.off = st.sel; if (st.sel >= st.off + rows) st.off = st.sel - rows + 1; },
+  scroll(st, n, rows, px = 40) {
+    if (window.TOUCH?.on && n > rows) { TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { TOUCH.drag = null; st.dragY = (st.dragY || 0) + d.dy; while (st.dragY <= -px) { st.dragY += px; st.off = (st.off | 0) + 1; st.sel = Math.max(st.sel, st.off); } while (st.dragY >= px) { st.dragY -= px; st.off = Math.max(0, (st.off | 0) - 1); st.sel = Math.min(st.sel, st.off + rows - 1); } } }   // a finger drags a long list (the Mart's Super Potion sat on row 10, out of reach on a phone, playtest 9)
+    st.off = clamp(st.off | 0, 0, Math.max(0, n - rows)); st.sel = clamp(st.sel, 0, Math.max(0, n - 1)); st.off = clamp(st.off | 0, 0, Math.max(0, n - rows)); if (st.sel < st.off) st.off = st.sel; if (st.sel >= st.off + rows) st.off = st.sel - rows + 1; },
   nav(st, n, dir = INPUT.menu) { if (dir === 'up' || dir === 'down') { st.sel = clamp(st.sel + (dir === 'down' ? 1 : -1), 0, Math.max(0, n - 1)); uiBlip(600, 0.03); } },
   // ---------- dialogue chrome: the talk box, question box and notices share one set of house panels ----------
   // sizes follow the window height and margins follow the font, so a small window gets a smaller (never cramped) box
@@ -499,7 +501,7 @@ const ADVUI = {
         bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout(), l = list(), rows = 9;
         text('BAG', X(660), Y(46), L(36), '#ffde3b', 'center', '#1a2a6c'); text(ADVUI.money(sc.save.money), X(1280), Y(46), L(22), '#ffde3b', 'right', null);
         ADVP.CATS.forEach(([k, n], i) => { const w = L(200), x = X(40) + i * (w + L(8)), on = i === st.cat; hot(x, Y(80), w, L(40), { click: () => { st.cat = i; st.sel = 0; st.off = 0; } }); rrect(x, Y(80), w, L(40), L(10), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2); text(n, x + w / 2, Y(101), L(16), on ? '#111' : '#fff', 'center', null); });
-        ADVUI.scroll(st, l.length, rows);
+        ADVUI.scroll(st, l.length, rows, L(64));
         l.slice(st.off, st.off + rows).forEach((id, j) => {
           const i = j + st.off, y = Y(140) + j * L(64), on = i === st.sel, it = ADVP.item(id);
           hot(X(40), y, L(600), L(58), { hover: () => st.sel = i, click: () => { st.sel = i; use(id); }, wheel: d => st.sel = clamp(st.sel + d, 0, l.length - 1) });
@@ -527,7 +529,7 @@ const ADVUI = {
       draw() {
         bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout(), b = bx(), rows = 8;
         text('PC BOX', X(660), Y(46), L(36), '#ffde3b', 'center', '#1a2a6c'); text(`${b.length} stored   party ${sc.save.party.length} / 6`, X(1280), Y(46), L(16), '#9aa6c0', 'right', null);
-        ADVUI.scroll(st, b.length, rows);
+        ADVUI.scroll(st, b.length, rows, L(78));
         b.slice(st.off, st.off + rows).forEach((m, j) => {
           const i = j + st.off, y = Y(90) + j * L(78), on = i === st.sel, sp = DEX.species[toId(m.species)];
           hot(X(30), y, L(520), L(72), { hover: () => st.sel = i, click: () => { st.sel = i; take(i); }, wheel: d => st.sel = clamp(st.sel + d, 0, b.length - 1) });
@@ -684,7 +686,7 @@ const ADVUI = {
         bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout();
         text(mk ? 'TRADEWAY MARKET' : 'POKEMON MART', X(660), Y(46), L(36), '#ffde3b', 'center', mk ? '#5a2a10' : '#1a2a6c'); text(ADVUI.money(sv().money), X(1280), Y(46), L(24), '#ffde3b', 'right', null);
         if (!st.mode) { panel(X(380), Y(110), L(560), L(104)); wrapText(mk ? 'What are you after today? Mind, it will not be here next week.' : 'Welcome! What can I do for you?', X(410), mk ? Y(148) : Y(162), L(500), L(20), '#fff'); drawMenu(top, st, X(660), Y(250), L(560), 62); hint(padUI() ? 'A select   B leave' : 'Click to select   Esc leave'); backButton(() => sc.close()); return; }
-        const l = list(), rows = 9; ADVUI.scroll(st, l.length, rows);
+        const l = list(), rows = 9; ADVUI.scroll(st, l.length, rows, L(64));
         text(st.mode === 1 ? 'BUY' : 'SELL', X(40), Y(100), L(22), '#9aa6c0', 'left', null);
         l.slice(st.off, st.off + rows).forEach((id, j) => {
           const i = j + st.off, y = Y(120) + j * L(64), on = i === st.sel, it = ADVP.item(id);
