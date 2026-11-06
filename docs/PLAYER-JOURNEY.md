@@ -37,11 +37,11 @@ Mapped from the fifth playtest (phone, 104 minutes from badge 5 through the Cham
 | Jet at Dunereach, Soot and Inkwell at the Statue | Each brought a full six-mon team a band above the gyms; no level hint; the tower climax fired 24 tiles out, in Dunereach's fields, with no tower or grey sky. | Boss teams of 5 (stage 6) and 6 (stage 7); NEXT GOAL names the boss's level; the Statue scenes fire within 12 tiles and the Statue lies under a grey gloom while the door is open. |
 | Losing a boss | Woke at the last Center; at a landmark the goal said "still in Statue of Umbra, step out of town" 84 tiles away. | The goal reads right everywhere; a story fight lost at a landmark wakes you there. |
 | Ethan's Pebble (Shadow Tyranitar) | Showed as a plain Tyranitar; a prize-money line followed the scene. | Plate says SHADOW TYRANITAR with a dark outline; no prize line. |
-| The League | Two outdoor fights; losing to the Champion sent you 341 tiles back; the win was a prize line, four lines and a Master Ball. | You wake by the League after a loss; becoming Champion opens a Hall of Fame (your team, then the credits). |
+| The League | Two outdoor fights; losing to the Champion sent you 341 tiles back; the win was a prize line, four lines and a Master Ball. | Ethan at the foot of the plaza, then the Elite Four up the plaza (Fenn, Bram, Odile, Hale; no healing between but the bag, a loss starts them over), then the Champion at the hall door. You wake at the foot of the plaza after a loss; becoming Champion opens a Hall of Fame (your team, then the credits). |
 
 A desktop keyboard pass (sixth playtest, 79 minutes) confirmed the night's changes: one wild mon before the first badge, the gentler route trainers, the fight camera, corner correction at doors (4 of 4), the stat caps, gym fights staying in the hall, and every must-win story fix. Early fights take 5 to 35 s and feel good; at three badges 50 to 130 s, decided mostly by status moves. It found the blackout save and the one-Enter forget bug (both fixed), and the missing Controls page in Adventure (added).
 
-Still open from it: no Elite Four (the League is the gate rival and the Champion); the post-game beats point at Shadow Pokemon and a tower dungeon that do not exist yet; gym 8 (Bjorn) was not played; three sign pairs still disagree; money has nothing to buy in the late game.
+Still open from it: the post-game beats point at Shadow Pokemon and a tower dungeon that do not exist yet; gym 8 (Bjorn) was not played; three sign pairs still disagree; money has nothing to buy in the late game.
 
 ## What players liked
 
@@ -62,3 +62,17 @@ Still open from it: no Elite Four (the League is the gate rival and the Champion
 - After a blackout the fainting lines come before the EXP pages, and the game saves at once. A tap on a forget-move row asks for a second tap. Wild mons outside your fight are faint.
 
 Reports in full: the session scratchpad's reports/playtest.md and reports/playtest2.md (not in the repo).
+
+## The first hour on a phone, again (seventh playtest)
+
+A new player on a phone (Aldermere City, Pikachu, 60 minutes, touch only) reached Lv10 with 7 blackouts and never met the first leader. What changed:
+
+| Problem | Now |
+|---|---|
+| The pre-selected hometown, Aldermere City, is 46 tiles from the nearest wild Pokemon; every blackout walked you back. | New games highlight Goldacre (grass at the gate); the four cities far from wild Pokemon are tagged "GYM *". |
+| Ten levels to the first gym at about one level per 2 to 3 minutes; wild starters two levels over your own. | EXP before the first badge is 1.5x; before it, no wild Pokemon tops your best. |
+| Fighters 15 to 25 px tall, lost under forest canopies and hit sparks. | A faint copy of each fighter is drawn over trees, roofs and effects; more of each tree fades. |
+| Smokescreen and Sweet Scent stacked to -3 and -6. | Status-move drops stop at -2 like hits. |
+| Every Save was a .sav download on Android. | Save saves on the device; Save files exports or loads a .sav. |
+| Tiny menus: pause rows 22 px, move chips with 4 px type text. | Two columns of 40 px rows on the phone's pause menu; bigger move names only. |
+

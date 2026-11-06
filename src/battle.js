@@ -988,9 +988,10 @@ function hitFoe(side, move, at, opts = {}) {
   }
   const col = r.crit ? '#ffef5a' : r.eff > 1 ? '#ff7a59' : r.eff < 1 ? '#bbb' : '#fff';
   floatText(fe.x + rand(-8, 8), fe.y - 36 * SS, String(dmg), col, r.crit || r.eff > 1 ? 18 : 14);
-  if (r.crit) { floatText(fe.x, fe.y - 56 * SS, 'Critical!', '#ffef5a', 12); B.cam.punch = Math.max(B.cam.punch, 0.18); }
-  if (r.eff > 1) floatText(fe.x, fe.y - 66 * SS, 'Super effective!', '#ff9a59', 12);
-  else if (r.eff < 1) floatText(fe.x, fe.y - 66 * SS, 'Not very effective', '#bbb', 11);
+  const low = B.arena?.world && window.TOUCH?.on, ey = k => low ? fe.y + (k - 40) * SS : fe.y - k * SS;   // a phone: under the target, clear of the move bubbles in the middle of the top (NOT VERY EFFECTIVE was half hidden, playtest 7)
+  if (r.crit) { floatText(fe.x, ey(56), 'Critical!', '#ffef5a', 12); B.cam.punch = Math.max(B.cam.punch, 0.18); }
+  if (r.eff > 1) floatText(fe.x, ey(66), 'Super effective!', '#ff9a59', 12);
+  else if (r.eff < 1) floatText(fe.x, ey(66), 'Not very effective', '#bbb', 11);
   const hitAnim = move.fx?.hitAnim, loud = !tick || tick % 3 === 1;
   if (!tick || tick % 2) spawnFx(r.eff > 1 ? 'Hit_Super_Effective' : 'Hit_Neutral', fe.x + (tick ? rand(-6, 6) : 0), fe.y - 12 * SS - fe.z, { ft: 2, scale: tick ? SS * 0.6 : SS });
   if (hitAnim && loud) spawnFx(hitAnim, fe.x, fe.y - 12 * SS - fe.z);
@@ -1085,7 +1086,7 @@ function statusOnTarget(side, foe, move) {
   const fm = activeMon(foe), m = activeMon(side), fe = foe.ent;
   let did = false;
   if (move.status) did = inflict(foe, fm, move.status, side) || did;
-  if (move.boosts) did = boost(foe, fm, move.boosts, true) || did;
+  if (move.boosts) did = boost(foe, fm, move.boosts, true, B.arena?.world ? -2 : -6) || did;   // Adventure: a status move's drop stops at -2 too (Smokescreen took a Pikachu to ACC-3, an Illumise to EVA-6, playtest 7)
   const v = move.volatileStatus;
   if (v === 'confusion') { confuse(foe, fm); did = true; }
   if (v === 'leechseed' && !hasType(fm, 'Grass') && !fm.vol.seeded) { fm.vol.seeded = side.idx + 1; floatText(fe.x, fe.y - 44 * SS, 'Seeded', '#9f9', 12); did = true; }

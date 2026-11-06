@@ -7,7 +7,8 @@ const ADVR = {
   zoom: 2, zm: 4, T: 64, S: 2,   // zoom = last drawn; zm = the player's pick: DEVICE px per ART px, 1 farthest .. 6 closest, 4 = Normal, the default (Settings, mouse wheel, shoulders)
   GRASSY: new Set(['grass', 'rgGrass', 'wetGrass', 'tallgrass', 'dryGrass']),   // grounds whose cliff rims take the lab meadow copy
   ART: 2,   // world px per art px: sprites, interior sheets and the 2x exterior all draw their art pixels 2 world px big
-  NAMES: ['Farthest', 'Far', 'Medium', 'Normal', 'Close', 'Closest'], ZMAX: 6, ZDEF: 4,   // his pick 2026-10-15: the old 'Closer' (4) is the perfect default, with room to go further in and out
+  NAMES: ['Farthest', 'Farther', 'Far', 'Normal', 'Close', 'Closest'],   // in order, so the steps read as nearer and farther ('Medium' sat farther out than 'Normal', playtest 7)
+  ZMAX: 6, ZDEF: 4,   // his pick 2026-10-15: the old 'Closer' (4) is the perfect default, with room to go further in and out
   frame: 0,
   dark: null,
   t: 0,
@@ -257,7 +258,7 @@ const ADVR = {
       const q = SCENE.p, hy = q.y - (q.z || 0) - 24; return q.y < p.y - 4 && q.x > x + 6 && q.x < x + w - 6 && hy > y && hy < y + h;
     }
     if (typeof B === 'undefined' || !B?.arena?.world || (p.b && B.arena.bld)) return false;   // buildings too (a house roof hid a fighter), unless the fight is indoors, where the cutaway already shows the room
-    const ar = B.arena; for (const s of B.sides) { const e = s.ent; if (!e) continue; const fx = ar.ox + e.x, fy = ar.oy + e.y; if (fy < p.y && fx > x && fx < x + w && fy - 20 > y && fy - 20 < y + h) return true; }
+    const ar = B.arena; for (const s of B.sides) { const e = s.ent; if (!e) continue; const fx = ar.ox + e.x, fy = ar.oy + e.y; if (fy < p.y + 8 && fx > x - 16 && fx < x + w + 16 && fy > y && fy - 56 < y + h) return true; }   // any of the fighter's body under the picture, not only its middle (a canopy over a head stayed solid)
     return false;
   },
   propFn(p, def) {
@@ -265,7 +266,7 @@ const ADVR = {
     const ph = def.frames ? ((p.x * 7 + p.y * 13) >> 4) & 255 : 0;   // animated props (def.frames, def.fps): frame k = source rect shifted right by k * sw, out of step per instance
     return g => {
       if (!sh) return; const sx = def.sx + (def.frames ? (Math.floor(this.t * def.fps) + ph) % def.frames * def.sw : 0), x = Math.round(p.x - def.ax * S), y = Math.round(p.y - p.z - def.ay * S);
-      const see = this.seeThrough(p, x, y, def.sw * S, def.sh * S), a0 = g.globalAlpha; if (see) g.globalAlpha = a0 * 0.4;   // a tree or hut in front of a fighter goes see-through for the fight
+      const see = this.seeThrough(p, x, y, def.sw * S, def.sh * S), a0 = g.globalAlpha; if (see) g.globalAlpha = a0 * (typeof B !== 'undefined' && B?.arena?.world ? 0.3 : 0.4);   // a tree or hut in front of a fighter goes see-through for the fight
       if (def.noOutline) g.drawImage(sh, sx, def.sy, def.sw, def.sh, x, y, def.sw * S, def.sh * S); else g.drawImage(this.olRect(sh, sx, def.sy, def.sw, def.sh), x - S, y - S, (def.sw + 2) * S, (def.sh + 2) * S);   // outlined like the sprites
       if (see) g.globalAlpha = a0;
       if (!this.sun) return;

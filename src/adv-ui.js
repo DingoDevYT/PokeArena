@@ -178,12 +178,19 @@ const ADVUI = {
   },
   money: n => '$' + n,
 
+  // a big city with no wild Pokemon within 20 tiles of its Pokemon Center (a new player there walked 50 tiles to find one, and back again after every blackout)
+  farWild(code) {
+    const c = (this._far ||= {}); if (code in c) return c[code];
+    const t = ADVS.town(code), f = t && ADVS.front(t), ok = z => !!window.ADV_ENC?.[z]?.day?.length; if (!f) return c[code] = false;
+    for (let r = 1; r <= 20; r++) for (let a = 0; a < 48; a++) if (ok(ADVW.zone(f.x + Math.cos(a / 48 * 6.283) * r * ADV.T, f.y + Math.sin(a / 48 * 6.283) * r * ADV.T))) return c[code] = false;
+    return c[code] = true;
+  },
   // ---------- new game: trainer, hometown, starter ----------
   newGame(sc) {
     const st = { stage: 0, sel: 0, off: 0, q: '', ate: false, town: 0, home: '', pick: 0, list: ADVUI.starters(), tab: 0, outfit: ADVO.def() }, towns = ADVS.towns().sort((a, b) => a.name.localeCompare(b.name));
     const refilter = () => { const q = toId(st.q); st.list = q === 'jarona' && DEX.species.flowery ? ['flowery'] : ADVUI.starters().filter(id => toId(DEX.species[id].name).includes(q)); st.sel = 0; st.off = 0; };   // "jarona": the hidden Flowery starter, same unlock as the battle picker
     const keys = searchKeys(st, refilter);
-    const stage = n => { st.stage = n; st.sel = 0; st.off = 0; uiBlip(880, 0.05); };
+    const stage = n => { st.stage = n; st.sel = n === 1 ? Math.max(0, towns.findIndex(t => t.id === (st.home || 'G7'))) : 0; st.off = 0; uiBlip(880, 0.05); };   // the towns open on the one you picked, else Goldacre, a farm village with grass at its gate (the first in the list, Aldermere City, is 46 tiles from a wild Pokemon)
     const go = () => {
       const id = st.list[st.sel]; if (!id) return;
       const nm = profileName() === 'You' ? (avatarById(profileAvatar())?.name || 'Red') : profileName();   // no name typed: the portrait's ("You must be You." read oddly)
@@ -233,10 +240,10 @@ const ADVUI = {
             hot(x, y, cw, per - 6, { hover: () => st.sel = i, click: () => { st.sel = i; st.home = t.id; stage(2); }, wheel: d => st.sel = clamp(st.sel + d, 0, towns.length - 1) });
             rrect(x, y, cw, per - 6, L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
             text(t.name, x + L(18), y + (per - 6) / 2, L(20), on ? '#1a1a2a' : '#fff', 'left', null);
-            text(t.id[0] === 'G' ? 'GYM' : 'TOWN', x + cw - L(14), y + (per - 6) / 2, L(12), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
+            text(t.id[0] === 'G' ? ADVUI.farWild(t.id) ? 'GYM *' : 'GYM' : 'TOWN', x + cw - L(14), y + (per - 6) / 2, L(12), on ? '#1a1a2a' : '#9aa6c0', 'right', null, 'Silkscreen');
           });
           text('Any town works: every gym and route matches the badges you hold.', X(660), Y(612), L(14), '#ffde3b', 'center', null);
-          text('Professor Linden meets you at its Pokemon Center, and you wake there after a blackout.', X(660), Y(640), L(13), '#9aa6c0', 'center', null);
+          text('Linden meets you at its Pokemon Center. * A big city: wild Pokemon are a long walk out.', X(660), Y(640), L(13), '#9aa6c0', 'center', null);
           hint(padUI() ? 'A pick   B back' : 'Enter or click a town   Esc back'); backButton(back);
         } else if (st.stage === 2) {
           const sz = 84 * s, ids = st.list, c = cols(), r = rows(), y0 = 150 * s;
@@ -336,8 +343,8 @@ const ADVUI = {
       { label: 'Change outfit', act: () => sc.open(ADVUI.outfit(sc, sc.save.outfit, o => sc.save.outfit = o)) },
       { label: 'Settings', act: () => sc.open(ADVUI.settings(sc)) },
       { label: 'Controls', act: () => { ControlsScene.overlay = sc; sc.open({ update: () => ControlsScene.update(), draw: () => ControlsScene.draw() }); } },   // the keys and buttons, without leaving Adventure (they were only on the main menu)
-      { label: 'Save', act: () => sc.saveFile(say) },
-      { label: 'Load', act: () => sc.loadFile(m => say(m, true)) },
+      { label: 'Save', act: () => { sc.persist(); say('Game saved. It also saves as you play.'); } },   // on this device; the .sav download is under Save files (every Save was a download on Android, playtest 7)
+      { label: 'Save files', act: () => sc.open(ADVUI.files(sc)) },
       ...(/[?&]debug\b/.test(location.search) ? [{ label: 'Test', act: () => sc.open(ADVDBG.panel(sc)) }] : []),   // the test panel (free money, levels, warps) only with ?debug in the address; F9 still opens it on a keyboard
       { label: 'Quit to menu', act: () => { sc.persist(); setScene(MenuScene); } },
     ];
@@ -355,9 +362,27 @@ const ADVUI = {
         if (sc.chatOn()) text(`${sc.net.N.role === 'host' ? 'Hosting' : 'On'} ${sc.net.N.name}  ${sc.net.N.count()}/16`, cx + pad, Y(top + 352), L(13), '#7be07b', 'left', null);
         const ps = L(48), gap = (cw - 2 * pad - 6 * ps) / 5; sv.party.forEach((m, i) => { const im = portrait(toId(m.species)), x = cx + pad + i * (ps + gap), y = Y(top + H - 72); rrect(x, y, ps, ps, L(8), '#00000066', '#ffffff33', 1); if (im) { ctx.globalAlpha = ADVP.fainted(m) ? 0.35 : 1; ctx.drawImage(im, x, y, ps, ps); ctx.globalAlpha = 1; } });
         drawMenu(its, st, X(870), Y(top), L(500), rowH);
-        if (note.s) text(note.s, X(870), Y(top + H + 24), L(15), note.bad ? '#ff9a9a' : '#9f9', 'center', null);
+        if (note.s) wrapText(note.s, cx + pad, Y(top + 420), cw - 2 * pad, L(15), note.bad ? '#ff9a9a' : '#9f9');   // in the left panel, above the party (under the menu it ran over Quit to menu, playtest 7)
         hint(padUI() ? 'A select   B resume' : 'Enter or click select   Esc resume');
         backButton(() => sc.close());   // like every other screen: a corner button back to the game
+      },
+    };
+  },
+
+  // Save files: copy the save to a .sav file you keep (another device, a backup) or load one back
+  files(sc) {
+    const st = { sel: 0 }, note = { s: '', bad: false }, say = (s, bad) => { note.s = s; note.bad = !!bad; };
+    const items = () => [{ label: 'Export to a .sav file', act: () => sc.saveFile(say) }, { label: 'Load a .sav file', act: () => sc.loadFile(m => say(m, true)) }, { label: 'Back', act: () => sc.close() }];
+    return {
+      update(dt) { runMenu(st, items(), dt); if (backHit()) sc.close(); },
+      draw() {
+        ctx.fillStyle = '#000d'; ctx.fillRect(0, 0, VW, VH); const { X, Y, L } = layout();
+        text('SAVE FILES', X(660), Y(70), L(40), '#ffde3b', 'center', '#1a2a6c');
+        text('Your game already saves on this device as you play.', X(660), Y(150), L(17), '#fff', 'center', null);
+        text('Export a .sav file to keep a backup or move your game to another device.', X(660), Y(184), L(14), '#9aa6c0', 'center', null);
+        drawMenu(items(), st, X(660), Y(250), L(520), 62);
+        if (note.s) text(note.s, X(660), Y(470), L(15), note.bad ? '#ff9a9a' : '#9f9', 'center', null);
+        hint(padUI() ? 'A select   B back' : 'Enter or click select   Esc back'); backButton(() => sc.close());
       },
     };
   },

@@ -282,8 +282,8 @@ const AdventureScene = {
   netStep(dt) {
     const n = this.net; if (!n) return;
     const N = n.N, p = this.p, mv = p.moving ? (this.running ? 2 : 1) : 0, busy = this.mode !== 'walk' || !!this.uis.length || !!this.dlg || performance.now() < (ADVW.calmA || 0);   // calmA: a few seconds after a fight no pack notices you (one charged the moment a level-up panel closed)
-    const now = performance.now(); if (busy) this.busyT = now;   // and for 3 s after any menu, text box or fight, so nothing pounces the moment it closes
-    N.local({ x: p.x, y: p.y, z: p.z, face: p.face, mv, room: this.room ? this.room.id : 0, b: this.save.badges | 0, busy: busy || now - (this.busyT || 0) < 3000, view: this.view(), ent: p });
+    const now = performance.now(); if (busy) this.busyT = now;   // and for 5 s after any menu, text box or fight, so nothing pounces the moment it closes (3 s: a pack hit while a phone player reached for MENU after the EXP pages, playtest 7)
+    N.local({ x: p.x, y: p.y, z: p.z, face: p.face, mv, room: this.room ? this.room.id : 0, b: this.save.badges | 0, busy: busy || now - (this.busyT || 0) < 5000, view: this.view(), ent: p });
     N.tick(dt); N.world(dt);
     if (this.tst && (this.tst.t -= dt) <= 0) this.tst = null;
   },
@@ -870,7 +870,7 @@ const AdventureScene = {
   fightIn() { return this.inB && B?.arena?.bld || null; },
   fightMid() { const ar = B.arena, [a, b] = B.sides.map(q => q.ent); return { x: ar.ox + (a.x + b.x) / 2, y: ar.oy + (a.y + b.y) / 2 }; },
   // keep a point inside a building's floor (its walls are BW thick, the back wall 8 px plus a tile of upright wall)
-  inRoom(b, x, y, m = 20) { return { x: Math.max(b.x0 + ADV.BW + m, Math.min(b.x1 - ADV.BW - m, x)), y: Math.max(b.y0 + 8 + m, Math.min(b.y1 - ADV.BW - m, y)) }; },
+  inRoom(b, x, y, m = 20, top = m) { return { x: Math.max(b.x0 + ADV.BW + m, Math.min(b.x1 - ADV.BW - m, x)), y: Math.max(b.y0 + 8 + top, Math.min(b.y1 - ADV.BW - m, y)) }; },
   trainerStep(dt) {
     const s = this.step, p = this.p, ar = B.arena, [a, b] = B.sides.map(q => q.ent), ox = ar.ox, oy = ar.oy, T = ar.T;
     if (!s) return;
@@ -889,7 +889,7 @@ const AdventureScene = {
         let bx = a.x - b.x, by = a.y - b.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl;   // away from the foe, behind own mon
         const lat = (p.x - ox - a.x) * -by + (p.y - oy - a.y) * bx; if (Math.abs(lat) > 12) s.side = lat > 0 ? 1 : -1;   // keep to the side it is already on
         let tx = ox + a.x + bx * ADV_KEEP * T - by * s.side * 1.5 * T, ty = oy + a.y + by * ADV_KEEP * T + bx * s.side * 1.5 * T;
-        const rb = this.fightIn(); if (rb) ({ x: tx, y: ty } = this.inRoom(rb, tx, ty));   // indoors: as far back as the room allows, never out of the door
+        const rb = this.fightIn(); if (rb) ({ x: tx, y: ty } = this.inRoom(rb, tx, ty, 20, 56));   // indoors: as far back as the room allows, never out of the door, and a step clear of the back wall (you stood on the painting rail, playtest 7)
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), go = d > (s.go ? 0.3 : 1) * T;   // starts walking past a tile off the spot, stops when it is close
         s.go = go; if (go) { const sp = Math.min(200, 60 + d * 1.6) * dt; ADV.move(p, dx / d * sp, dy / d * sp); }
       }

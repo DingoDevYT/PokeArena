@@ -32,8 +32,9 @@ const ADVW = {
   partyTop(sv = ADV.player) { return sv?.party?.length ? Math.max(...sv.party.map(m => m.level | 0)) : 0; },
   // the level wild bands follow: before the second badge your lead's (one high catch made every wild near Goldacre harder for the starter, playtest 3), then your best
   bandTop(sv = ADV.player) { if (!sv?.party?.length) return 0; if ((sv.badges | 0) >= 2) return this.partyTop(sv); const ld = sv.party.find(m => m.hp > 0) || sv.party[0]; return ld.level | 0; },
-  level(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { const [a, b] = this.band(badges, top); return a + Math.floor(this.rnd() * (b - a + 1)) + (this.BONUS[band] || 0); },
-  top(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { return this.band(badges, top)[1] + (this.BONUS[band] || 0); }, // highest level of the band
+  level(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { const [a, b] = this.band(badges, top); return a + Math.floor(this.rnd() * (b - a + 1)) + this.plus(band, badges, top); },
+  top(band, badges = ADV.player?.badges | 0, top = this.bandTop()) { return this.band(badges, top)[1] + this.plus(band, badges, top); }, // highest level of the band
+  plus(band, badges, top) { return (badges | 0) || !(top > 0) ? this.BONUS[band] || 0 : 0; },   // the rare and starter bonus waits for the first badge: a wild Bulbasaur 2 over a Lv5 starter Growthed it flat in 35 s (playtest 7)
   // a Wooloo at 30 is a Dubwool: follow plain level evolutions (no item / trade / friendship / time) while the level allows
   evolve(id, lv) {
     for (;;) {

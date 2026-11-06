@@ -510,6 +510,7 @@ function drawOver(dt) {
     else if (f.column) { const q = f.t / f.life; ctx.globalAlpha = 1 - q * q; drawBeam(f.column, f.x, f.y - 200, Math.PI / 2, 200, f.t); ctx.globalAlpha = 1; }
   }
   if (!ar.world) { drawLighting(); drawVignette(); }
+  else for (const s of B.sides) { const e = s.ent, m = activeMon(s); if (m.fainted || e.hidden > 0 || e.enterT > 0) continue; drawMonSprite(spriteKey(m), e.anim, e.animT, e.face, e.x, e.y, { z: e.z, alpha: 0.42, loop: !e.animOnce, noOutline: true }); }   // Adventure: a faint copy of each fighter over the trees, roofs and hit effects (on a phone both vanished under a forest canopy or a spark, playtest 7)
   if (B.impact) {
     // impact frame: black void, white speed lines bursting from the hit, both mons as white silhouettes
     const k = B.impact, rr = seeded(Math.floor(k.seed));
@@ -835,10 +836,10 @@ function drawHUD() {
     const rdy = me.hudRdy || (me.hudRdy = []); if (cd > 0) rdy[i] = 0; else if (rdy[i] === 0) rdy[i] = B.time;
     rrect(x, y, W, H, 10 * S, ready ? '#1c1f26ee' : '#13151acc', ready ? tc : '#555', 3);
     ctx.globalAlpha = cd > 0 ? 0.45 : 1; const ic = (pad ? PAD_ICONS : typeof kbPlay === 'function' && kbPlay() ? ['J', 'K', 'key_q', 'key_e'] : PC_ICONS)[i]; if (!icon(ic, x + 25 * S, y + H / 2, H >= 34 ? 32 : 16) && ic.length === 1) text(ic, x + 25 * S, y + H / 2 + 1, H >= 34 ? 18 : 12, '#fff', 'center', '#000'); ctx.globalAlpha = 1;   // keyboard play shows J and K (there are no icons for them)
-    const room = W - 50 * S - (cd > 0 ? 46 * S : 8 * S); ctx.font = `${15 * S}px Bungee, "Arial Black", sans-serif`;
-    const nsz = 15 * S * Math.min(1, room / Math.max(1, ctx.measureText(mv.name).width));
-    text(mv.name, x + 50 * S, y + H / 2 - 7 * S, nsz, ready ? '#fff' : '#9a9aa4', 'left');
-    text(`${mv.type.toUpperCase()} ${mv.category === 'Status' ? 'STATUS' : (mv.category === 'Physical' ? 'PHY ' : 'SPC ') + (mv.basePower || '-')}`, x + 50 * S, y + H / 2 + 9 * S, 10 * S, tc, 'left', null);
+    const big = !!window.TOUCH?.on, fs = (big ? 21 : 15) * S, room = W - 50 * S - (cd > 0 ? 46 * S : 8 * S); ctx.font = `${fs}px Bungee, "Arial Black", sans-serif`;   // a phone: the name only, bigger (the type line was 4 CSS px; the border already wears the type's colour, playtest 7)
+    const nsz = fs * Math.min(1, room / Math.max(1, ctx.measureText(mv.name).width));
+    text(mv.name, x + 50 * S, y + H / 2 - (big ? 0 : 7 * S), nsz, ready ? '#fff' : '#9a9aa4', 'left');
+    if (!big) text(`${mv.type.toUpperCase()} ${mv.category === 'Status' ? 'STATUS' : (mv.category === 'Physical' ? 'PHY ' : 'SPC ') + (mv.basePower || '-')}`, x + 50 * S, y + H / 2 + 9 * S, 10 * S, tc, 'left', null);
     if (cd > 0) {
       // recharge strip along the bottom edge fills as the move comes back; the countdown turns yellow in its last second
       const max = cooldownFor(mv, m), sx = x + 10 * S, sw = W - 20 * S;

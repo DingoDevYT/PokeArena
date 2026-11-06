@@ -231,7 +231,7 @@ const ADVMAP = {
   },
   fs: () => clamp(Math.round(VH / 40), 11, 18),   // the HUD's font size
   panel(x, y, w, h, r) { rrect(x, y, w, h, r, '#0b1020ee', '#ffffff40', 2); },
-  tw(s, fs) { ctx.font = ADVUI.font(fs); return ctx.measureText(s).width; },
+  tw(s, fs) { ctx.font = ADVUI.font(Math.max(fs, TEXT_MIN)); return ctx.measureText(s).width; },   // measured at the size text() will draw (the HUD's minimum is 11: a 10 px goal line was measured small and ran past its panel, playtest 7)
   // a pin where a waypoint stands on screen, else an arrow on the screen edge toward it with the distance in tiles
   pins(sc) {
     const w = this.wps(sc); if (!w.length || sc.room || !ADVR.view) return;
