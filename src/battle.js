@@ -427,7 +427,7 @@ function confuse(side, m) {
   if (m.vol.confused > 0 || abil(m, 'owntempo') || abil(m, 'oblivious') || (B.field.terrain === 'misty' && grounded(m))) return;
   m.vol.confused = TUNE.CONFUSE_TIME; floatText(side.ent.x, side.ent.y - 44 * SS, 'Confused', '#ffe66b', 12);
 }
-function boost(side, m, boosts, fromFoe) {
+function boost(side, m, boosts, fromFoe, floor = -6) {   // floor: how low a foe's drop can take a stage (one already lower stays put)
   let any = false;
   for (const k in boosts) {
     let n = boosts[k];
@@ -437,7 +437,7 @@ function boost(side, m, boosts, fromFoe) {
     }
     if (abil(m, 'simple')) n *= 2;
     if (abil(m, 'contrary')) n = -n;
-    const before = m.stages[k]; m.stages[k] = clamp(before + n, -6, 6);
+    const before = m.stages[k]; m.stages[k] = clamp(before + n, n < 0 && fromFoe ? Math.min(before, floor) : -6, 6);
     const d = m.stages[k] - before; if (!d) continue;
     any = true;
     spawnFx(d > 0 ? 'Stat_Blue_Ring' : 'Stat_Red_Ring', side.ent.x, side.ent.y - 4 * SS, { ft: 2 }); AUDIO.gen(d > 0 ? 'statUp' : 'statDown', 0.5, side.ent.x);
@@ -1053,7 +1053,7 @@ function afterHit(side, foe, move, dmg, r, multi) {
     if (Math.random() * 100 >= ch || fm.hp <= 0) continue;
     if (abil(fm, 'shielddust') && !s.self) continue;
     if (s.status) inflict(foe, fm, s.status, side);
-    if (s.boosts) boost(foe, fm, s.boosts, true);
+    if (s.boosts) boost(foe, fm, s.boosts, true, B.arena?.world ? -2 : -6);   // Adventure: a hit's stat drop stops at -2 (real-time fights land many more hits than turns: Breaking Swipe on every hit took a Venusaur to Attack -6)
     if (s.volatileStatus === 'confusion') confuse(foe, fm);
     if (s.volatileStatus === 'flinch' && fe.act && !fe.act.fired && !abil(fm, 'innerfocus')) { fe.act = null; floatText(fe.x, fe.y - 76 * SS, 'Flinched', '#ffd', 11); if (abil(fm, 'steadfast')) boost(foe, fm, { spe: 1 }); }
     if (s.self && s.self.boosts) boost(side, m, s.self.boosts);

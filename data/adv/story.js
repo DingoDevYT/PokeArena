@@ -171,7 +171,7 @@ window.ADV_STORY = {
         { win: [{ say: 'grunt', lines: ["Lieutenant! Lieutenant, the kid is winning!"] }], lose: [{ say: 'grunt', lines: ["Ha! Now scram, before the lieutenant sees you."] }] },
         { say: 'jet', lines: ["Hates it! Can't stand it! Waiting is just losing, slowly!",
           "Who's this? Another one? No time! Battle in ten seconds. Nine. Eight. Oh, forget it, go!"] },
-        { battle: 'jet', mustWin: true },
+        { battle: 'jet', mustWin: true, max: 3, minus: 2 },   // three mons, two levels down: Jet came straight after a grunt with four mons at the next gym's levels (two playtests lost to her at Lv30+)
         { win: [{ say: 'jet', lines: ["Late! I'm never late! You made me late!",
             "Forget the crates! Cast off, cast off! The ship won't wait, and neither will I!"] }],
           lose: [{ say: 'jet', lines: ["Ha! Signed, sealed, gone! Better luck next delivery!"] }] },

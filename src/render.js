@@ -21,8 +21,8 @@ function updateCamera(dt) {
   mx += tb;
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
   const hw = VW / 2 / c.z, hh = VH / 2 / c.z;
-  c.x = ar.w > hw * 2 ? clamp(c.x, hw, ar.w - hw + tb) : ar.w / 2 + tb;   // the world goes on past the fight box, so the phone's shift may look past its right edge (a gym's east wall put the fight under the buttons)
-  c.y = ar.h > hh * 2 ? clamp(c.y, hh, ar.h - hh) : ar.h / 2;
+  if (!ar.world) { c.x = ar.w > hw * 2 ? clamp(c.x, hw, ar.w - hw) : ar.w / 2; c.y = ar.h > hh * 2 ? clamp(c.y, hh, ar.h - hh) : ar.h / 2; }
+  // an Adventure fight keeps the fighters centred: the world goes on past the fight box (clamped to the box, a fight at its east edge sat under the phone's buttons, playtest 4)
   c.shake = Math.max(0, c.shake - dt * 30);
 }
 
