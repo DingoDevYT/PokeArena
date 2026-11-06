@@ -22,7 +22,8 @@ const ADVP = {
   // EXP per fight, x mainline. Wild and route trainers are held near your level, so a flat rate drifts ever further ahead of the gyms; falling with each badge keeps
   // a player who fights the trainers on the way within about a level of each leader's ace (balance pass 2026-11-05: 0.85 at no badges down to 0.3).
   // (It was PACE = 1.5 until then, which clashed with PACE the speeds below and made every award NaN: nothing levelled.)
-  expPace: badges => (badges | 0) ? Math.max(0.3, 0.85 / (1 + 0.2 * (badges | 0))) : 1.5,   // the road to the first gym is quicker (playtest 2: 2 levels in 40 minutes; playtest 7: Lv5 to Lv10 in an hour on a phone at 1.1)
+  expPace: badges => (badges | 0) ? Math.max(0.3, 1.2 / (1 + 0.3 * (badges | 0))) : 1.5,   // 0.92 0.75 0.63 0.55 0.48 0.43 0.39 0.35 from one badge to eight (it fell from 1.5 to 0.71 at the first badge: 15 wild fights a level by Pinegrove, playtest 9)
+    // the road to the first gym is quicker (playtest 2: 2 levels in 40 minutes; playtest 7: Lv5 to Lv10 in an hour on a phone at 1.1)
   catchUp: (lv, top) => 1 + 0.15 * Math.min(6, Math.max(0, top - lv)),   // a mon behind your best catches up faster (no EXP Share): +15% per level behind, up to +90%
   expGain(base, foeLv, myLv, split = 1, trainer = false) { return Math.floor((trainer ? 1.5 : 1) * base * foeLv / (5 * split) * ((2 * foeLv + 10) / (foeLv + myLv + 10)) ** 2.5 + 1); },
 
