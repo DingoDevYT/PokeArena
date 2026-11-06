@@ -30,6 +30,7 @@ const ADVB = {
     // a fight inside a building stays inside: its doorway is shut with rocks for the fight (gym battles had fighters and the trainer wander out of the door)
     const fb = ADV.bldAt?.(a.x, a.y) || ADV.bldAt?.(b.x, b.y) || null;   // a fighter must stand inside (a midpoint test put a fight outside a Center's door indoors and dropped you among the furniture after it)
     if (fb) for (const [g0, g1] of fb.gaps || []) { const r = ADV.BW / 2, y = fb.y1 - r - oy; for (let x = g0 + r; x <= g1 - r + 0.1; x += r) obstacles.push({ kind: 'rock', x: x - ox, y, r, hp: Infinity, world: true }); }
+    if (fb) for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) { const x = ox + (c + 0.5) * T, y = oy + (r + 0.5) * T; if (x < fb.x0 || x > fb.x1 || y < fb.y0 || y > fb.y1) mask[r * C + c] = Math.max(mask[r * C + c], 1); }   // and nothing outside the building is floor: a kiting Leafeon slipped past the wall rocks and fought from the road for minutes (playtest 5)
     const ar = { world: true, T, col, row, ox, oy, w: C * T, h: R * T, cols: C, rows: R, wall: 0, lv, mask, obstacles, props: {}, t: 0, bld: fb || null };
     ar.spawns = [a, b].map(q => { const [x, y] = this.clamp(ar, q.x - ox, q.y - oy, 14); return [x, y]; });
     return ar;

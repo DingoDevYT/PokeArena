@@ -154,6 +154,9 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - The follower is never set down where a building's front or a tall prop would hide it (after a blackout it stood behind the Pokemon Center's front, out of sight).
   - A route trainer who beats you says a line before the fade (their own `win` line if they have one, else one of four short ones), and the fade waits for it.
   - The pause card shows a mark per gym, gold once won (it was a bare number), and an empty skills line says teachers in towns can show you one.
+- Fifth playtest fixes (2026-11-06, late game, in progress):
+  - An indoor fight's box has no floor outside the building: a kiting Leafeon slipped past the wall rocks in Thorn's hall and fought from the road for minutes.
+  - In Adventure the CPU stops using a boost move once any stat it raises is at +2 (Bulk Up kept climbing on Attack while Defence lagged).
 - Phone stick (2026-11-05): speed follows the push on a gentle curve, so a small push creeps (lining up to face someone took several tries) and a full push is full speed; pushed to the rim it runs.
 - Settings (2026-11-05): Text speed (Slow, Normal, Fast, Instant) everywhere; on a phone also Full push runs and Touch buttons (Small, Normal, Large: every button's size and distance from the corner scale together).
 - NPC writing pass (2026-11-05): 171 people rewritten with a voice per town, small arcs inside towns, a useful hint from about one in three (route exits from the signs, catch spots, Skill teachers, gym type tips) and quiet foreshadowing of the story. Lines pinned by STORY.md and the checks were kept.
