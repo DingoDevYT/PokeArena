@@ -126,16 +126,18 @@ const ADVSTORY = {
   },
   // a story battle: the cast member's roster for the challenger's band (or a named list), the ace last; hold keeps it near the party like a route trainer, max sends the last n
   fight(sc, s) {
-    const sv = sc.save, c = this.castOf(s.battle), n = this.speaker(sc, s.battle), R = window.ADV_ROSTERS?.[s.battle];
-    let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, sv.badges | 0)   // an inline route-trainer team (grunts), held near the party
-      : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace })) : ADVN.leaderTeam(s.battle, sv.badges | 0);
+    const sv = sc.save, c = this.castOf(s.battle), n = this.speaker(sc, s.battle), R = window.ADV_ROSTERS?.[s.battle], st = this.run.beat.stage;
+    const bb = typeof st === 'number' ? Math.min(sv.badges | 0, st) : sv.badges | 0;   // the team of the stage the beat opened at: winning a gym while a boss waits for a retry made the boss bigger (Jet went from 4 mons at Lv22-24 to 5 at Lv27-29)
+    let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, bb)   // an inline route-trainer team (grunts), held near the party
+      : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace })) : ADVN.leaderTeam(s.battle, bb);
     if (!team.length) return this.next(sc);
     if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     if (s.max) team = team.slice(-s.max);
     if (s.minus) team = team.map(m => ({ ...m, level: Math.max(2, m.level - s.minus), moves: undefined }));   // a softer first meeting (moves follow the new level)
     this.run.bn = (this.run.bn || 0) + 1;
-    n.def.trainer = { cls: c.cls || '', name: c.name || s.battle, avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
+    n.def.trainer = { cls: c.cls && !(c.name || '').toLowerCase().includes(c.cls.toLowerCase()) ? c.cls : '', name: c.name || s.battle,   // no 'Grunt Umbra Grunt' on the plate
+      avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
     n.busy = true; this.run.fighting = true; sc.startTrainer(n);
   },
   // the scene calls this when a story battle ends: won, or lost without mustWin (a mustWin loss is a blackout: abort())

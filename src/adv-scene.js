@@ -695,7 +695,7 @@ const AdventureScene = {
     n.busy = true;
     ar.extra = () => [{ x: p.x, y: p.y, z: p.z, f: () => this.drawFighter() }, ...this.npcItems(), ...this.itemFx(), ...this.wildItems(), ...this.remoteItems()];
     startBattleA({ arena: ar, weather: '', player: { name: this.save.name, avatar: this.save.avatar, team: order.map(i => mons[i]) },
-      cpu: { name: t.cls + ' ' + t.name, cpu: true, tier: b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion', avatar: ADVN.avatar(t), team: team.map(m => ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {})) } });
+      cpu: { name: [t.cls, t.name].filter(Boolean).join(' '), cpu: true, tier: t.story || t.gym || t.leader || t.fixed ? (b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion') : b < 3 ? 'easy' : b < 6 ? 'normal' : 'hard', avatar: ADVN.avatar(t), team: team.map(m => ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {})) } });
     order.forEach((i, k) => { const s = mons[i], m = B.sides[0].team[k]; m.hp = Math.min(m.maxHp, s.hp); m.status = s.status || ''; if (!(s.hp > 0)) { m.fainted = true; m.hp = 0; } });
     Object.assign(B.cam, { x: this.cam.x - ar.ox, y: this.cam.y - ar.oy + lv * T, z: ADVR.battleZoom() });
     B.sides[1].queue = true; callout({ idx: -1 }, `${t.cls} ${t.name} wants to battle!`);
@@ -1079,7 +1079,7 @@ const AdventureScene = {
   wakeUp() { const w = this.wake; this.wake = null; if (w) this.dialog(w, null); },
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
-    const sv = this.save, lost = (sv.badges | 0) ? Math.min(Math.floor(sv.money / 8), 1500) : 0,   /* an eighth, at most $1500 (a quarter stung on every gym retry) */ t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
+    const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
@@ -1201,7 +1201,7 @@ const AdventureScene = {
     return out;
   },
   drawDlg() {
-    const d = this.dlg, pg = d.pages[d.i], vis = Math.floor(d.t * 50), t = d.n && d.n.def.trainer, who = t ? t.cls + ' ' + t.name : d.n && d.n.def.name;
+    const d = this.dlg, pg = d.pages[d.i], vis = Math.floor(d.t * 50), t = d.n && d.n.def.trainer, who = t ? [t.cls, t.name].filter(Boolean).join(' ') : d.n && d.n.def.name;
     ADVUI.say(pg, vis, who, vis >= pg.chars);
     if (d.fol) this.drawFolPortrait(d.fol);
   },

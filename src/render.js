@@ -664,7 +664,7 @@ function drawBattleOverlay() {
     const q = f.t / (f.num ? 0.9 : 1.3), p = worldToScreen(f.x, f.y), Z = clamp(c.z / 2, 0.7, 1.6);
     const pop = f.t < 0.12 ? 1 + (1 - f.t / 0.12) * 0.7 : 1;
     // every label (status, no effect, boosts, ...) is big Bungee like the damage numbers; labels hang a bit longer than numbers
-    const size = Math.round((f.num ? 16 + f.size * 1.6 : 13 + f.size * 1.4) * Z * pop), x = Math.round(p.x), hw = f.s.length * size * 0.32;
+    const size = Math.round((f.num ? 16 + f.size * 1.6 : 13 + f.size * 1.4) * Z * pop), hw = f.s.length * size * 0.32, xr = window.TOUCH?.on && B.arena.world ? VW * 0.8 : VW - 8, x = Math.round(clamp(p.x, hw + 8, Math.max(hw + 8, xr - hw)));   // kept on screen and, on a phone, clear of the buttons (NOT VERY EFFECTIVE ran off the right edge under BAG and MENU)
     let y = Math.round(p.y - q * (f.num ? 46 : 30));
     // older labels keep their spot; newer ones slide up until they clear every label they would overlap
     for (let n = 0; n < 8 && placed.some(o => Math.abs(o.x - x) < o.hw + hw && Math.abs(o.y - y) < (o.size + size) * 0.55); n++) y -= size * 0.9;
@@ -813,7 +813,7 @@ function drawSideHUD(s, right) {
 const PAD_ICONS = ['xbox_a', 'xbox_b', 'xbox_x', 'xbox_y'], PC_ICONS = ['mouse_left', 'mouse_right', 'key_q', 'key_e'];
 function drawHUD() {
   const S = Math.min(1, VW / 1500);
-  if (B.arena.world) { const h = 150 * S + 30, gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(8,10,24,0.4)'); gr.addColorStop(1, 'rgba(8,10,24,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, h); }   // a soft shade behind the name plates: the Adventure world behind them is busy (sand, signs, wild mons)
+  if (B.arena.world) { const h = 150 * S + 30, gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(8,10,24,0.55)'); gr.addColorStop(1, 'rgba(8,10,24,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, h); }   // a soft shade behind the name plates: the Adventure world behind them is busy (sand, signs, wild mons)
   drawSideHUD(B.sides[0], false); drawSideHUD(B.sides[1], true);
   const t = Math.floor(B.time), clock = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
   const adv = typeof AdventureScene !== 'undefined' && SCENE === AdventureScene && SCENE.mode !== 'pvp';   // Adventure's wild and trainer fights have no clock to beat: no timer there
@@ -853,9 +853,10 @@ function drawHUD() {
     rrect(px, sy, pw, 26 * S, 13 * S, fill || (ok ? '#2b3340dd' : '#2b334088'), ok ? '#cfe3ff' : '#555', 2);
     iconRow([...ic, ' ' + (cd > 0 ? `${label} ${cd.toFixed(1)}` : label)], px + pw / 2, sy + 13 * S, ih, 11 * S, ok ? '#fff' : '#999', 'center');
   };
-  pill(VW / 2 - total / 2, [pad ? 'xbox_lb' : 'key_space'], 'DODGE', Math.max(0, me.dodgeCd), me.dodgeCd <= 0);
-  pill(VW / 2 - total / 2 + pw + 8 * S, pad ? ['xbox_rb'] : ['key_1', '-', 'key_6'], 'SWAP', me.freeSwap > 0 ? 0 : Math.max(0, me.swapCd), me.swapCd <= 0 || me.freeSwap > 0);
-  if (megaTarget(m) && !me.megaUsed) pill(VW / 2 + total / 2 - pw, pad ? ['xbox_lt', '+', 'xbox_rt'] : ['key_f'], 'MEGA', 0, true, `hsl(${B.time * 120 % 360},80%,45%)`);
+  const tch = !!window.TOUCH?.on;   // a phone has its own DODGE and SWAP buttons: the chips keep the cooldowns, without the pad's LB and RB
+  pill(VW / 2 - total / 2, tch ? [] : [pad ? 'xbox_lb' : 'key_space'], 'DODGE', Math.max(0, me.dodgeCd), me.dodgeCd <= 0);
+  pill(VW / 2 - total / 2 + pw + 8 * S, tch ? [] : pad ? ['xbox_rb'] : ['key_1', '-', 'key_6'], 'SWAP', me.freeSwap > 0 ? 0 : Math.max(0, me.swapCd), me.swapCd <= 0 || me.freeSwap > 0);
+  if (megaTarget(m) && !me.megaUsed) pill(VW / 2 + total / 2 - pw, tch ? [] : pad ? ['xbox_lt', '+', 'xbox_rt'] : ['key_f'], 'MEGA', 0, true, `hsl(${B.time * 120 % 360},80%,45%)`);
   if (me.freeSwap > 0) text(pad ? 'Hold RB to switch out!' : 'Press 1-6 to switch out!', VW / 2, sy - 18 * S, 13 * S, '#9cf', 'center');
   if (m.vol.recharge > 0) text('Recharging...', VW / 2, sy - 18 * S, 13 * S, '#ff9a9a', 'center');
 }

@@ -1206,12 +1206,14 @@ function playerIntent(side, dt) {
   for (let k = 1; k <= 6; k++) if (INPUT.hit('S' + k)) { if (doSwap(side, k - 1, side.freeSwap > 0)) side.freeSwap = 0; }
   // Pad or touch: hold RB (SWAP on a phone), point either stick at a mon, release to swap
   if ((INPUT.usingPad || window.TOUCH?.on) && INPUT.held('RB')) {
-    if (!side.wheel) side.wheel = { sel: -1 };
+    if (!side.wheel) side.wheel = { sel: -1, t: 0 };
+    side.wheel.t += dt || 0;
     const vx = INPUT.aimActive ? INPUT.ax : INPUT.mx, vy = INPUT.aimActive ? INPUT.ay : INPUT.my;
     if (Math.hypot(vx, vy) > 0.4) { const w = side.wheel, o = wheelOpts(side), k = wheelPick(o.length, Math.atan2(vy, vx)); w.ang = Math.atan2(vy, vx); w.sel = k >= 0 && !side.team[o[k]].fainted ? o[k] : -1; }
     I.mx = I.my = 0; I.use = -1;
   } else if (side.wheel) {
-    const sel = side.wheel.sel; side.wheel = null;
+    let sel = side.wheel.sel; const quick = side.wheel.t < 0.35; side.wheel = null;
+    if (sel < 0 && quick) { const n = side.team.length; for (let k = 1; k < n; k++) { const i = (side.cur + k) % n; if (!side.team[i].fainted) { sel = i; break; } } }   // a quick tap swaps to the next mon that can fight (a phone needed two fingers: hold SWAP and push the stick)
     if (sel >= 0 && doSwap(side, sel, side.freeSwap > 0)) side.freeSwap = 0;
   }
 }

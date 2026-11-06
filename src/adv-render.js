@@ -250,6 +250,7 @@ const ADVR = {
   // during an Adventure fight: does this prop's picture (x, y, w, h) cover one of the two fighters standing behind it (north of its foot)?
   seeThrough(p, x, y, w, h) {
     if ((typeof B === 'undefined' || !B?.arena?.world) && !p.b && typeof SCENE !== 'undefined' && SCENE?.p && SCENE.save && SCENE.mode !== 'battle') {   // walking: a tree whose canopy covers you goes see-through, so you never vanish under it
+      if (/^maCave/.test(p.n)) return false;   // a cave mouth stays solid while you stand in its doorway (it faded like a canopy and you seemed to stand inside the cliff)
       const q = SCENE.p, hy = q.y - (q.z || 0) - 24; return q.y < p.y - 4 && q.x > x + 6 && q.x < x + w - 6 && hy > y && hy < y + h;
     }
     if (typeof B === 'undefined' || !B?.arena?.world || (p.b && B.arena.bld)) return false;   // buildings too (a house roof hid a fighter), unless the fight is indoors, where the cutaway already shows the room

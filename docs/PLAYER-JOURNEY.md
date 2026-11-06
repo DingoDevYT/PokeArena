@@ -13,6 +13,20 @@ Mapped on 2026-11-05 from two full playtests (phone and desktop, about 95 minute
 | First gym | was 3 to 5 min fights, many losses | Trainers Lv12 to 14, Whitney 14/14/15, Miltank's Rollout through the barn wall, a 280 second fight that went nowhere. Forfeit said "your team fainted". | Trainers Lv9 to 11, leaders 11/11/12; Rollout stays inside; forfeit says you gave up; prizes in their own box with a little badge fanfare; gym signs name the ace's type. |
 | After the badge | | NEXT GOAL names the next gym and its bearing (from Goldacre the next is 249 tiles east). Story beats wait in the next towns (survey, Soot, Ethan, Chad). | Same; the story line now leads the goal panel with the next gym under it ("Also: Pinegrove Gym, E 249 tiles"). |
 
+## The middle (two badges to four)
+
+Mapped from the fourth playtest (phone, 76 minutes, a fight bot that plays below a good human) and its fixes.
+
+| Step | Before | Now |
+|---|---|---|
+| Leaving Tradeway after badge 2 | Linden points you at Spindlewood (E 238 tiles). Packs of three Lv18-20 Zubat (Supersonic, both Grass moves resisted) beat a Lv23 Ivysaur twice. | Packs stay at two mons until the fourth badge. |
+| Route 111 to Spindlewood | Teamster Dale (Lv19-20, three mons) beat a team 8 to 12 levels higher; fights ran 90 to 215 s and the camera let them drift under the phone's buttons. | Route trainers use a gentler CPU before the third badge; the fight camera follows the fighters past the fight box; a hit's stat drop stops at -2. |
+| The docks (Jet) | Four mons at the next gym's levels straight after a grunt; three losses at Lv32-37; after each blackout nothing said what to do, the goal pointed where you stood, and winning a gym in between grew her team. | Three mons two levels down; the wake-up text and NEXT GOAL say she is still there and to step out of town and come back; her team stays at the stage the scene opened. No money lost for a must-win story fight. |
+| Gym 3 (Sporehaven) | Won at Lv32-37 (Orrin 132 s, Fern 63 s, Rue 138 s). Inside, the goal panel kept the story line and covered Rue on a phone. | Inside a gym, NEXT GOAL shows the gym's steps in a short panel. |
+| Money | Eight blackouts cost about $6400 of $8000. | A blackout costs a tenth, at most $1000. |
+
+Still open from it: gym 4 (Claystone) is 336 tiles north of gym 3; the docks scene starts on Spindlewood's west road rather than at the docks; trainers standing in a gym hall can cover a fight.
+
 ## What players liked
 
 - Character creation and the opening scene: about five minutes from title to the first battle, and the writing gives a reason to set out.

@@ -172,6 +172,7 @@ const ADVMAP = {
   },
   goal(sc) {
     const st = typeof ADVSTORY !== 'undefined' && ADVSTORY.goal(sc), gy = this.gymGoal(sc);
+    if (st && gy.g && sc.room?.id === gy.g.b) return gy;   // inside the gym its own steps lead, in a shorter panel (it said "Also: Sporehaven Gym, HERE" under the story, and the long panel sat over the leader on a phone)
     if (st) return { ...st, sub: gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}` };   // the story leads (adv-story.js); the gym hunt carries on underneath
     return gy;
   },

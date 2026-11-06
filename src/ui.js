@@ -287,7 +287,7 @@ const ControlsScene = {
     bgFill(); const s = S();
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
     if (window.TOUCH?.on) {   // a phone: the on-screen controls, not the pad and keyboard tables (they do not fit)
-      const L = [['Move', 'drag on the left half'], ['Moves 1 to 4', 'A  B  X  Y'], ['Dodge roll', 'DODGE'], ['Swap', 'hold SWAP, aim the stick, let go'], ['Mega Evolve', 'MEGA'],
+      const L = [['Move', 'drag on the left half'], ['Moves 1 to 4', 'A  B  X  Y'], ['Dodge roll', 'DODGE'], ['Swap', 'tap SWAP for the next, or hold and aim'], ['Mega Evolve', 'MEGA'],
         ['Items', 'BAG in a fight, B closes it'], ['Forfeit, run', 'MENU in a fight'], ['Talk, read signs', 'A'], ['Run', 'push the stick to its rim, or hold B'], ['Menu', 'MENU, or tap B'], ['Map', 'tap the minimap'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B']];
       const rh = Math.max(18, (VH - 130 * s - 60) / L.length), fs = Math.max(11, Math.min(18, rh * 0.5)), x0 = Math.max(VW * 0.08, 175), x1 = x0 + Math.max(VW * 0.22, 130);   // right of the d-pad
       L.forEach(([a, b], i) => { const y = 110 * s + i * rh; text(a, x0, y, fs, '#ffde3b', 'left', null); text(b, x1, y, fs, '#fff', 'left', null); });
@@ -296,7 +296,7 @@ const ControlsScene = {
     const rows = [
       ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor (still mouse: at the foe)']],
       ['Move 1 / 2', ['xbox_a', ' ', 'xbox_b'], ['mouse_left', ' ', 'mouse_right', '  or J K']], ['Move 3 / 4', ['xbox_x', ' ', 'xbox_y'], ['key_q', ' ', 'key_e', '  or L I']],
-      ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' hold, point a stick, release'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
+      ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' tap for the next, or hold and point a stick'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
       ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Items in a fight', ['xbox_back'], [' C']], ['Pause, forfeit', ['xbox_start'], ['key_esc', ' or P']],
       ['ADVENTURE', [], []],
       ['Talk, read signs', ['xbox_a'], ['key_enter', ' or ', 'key_e']], ['Run', ['xbox_b', ' hold'], ['key_shift', ' hold']], ['Map', [' pause menu'], ['M']],
