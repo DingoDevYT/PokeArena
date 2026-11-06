@@ -108,7 +108,10 @@ const ADVMAP = {
         const taken = [[X(660) - L(140), Y(40) - L(24), X(660) + L(140), Y(40) + L(24)], [0, VH - Math.max(54, L(70)) - Math.max(52, 60 * s) - 6, Math.max(300, L(420)), VH], [0, VH - 48, VW, VH]], hit = b => taken.some(o => o[0] < b[2] && b[0] < o[2] && o[1] < b[3] && b[1] < o[3]), towns = [];   // the title, the place box and the hint bar are claimed first: no route name under them
         for (const [id, t] of Object.entries(window.ADV_WORLD?.towns || {})) { const [x, y] = scr(t.center.x / T, t.center.y / T); if (!on(x, y, 80)) continue; towns.push([id, t, x, y]); taken.push(lbox(x, y - 13, 11, tw(t.name, 11)), [x - 9, y - 9, x + 9, y + 9]); }
         for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); taken.push([x - 10, y - 10, x + 10, y + 10]); }
+        const shops = st.zi >= 1 ? (ADV.blds || []).map(b => { const k = /-mart$/.test(b.id) ? 'M' : ''; if (!k) return null; const [x, y] = scr((b.x0 + b.x1) / 2 / T, (b.y0 + b.y1) / 2 / T); return on(x, y) ? [k, x, y] : null; }).filter(Boolean) : [];   // zoomed in: each Mart (M; the town's square already sits on its Pokemon Center) (a tester could not find Spindlewood's Mart, playtest 10)
+        for (const [, x, y] of shops) taken.push([x - 8, y - 8, x + 8, y + 8]);
         if (st.zi >= 1) for (const rt of A.routes()) { const [x, y] = scr(rt.c, rt.r); if (!on(x, y)) continue; const b = lbox(x, y, 10, tw(rt.name, 10)); if (hit(b)) continue; taken.push(b); text(rt.name, x, y, 10, '#dfe8f5', 'center', '#101428', 'Silkscreen'); }   // route names once you zoom in a step
+        for (const [k, x, y] of shops) { rrect(x - 7, y - 7, 14, 14, 3, k === 'M' ? '#2f7de1' : '#e8402e', '#fff', 1.5); text(k, x, y + 1, 10, '#fff', 'center', null); }
         for (const [id, t, x, y] of towns) {
           const g = id[0] === 'G', l = id[0] === 'L';
           A.sq(x, y, g ? 9 : 7, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff'); text(t.name, x, y - 13, 11, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff', 'center', '#101428', 'Silkscreen');
