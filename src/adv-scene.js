@@ -174,7 +174,7 @@ const AdventureScene = {
     if (padB) this.bHeld += dt;
     const tapB = INPUT.released('B') && this.bHeld < 0.25 && !this.noTap;
     if (!padB) { this.bHeld = 0; this.noTap = false; }
-    if (ui) { ui.update(dt); return; }
+    if (ui) { ui.update(dt); if (this.mode === 'walk' && this.ready && this.p && !this.inB) this.camStep(dt); return; }   // the camera glides back to you behind the EXP pages (it stayed on the fight spot, with you off screen)
     const p = this.p;
     ADV.update(p, dt);
     if (this.msg && !this.dlg && (this.msg.t -= dt) <= 0) this.msg = null;   // a toast waits out a text box (the status reminder ran out under the prize lines)
@@ -1087,7 +1087,7 @@ const AdventureScene = {
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
-    this.persist();   // what the fight earned is kept (a reload after a lost gym fight undid a level)
+    STORE.set('advSave', sv);   // what the fight earned is kept (a reload after a lost gym fight undid a level); not persist(), which waits for the world to be ready again and so skipped it (playtest 6)
     this.wake = [L ? (gaveUp ? `You gave up the battle and caught your breath by the ${L.name.replace(/^the /i, '')}.` : `Your team fainted. A passing ranger patched everyone up by the ${L.name.replace(/^the /i, '')}.`) : gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
     const cool = typeof ADVSTORY !== 'undefined' && ADVSTORY.cool; if (cool?.who && !cool.said) { cool.said = 1; this.wake.push(`${cool.who} won't be going anywhere. Train up a little, then go back.`); }
   },

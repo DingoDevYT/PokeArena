@@ -250,7 +250,7 @@ const ADVUI = {
             hot(x, y, sz - 6, sz - 6, { hover: () => st.sel = i, click: () => { st.sel = i; stage3(); } });
             rrect(x, y, sz - 6, sz - 6, 10 * s, on ? '#ffde3b' : '#ffffff12');
             const im = portrait(ids[i]); if (im) ctx.drawImage(im, x + 12 * s, y + 2 * s, sz - 30 * s, sz - 30 * s);
-            if (10 * s >= 7) text(sp.name.length > 11 ? sp.name.slice(0, 10) + '.' : sp.name, x + (sz - 6) / 2, y + sz - 17 * s, 10 * s, on ? '#111' : '#dde', 'center', null, 'Silkscreen');   // too small to read on a phone (the minimum text size would spill it over the next cell): the picked one is named below
+            if (10 * s >= 7) { const nm = sp.name.length > 11 ? sp.name.slice(0, 10) + '.' : sp.name, f0 = 10 * s, tm = TEXT_MIN; ctx.font = `${f0}px Silkscreen`; const fs = Math.max(6, Math.min(f0, f0 * (sz - 14) / Math.max(1, ctx.measureText(nm).width))); TEXT_MIN = 0; text(nm, x + (sz - 6) / 2, y + sz - 17 * s, fs, on ? '#111' : '#dde', 'center', null, 'Silkscreen'); TEXT_MIN = tm; }   // shrunk to fit its tile (BULBASAUR and CHARMANDER spilled over the edges)   // too small to read on a phone (the minimum text size would spill it over the next cell): the picked one is named below
           }
           const id = ids[st.sel];
           if (id) {
@@ -335,6 +335,7 @@ const ADVUI = {
       { label: `PC Box (${sc.save.box.length})`, act: () => sc.open(ADVUI.box(sc)) },
       { label: 'Change outfit', act: () => sc.open(ADVUI.outfit(sc, sc.save.outfit, o => sc.save.outfit = o)) },
       { label: 'Settings', act: () => sc.open(ADVUI.settings(sc)) },
+      { label: 'Controls', act: () => { ControlsScene.overlay = sc; sc.open({ update: () => ControlsScene.update(), draw: () => ControlsScene.draw() }); } },   // the keys and buttons, without leaving Adventure (they were only on the main menu)
       { label: 'Save', act: () => sc.saveFile(say) },
       { label: 'Load', act: () => sc.loadFile(m => say(m, true)) },
       ...(/[?&]debug\b/.test(location.search) ? [{ label: 'Test', act: () => sc.open(ADVDBG.panel(sc)) }] : []),   // the test panel (free money, levels, warps) only with ?debug in the address; F9 still opens it on a keyboard
@@ -442,7 +443,7 @@ const ADVUI = {
           panel(X(300), Y(220), L(420), L(60 + its.length * 62), ADVP.name(p[st.sel]).toUpperCase()); drawMenu(its, st.act, X(510), Y(270), L(360), 58);
         }
         if (st.note) text(st.note, X(300), Y(748), L(15), '#9f9', 'center', null);
-        hint(pick ? 'A use on this one   B back' : padUI() ? 'A actions   B back' : st.mv >= 0 ? 'Pick where to move it   Esc cancel' : 'Click or Enter for actions   Esc back');
+        hint(pick ? (padUI() ? 'A use on this one   B back' : 'Click or Enter to use on this one   Esc back') : padUI() ? 'A actions   B back' : st.mv >= 0 ? 'Pick where to move it   Esc cancel' : 'Click or Enter for actions   Esc back');
         backButton(() => { if (pick || st.mv < 0) sc.close(); else st.mv = -1; });
       },
     };
@@ -591,7 +592,8 @@ const ADVUI = {
         const e = st.e; if (!e) return; st.t += dt;
         if (e.t === 'forget') {
           const n = 5; ADVUI.nav(st, n);
-          if (okHit() || st.go) { st.go = false; st.arm = -1; if (st.sel < 4) { const old = DEX.moves[e.s.moves[st.sel]].name; ADVP.replace(e.s, st.sel, e.mv); ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} forgot ${old} and learned ${DEX.moves[e.mv].name}!` }); } else ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} did not learn ${DEX.moves[e.mv].name}.` }); next(); }
+          if (okHit() && st.t > 0.4) { if (st.arm === st.sel) st.go = true; else { st.arm = st.sel; uiBlip(700, 0.04); } }   // Enter too: the first press picks the row, the second confirms (mashing Enter through the level pages forgot move 1)
+          if (st.go) { st.go = false; st.arm = -1; if (st.sel < 4) { const old = DEX.moves[e.s.moves[st.sel]].name; ADVP.replace(e.s, st.sel, e.mv); ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} forgot ${old} and learned ${DEX.moves[e.mv].name}!` }); } else ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} did not learn ${DEX.moves[e.mv].name}.` }); next(); }
           return;
         }
         if (e.t === 'evo') {
@@ -626,7 +628,7 @@ const ADVUI = {
         if (e.t !== 'forget' && e.t !== 'lv') {
           ADVUI.say(ADVUI.pages(st.txt)[0], 1e4, null, e.t !== 'evo');
           if (e.t === 'evo' && st.t < 3) { if (window.TOUCH?.on) { if (st.t > 0.3) backButton(() => st.stop = true); ADVUI.notice('BACK stops it'); } else ADVUI.notice(padUI() ? 'B stops it' : 'Esc stops it'); }   // a phone has no B here: a corner button
-        } else if (e.t === 'forget') ADVUI.say(ADVUI.pages(st.arm >= 0 && st.arm === st.sel ? `${window.TOUCH?.on ? 'Tap' : 'Click'} again to ${st.sel < 4 ? 'forget ' + DEX.moves[e.s.moves[st.sel]].name : 'skip ' + DEX.moves[e.mv].name}.` : st.txt)[0], 1e4);
+        } else if (e.t === 'forget') ADVUI.say(ADVUI.pages(st.arm >= 0 && st.arm === st.sel ? `${window.TOUCH?.on ? 'Tap it' : padUI() ? 'Press A' : 'Press Enter or click'} again to ${st.sel < 4 ? 'forget ' + DEX.moves[e.s.moves[st.sel]].name : 'skip ' + DEX.moves[e.mv].name}.` : st.txt)[0], 1e4);
         else if (Math.floor(performance.now() / 400) % 2) text('>', VW / 2 + L(186), Y(120) + L(306), L(22), '#ffde3b', 'center', null);   // inside the panel's bottom right (it floated off the panel on a phone)
       },
     };

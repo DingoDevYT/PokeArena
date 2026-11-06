@@ -12,7 +12,7 @@ const ICON_KEY = { xbox_a: 'A', xbox_b: 'B', xbox_x: 'X', xbox_y: 'Y', xbox_lb: 
 // On a touch screen the button icons in the hint are buttons themselves (touch.js only draws A, B and a d-pad on screens), so X / Y / LB / RB / LT / RT stay reachable without covering anything.
 function hint(s, y = VH - 26, pill = false, cx = VW / 2) {   // pill: a dark backing so the row reads over a bright map (the overworld)
   if (window.TOUCH?.on && !TOUCH.padOn) s = s.split(/\s{3,}/).filter(p => !/d-pad|left\/right|\bstick\b|up\/down|arrows|scroll/i.test(p)).join('   ');   // touch: the pad is hidden on screens, so no steering instructions
-  const parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|LT|RT|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => HINT_ICONS[p] || p);
+  const kb = !padUI(), parts = s.split(/(\bleft\/right\b|\b(?:A|B|X|Y|LB|RB|LT|RT|Delete|F2|Enter|Esc)\b)/).filter(Boolean).map(p => kb && /^[ABXY]$/.test(p) ? p : HINT_ICONS[p] || p);   // a keyboard reads a lone letter as that key (the map's X key showed a gamepad X)
   const tap = window.TOUCH?.on ? (name, ix, iw) => { const k = ICON_KEY[name]; if (k) hot(ix - 8, y - 22, iw + 16, 44, { click: () => { TOUCH.p[k] = true; } }); } : null;
   const fs = Math.max(12, 14 * S());
   if (pill) { const w = iconRow(parts, cx, y, 32, fs, '#ccd', 'center', true); rrect(cx - w / 2 - 14, y - 19, w + 28, 38, 19, 'rgba(10,14,28,0.62)', null, 0); }
@@ -282,7 +282,9 @@ const ProfileScene = {
 
 const ControlsScene = {
   back: null, // the scene to return to (the pause menu sets this); null = main menu
-  update() { if (backHit() || okHit()) setScene(this.back || MenuScene); },
+  overlay: null,   // opened over Adventure (its pause menu): back closes the overlay instead of changing scene
+  leave() { if (this.overlay) { const o = this.overlay; this.overlay = null; o.close(); } else setScene(this.back || MenuScene); },
+  update() { if (backHit() || okHit()) this.leave(); },
   draw() {
     bgFill(); const s = S();
     text('CONTROLS', VW / 2, 60 * s, 44 * s, '#ffde3b', 'center');
@@ -291,7 +293,7 @@ const ControlsScene = {
         ['Items', 'BAG in a fight, B closes it'], ['Forfeit, run', 'MENU in a fight'], ['Talk, read signs', 'A'], ['Run', 'push the stick to its rim, or hold B'], ['Menu', 'MENU, or tap B'], ['Map', 'tap the minimap'], ['Zoom', 'pinch the world'], ['On screens', 'tap, or d-pad with A and B']];
       const rh = Math.max(18, (VH - 130 * s - 60) / L.length), fs = Math.max(11, Math.min(18, rh * 0.5)), x0 = Math.max(VW * 0.08, 175), x1 = x0 + Math.max(VW * 0.22, 130);   // right of the d-pad
       L.forEach(([a, b], i) => { const y = 110 * s + i * rh; text(a, x0, y, fs, '#ffde3b', 'left', null); text(b, x1, y, fs, '#fff', 'left', null); });
-      hint('B back'); backButton(() => setScene(this.back || MenuScene)); return;
+      hint('B back'); backButton(() => this.leave()); return;
     }
     const rows = [
       ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor (still mouse: at the foe)']],
@@ -317,7 +319,7 @@ const ControlsScene = {
       text(`Pad ${i + 1}: ${p.id.slice(0, 60)}  [${p.mapping || 'non-standard'}]`, VW / 2, y0 + i * 44 * s, 14 * s, p.mapping === 'standard' ? '#9f9' : '#fc9', 'center', null);
       text(`buttons: ${pressed.join(' ') || '-'}   sticks: ${[...p.axes].slice(0, 4).map(a => a.toFixed(2)).join(' ')}`, VW / 2, y0 + i * 44 * s + 20 * s, 12 * s, '#ccd', 'center', null);
     });
-    hint('B / right-click back'); backButton(() => setScene(this.back || MenuScene));
+    hint('B / right-click back'); backButton(() => this.leave());
   },
 };
 
