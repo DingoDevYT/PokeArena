@@ -39,7 +39,9 @@ const ADVSTORY = {
   },
   // NEXT GOAL: the next main-line beat's goal (tokens filled), pinned on its place when it has a fixed one
   goal(sc) {
-    const b = this.main(sc.save); if (!b) return this.gauntlet(sc); if (!b.goal) return null;
+    const b = this.main(sc.save); if (!b) return this.gauntlet(sc);
+    if (this.cool?.id === b.id && this.cool.who && b.trigger === 'talk') { const who = b.who || b.script.find(s => s.say && s.say !== 'player')?.say, n = who && this.cast.get(who); return { line: `${this.cool.who} is still waiting. Train up, then talk to ${this.cool.who} again.`, story: b, lv: this.bossLevel(sc.save, b), ...(n?.e ? { x: n.e.x, y: n.e.y } : {}) }; }   // a lost talk scene: the goal says so and points at them (Soot dropped out of NEXT GOAL after a loss, playtest 9)
+    if (!b.goal) return null;
     const w = b.where || {}, t0 = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null, t = t0 && { ...t0, center: w.town !== 'home' && this.spot(w) || t0.center };   // pinned on the spot (the hall door), not the plaza's centre
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
     if (this.cool?.id === b.id && this.cool.who && t?.center) {   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
@@ -85,7 +87,7 @@ const ADVSTORY = {
       if (this.cool.code === undefined) this.cool.code = code; else if (this.cool.code !== code || far) this.cool = null;
     }
     for (const b of open) {
-      if (!this.here(b, code, sc) || b.id === this.cool?.id) continue;
+      if (!this.here(b, code, sc) || b.id === this.cool?.id && b.trigger === 'enter') continue;   // the cooldown is for arrival scenes; a talk scene's speaker stays, with the "!", to talk to when you are ready
       if (b.trigger === 'enter') { if (!sc.room) return this.start(sc, b); continue; }
       const who = b.who || b.script.find(s => s.say && s.say !== 'player')?.say; if (!who || !/^[GT]/.test(code)) continue;
       want.add(who); const n = this.cast.get(who);
