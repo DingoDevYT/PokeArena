@@ -47,7 +47,7 @@ const walk = (steps, where, b) => {
       if (!S.cast[st.battle]) err(w + ': battle vs ' + st.battle + ' not in cast');
       if (st.team && !Array.isArray(st.team) && !R[st.battle]?.[st.team]) err(w + ': roster band ' + st.team + ' missing');
       const nxt = steps[i + 1]; if (!nxt || (!nxt.win && !nxt.lose)) err(w + ': battle without win/lose branch after it');
-      for (const k of keys) if (!['battle', 'hold', 'max', 'team', 'mustWin', 'minus'].includes(k)) err(w + ': unknown battle key ' + k);
+      for (const k of keys) if (!['battle', 'hold', 'max', 'team', 'mustWin', 'minus', 'keep'].includes(k)) err(w + ': unknown battle key ' + k);
     } else if (st.win || st.lose) {
       walk(st.win || [], w + '.win', b); walk(st.lose || [], w + '.lose', b);
       if (!steps[i - 1] || steps[i - 1].battle === undefined) err(w + ': win/lose not right after a battle');
@@ -75,6 +75,12 @@ for (const b of S.beats) {
   if (!['talk', 'enter'].includes(b.trigger)) err(w + ': trigger');
   if (b.trigger === 'talk') { if (/^L/.test(wh.town || '') || wh.zone) err(w + ': talk needs a town with a Center'); if (!b.who || !S.cast[b.who]) err(w + ': talk beat without a valid who'); if (b.script[0].say !== b.who) err(w + ': first speaker is not who'); }
   if (b.goal !== undefined) { textRule(b.goal, w + ' goal', 60); }
+  if (b.beat !== undefined) {   // trainers to beat first (the Elite Four): each a trainer in data/adv/npcs.js; its goal text fills {next}, {k}, {n}
+    require(process.cwd() + '/data/adv/npcs.js'); require(process.cwd() + '/data/adv/rosters-league.js');
+    for (const id of b.beat) { const d = (window.ADV_NPCS || []).find(n => n.id === id); if (!d?.trainer) err(w + ': beat ' + id + ' is not a trainer'); else if (d.trainer.roster && !R[d.trainer.roster]?.true) err(w + ': beat ' + id + ' roster ' + d.trainer.roster + ' has no true band'); }
+    if (b.beatGoal !== undefined) textRule(b.beatGoal.replace('{next}', 'Odile').replace('{k}', '3').replace('{n}', '4'), w + ' beatGoal', 60);
+    if (b.beatSub !== undefined) textRule(b.beatSub, w + ' beatSub', 70);
+  }
   if (b.title !== undefined) textRule(b.title, w + ' title', 30);
   walk(b.script, w, b);
   for (const st of b.script) if (st.flag) { if (flags.has(st.flag)) err(w + ': flag set twice ' + st.flag); flags.add(st.flag); }

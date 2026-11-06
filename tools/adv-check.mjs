@@ -502,6 +502,7 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
     ok(tm.every(m => m.level >= a && m.level <= z), `badges ${b}: levels inside ${a}-${z}`);
   }
   ok(ADVN.team(t6, 'x1', 8).some(m => m.species === 'dubwool') && ADVN.team(t6, 'x1', 0).every(m => m.species === 'wooloo' || m.species === 'bunnelby'), 'at 8 badges a Wooloo is a Dubwool, at 0 it is not');
+  load('data/adv/rosters-league.js'); eq(['fenn', 'bram', 'odile', 'hale'].filter(k => RO[k]?.true).length, 4, 'the Elite Four rosters load on top (data/adv/rosters-league.js)');
   eq(ADVN.pay({ money: 16 }, [{ level: 10 }, { level: 12 }]), 192, 'payout = money x the strongest level'); eq(ADVN.team({ team: [['wooloo', 0]], gym: true }, 'g', 0)[0].level, 9, 'gym trainers before the first badge use cap-6 (9 at badge 0)'); eq(ADVN.team({ team: [['wooloo', 0]], gym: true }, 'g', 1)[0].level, 16, 'and cap-3 after it (16 at badge 1)');
   eq(ADVN.avatar({ cls: 'Hiker' }), 'hiker', 'class picks its portrait');
 
@@ -512,10 +513,10 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
   for (const k of cs) { const f = new URL(`../data/adv/chunks/${k.replace(',', '_')}.js`, import.meta.url); if (fs.existsSync(f)) vm.runInThisContext(fs.readFileSync(f, 'utf8')); }
   eq(new Set(D.map(d => d.id)).size, D.length, 'NPC ids are unique');
   ADVN.load(D); ADV.player = { badges: 0, beat: {} };
-  const villagers = D.filter(d => !d.trainer), trainers = D.filter(d => d.trainer), where = id => ({ r5: 'route5', r7: 'route7', r8: 'route8', r9: 'route9', r10: 'route10', g7: 'goldacre', s5: 'saltbay', r6: 'route6', t7: 'longshore', t4: 'tradeway', g6: 'pinegrove', t6: 'spindlewood', g8: 'sporehaven', t8: 'duskmoss', l4: 'quietplain', r1: 'route1', r103: 'route103', r3: 'route3', r111: 'route111', r21: 'route21', r22: 'route22', r2: 'route2', r101: 'route101', t2: 'sailsport', g5: 'aldermerecity', g4: 'claystone', g2: 'sprucevale', t1: 'frostfall', g1: 'dunereach' })[id.split('-')[0]];
+  const villagers = D.filter(d => !d.trainer), trainers = D.filter(d => d.trainer), where = id => ({ r5: 'route5', r7: 'route7', r8: 'route8', r9: 'route9', r10: 'route10', g7: 'goldacre', s5: 'saltbay', r6: 'route6', t7: 'longshore', t4: 'tradeway', g6: 'pinegrove', t6: 'spindlewood', g8: 'sporehaven', t8: 'duskmoss', l4: 'quietplain', l3: 'pokemonleague', r1: 'route1', r103: 'route103', r3: 'route3', r111: 'route111', r21: 'route21', r22: 'route22', r2: 'route2', r101: 'route101', t2: 'sailsport', g5: 'aldermerecity', g4: 'claystone', g2: 'sprucevale', t1: 'frostfall', g1: 'dunereach' })[id.split('-')[0]];
   const vil = p => villagers.filter(d => d.id.startsWith(p + '-'));
   ok(vil('g7').length >= 8 && vil('g7').length <= 12, `${vil('g7').length} Goldacre villagers (8-12)`); ok(vil('s5').length >= 8 && vil('s5').length <= 14, `${vil('s5').length} Salt Bay villagers outdoors (8-14, more inside the houses)`);
-  ok(vil('t7').length >= 8 && vil('t7').length <= 14, `${vil('t7').length} Longshore villagers outdoors (8-14, more inside the houses)`); ok(vil('t4').length >= 8 && vil('t4').length <= 14, `${vil('t4').length} Tradeway villagers outdoors (8-14, more inside the houses and the cave)`); ok(vil('g6').length >= 8 && vil('g6').length <= 14, `${vil('g6').length} Pinegrove villagers outdoors (8-14, more inside the houses)`); ok(vil('t6').length >= 8 && vil('t6').length <= 14, `${vil('t6').length} Spindlewood villagers outdoors (8-14, more inside the houses)`); ok(vil('g8').length >= 8 && vil('g8').length <= 14, `${vil('g8').length} Sporehaven villagers outdoors (8-14, more inside the houses)`); ok(vil('t8').length >= 8 && vil('t8').length <= 14, `${vil('t8').length} Duskmoss villagers outdoors (8-14, more inside the houses)`); ok(villagers.every(d => /^(g7|s5|t7|t4|g6|t6|g8|t8|l4|r1|r6|r9|r10|r21|r22|t2|g5|g4|g2|t1|g1)-/.test(d.id)) && trainers.every(d => /^(r1|r2|r3|r5|r6|r7|r8|r9|r10|r21|r101|r103|r111)-/.test(d.id)), 'every NPC id names its place');
+  ok(vil('t7').length >= 8 && vil('t7').length <= 14, `${vil('t7').length} Longshore villagers outdoors (8-14, more inside the houses)`); ok(vil('t4').length >= 8 && vil('t4').length <= 14, `${vil('t4').length} Tradeway villagers outdoors (8-14, more inside the houses and the cave)`); ok(vil('g6').length >= 8 && vil('g6').length <= 14, `${vil('g6').length} Pinegrove villagers outdoors (8-14, more inside the houses)`); ok(vil('t6').length >= 8 && vil('t6').length <= 14, `${vil('t6').length} Spindlewood villagers outdoors (8-14, more inside the houses)`); ok(vil('g8').length >= 8 && vil('g8').length <= 14, `${vil('g8').length} Sporehaven villagers outdoors (8-14, more inside the houses)`); ok(vil('t8').length >= 8 && vil('t8').length <= 14, `${vil('t8').length} Duskmoss villagers outdoors (8-14, more inside the houses)`); ok(villagers.every(d => /^(g7|s5|t7|t4|g6|t6|g8|t8|l4|r1|r6|r9|r10|r21|r22|t2|g5|g4|g2|t1|g1)-/.test(d.id)) && trainers.every(d => /^(r1|r2|r3|r5|r6|r7|r8|r9|r10|r21|r101|r103|r111|l3)-/.test(d.id)), 'every NPC id names its place');
   for (const r of ['r1', 'r2', 'r3', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r101', 'r103', 'r111']) ok(trainers.filter(d => d.id.startsWith(r + '-')).length >= 3 && trainers.filter(d => d.id.startsWith(r + '-')).length <= 5, `${r}: 3-5 route trainers`);
   const enc = z => new Set([...ADV_ENC[z].day, ...ADV_ENC[z].night, ...(ADV_ENC[z].fish || [])].map(e => e[0]));
   const kin = (id, s = new Set()) => { s.add(id); for (const e of ADV_DEX[id]?.evos || []) kin(e.to, s); return s; };
@@ -526,6 +527,13 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
     ok(Array.isArray(d.lines) && d.lines.length >= 1 && d.lines.length <= 2 && [...d.lines, ...(d.known || []), d.trainer?.say, d.trainer?.lose].filter(Boolean).every(s => s.length <= 100 && !/[\u2014\u2013]/.test(s) && !/\s{2}/.test(s)), d.id + ': 1-2 short lines, no dashes');
     ok(d.face % 2 === 0 || !d.trainer, d.id + ': trainers face a cardinal direction');
     if (!d.trainer) continue;
+    if (d.trainer.roster) {   // the Elite Four: a fixed roster, talked to (no sight), gated on eight badges and Ethan's last battle, every line short
+      const t = d.trainer, R = window.ADV_ROSTERS[t.roster]?.true, all = [t.say, t.lose, t.locked, t.gateSay, t.wait].filter(Boolean).flat();
+      ok(R?.length === 5 && R.at(-1).ace && R.every(m => DEX.species[m.species] && m.level >= 47 && m.level <= 52 && m.moves.length === 4 && m.moves.every(x => DEX.moves[x] && !DEX.moves[x].banned && ADVP.legalSet(m.species).has(x))), d.id + ': five legal mons, Lv 47-52, the ace last');
+      ok(t.sight === 0 && t.money > 0 && t.cls === 'Elite Four' && t.name && t.badges === 8 && t.gate === 'lg-gate' && t.league === 'L3' && !t.leader, d.id + ': talked to, no badge to give, gated, a League trainer');
+      ok(all.length >= 6 && all.every(s => typeof s === 'string' && s.length <= 100 && !/[\u2014\u2013]/.test(s) && !/\s{2}/.test(s)), d.id + ': every line under 100 characters, no dashes');
+      eq(ADVN.team(t, d.id, 8).length, 5, d.id + ': fights with all five'); continue;
+    }
     const t = d.trainer, z = where(d.id), allowed = new Set([...enc(z)].flatMap(s => [...kin(s)]));
     ok(t.team.length === 6 && t.team.every(([s, rel]) => DEX.species[s] && enc(z).has(s) && rel >= 0 && rel <= 3), d.id + ': six species from the ' + z + ' tables');
     ok(t.team.every(([, rel], i) => !i || rel >= t.team[i - 1][1]), d.id + ': team ordered weakest first'); ok(t.sight >= 3 && t.sight <= 6 && t.money > 0 && t.cls && t.name && t.say && t.lose, d.id + ': sight, money, class and lines');
@@ -533,6 +541,22 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
     const v = DIR_VEC[n.face], T0 = (d.x + 0.5) * T, T1 = (d.y + 0.5) * T; let road = -1;
     for (let k = 1; k <= t.sight; k++) { const pn = ADV.palette[ADV.mat(Math.floor((T0 + v[0] * k * T) / T), Math.floor((T1 + v[1] * k * T) / T))]; if (pn === 'path' || pn === 'rgPath' || pn === 'pavingStone') { road = k; break; } }   // rgPath: the map-lab road (tools/adv-region-export.py)
     ok(road >= 1 && ADVN.sees(n, T0 + v[0] * road * T, T1 + v[1] * road * T, 0), d.id + ': sees the road ' + road + ' tiles ahead'); ok(!ADVN.sees(n, T0 - v[0] * 2 * T, T1 - v[1] * 2 * T, 0), d.id + ': not behind it');
+  }
+  // the Elite Four: the Champion's beat waits on all four, in order up the plaza; NEXT GOAL names the next; a loss (or leaving) puts all four back, not after the title
+  {
+    load('data/adv/story.js'); const STY = load('src/adv-story.js', '\n;ADVSTORY'), E4 = ['l3-fenn', 'l3-bram', 'l3-odile', 'l3-hale'];
+    const svL = { badges: 8, beat: {}, story: { done: {}, flags: {} }, party: [], name: 'Ash' }, champ = () => STY.open(svL).some(b => b.id === 'lg-champion');
+    for (const b of window.ADV_STORY.beats) { if (b.id === 'lg-champion') break; svL.story.done[b.id] = 1; }
+    const L3 = window.ADV_WORLD.towns.L3.center, y = id => ADVN.list.find(q => q.id === id).home.y;
+    ok(E4.every((id, i) => !i || y(id) < y(E4[i - 1])) && E4.every(id => Math.abs(ADVN.list.find(q => q.id === id).home.x - L3.x) < T), 'the four stand in a column up the plaza, first nearest the road');
+    ok(E4.every((id, i) => JSON.stringify(window.ADV_NPCS.find(d => d.id === id).trainer.after || []) === JSON.stringify(i ? [E4[i - 1]] : [])), 'each waits on the one below');
+    ok(!champ(), 'the Champion waits until the Elite Four are beaten'); eq(STY.gauntlet({ save: svL }).line, 'Elite Four: challenge Fenn (0 of 4 beaten)', 'NEXT GOAL names the first');
+    svL.beat['l3-fenn'] = 1; const g = STY.gauntlet({ save: svL }); eq(g.line, 'Elite Four: challenge Bram (1 of 4 beaten)', '... then the next'); eq(g.y, y('l3-bram'), 'pinned on Bram'); ok(g.lv === 50 && /No Pokemon Center/.test(g.sub), 'with his ace level and the no-Center note');
+    E4.forEach(id => svL.beat[id] = 1); ok(champ(), 'the Champion opens once all four are beaten'); eq(STY.gauntlet({ save: svL }), null, 'and the gauntlet goal is gone');
+    const door = STY.spot(window.ADV_STORY.beats.find(b => b.id === 'lg-champion').where); ok(door.y < y('l3-hale') && Math.abs(door.x - L3.x) < 1, 'the Champion waits at the hall door, past Hale');
+    eq(STY.leagueReset(svL), 'Fenn', 'a loss or leaving starts the League again from Fenn'); ok(E4.every(id => !svL.beat[id]) && !champ(), 'all four back in their places');
+    svL.beat['l3-fenn'] = 1; svL.story.flags.champion = 1; eq(STY.leagueReset(svL), '', 'never once you are Champion'); eq(svL.beat['l3-fenn'], 1, 'and the beaten stay beaten');
+    eq(window.ADV_STORY.beats.find(b => b.id === 'lg-champion').script.find(s => s.battle).keep, true, 'no patch-up before the Champion: straight on from the Elite Four');
   }
   // saves: defeated trainers persist by NPC id; a save from before S1 (no beat) still loads
   const st1 = ADVP.mon('bulbasaur', 5), sv1 = ADVS.fresh({ name: 'Ash', avatar: 'red', home: 'G7', starter: st1 }); assert.deepEqual(sv1.beat, {}); n++;

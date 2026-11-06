@@ -252,7 +252,7 @@ const ProfileScene = {
     const caret = Math.floor(performance.now() / 500) % 2 ? '_' : ' ';
     text(this.name ? this.name + caret : 'You' + caret, X(46), Y(517), L(26), this.name ? '#fff' : '#ffffff66', 'left', null);
     text(`${this.name.length} / 12`, X(410), Y(564), L(12), '#9aa6c0', 'right', null, 'Silkscreen');
-    text(padUI() ? 'Press X to type a name' : 'Just type. Backspace deletes.', X(30), Y(564), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
+    text(window.TOUCH?.on ? 'Tap EDIT NAME to type one' : padUI() ? 'Press X to type a name' : 'Just type. Backspace deletes.', X(30), Y(564), L(12), '#9aa6c0', 'left', null, 'Silkscreen');
     rrect(X(30), Y(590), L(380), L(46), L(10), '#ffffff14', '#ffffff55', 2); text('EDIT NAME', X(220), Y(614), L(16), '#fff', 'center', null);
     hot(X(30), Y(590), L(380), L(46), { click: () => this.rename() });
     // ----- right: avatar grid -----

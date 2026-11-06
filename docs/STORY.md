@@ -138,7 +138,7 @@ Rue keeps her gym voice: terse, practical, "Mind the floor." She calls the alarm
 
 **8 badges: the road north.** Linden: the sky is clear, some Shadow Pokemon are still loose and will need finding, and the League is open to you. Ethan, with Pebble: strong is being scared and staying, so he is allowed to be scared too. "Medium was a lie."
 
-**The League.** Ethan waits at the gate for the last rival battle, his true team; he loses without freezing and sends you in. The Champion is Chad: Chadwick, whose holiday is over. After the Champion battle, Ethan and Linden burst in, and Chadwick gives you the Master Ball he never used.
+**The League.** Ethan waits at the foot of the plaza for the last rival battle, his true team; he loses without freezing, warns you there is no Pokemon Center up there, and sends you in. The Elite Four stand one behind the other up the plaza, the classic way: no healing between battles but your bag, and a loss to any of them, or to the Champion, or leaving the League, puts all four back in their places. Then the Champion, at the door of the hall, is Chad: Chadwick, whose holiday is over. After the Champion battle, Ethan and Linden burst in, and Chadwick gives you the Master Ball he never used.
 
 **After the League.** Homecoming: Mum, the town at the Center, a note from Linden. At the Statue, Vesper has her ear to the door: since it was shut the tower hums, there are stairs under it that go further down than the tower goes up, and something down there is awake. Soot hauls stones for her now. Optional: the stone-cutter on Route 1 explains the nine stones. **Hooks:** the deep under the tower (a post-game dungeon), the ship at sea with Wash and Jet, Shadow Pokemon still loose (a use for the Sensing skill), rematches with the leaders' and Ethan's true teams and with Chadwick.
 
@@ -176,7 +176,8 @@ Beats in story order. Each main-line beat waits for the one above it; the two op
 | s8-dawn | 8 | any town (next Center) | talk (linden) | none | Linden: the sky is clear, some Shadow Pokemon are still loose, the League is open to you. Inkwell is helping rebuild the Account. |
 | s8-ethan | 8 | any town (next Center) | talk (ethan) | none | Ethan with Pebble: strong is being scared and staying. See you at the gate. Medium was a lie. |
 | lg-gate | League (8) | L3 Pokemon League | enter | ethan | Final rival battle at the League gate, Ethan's true team. He loses without freezing. |
-| lg-champion | League (8) | L3 Pokemon League | enter | chadwick | The Champion is Chad: Chadwick. Holiday is over. Champion battle. Ethan and Linden celebrate. Gives the Master Ball. |
+| (Elite Four) | League (8) | L3 Pokemon League | talk (trainers) | none | Fenn, Bram, Odile and Hale, NPC trainers up the plaza (data/adv/npcs.js), in that order. See "The Elite Four" below. |
+| lg-champion | League (8) | L3 Pokemon League, the hall door | enter | chadwick | Opens once all four are beaten (`beat`). The Champion is Chad: Chadwick. Holiday is over. Champion battle, no patch-up first (`keep`). Ethan and Linden celebrate. Gives the Master Ball. |
 | pg-home | Post (8) | your hometown | enter | none | Homecoming. Mum; Ethan ate everything; a note from Linden: the tower is humming, see Vesper. |
 | pg-vesper | Post (8) | L1 Statue of Umbra | enter | none | Vesper at the shut door: the tower hums, stairs under it go further down than it goes up, something below is awake. Soot works for her now. |
 | pg-cutter (opt) | Post (8) | Route 1 (zone route1) | enter | none | Optional. The stone-cutter on Route 1 keeps the nine waymarkers fresh, one for each day the old ones walked south. |
@@ -216,7 +217,7 @@ The data follows the schema in the brief. These extra fields are used, and each 
 10. **Spots** should be nudged to the nearest free walkable tile.
 11. **Per player.** Story cast are seen only by the player whose beat it is (ADVENTURE.md: story state is per player), and show a "!" bubble while their beat is ready.
 12. **NEXT GOAL.** A beat's `goal` shows while it is the next open main-line beat; a beat with no goal leaves the gym goal in place (the surprise scenes have none on purpose). Goals for `'any'` beats say "at the next Pokemon Center".
-13. **The League.** No Elite Four rosters exist, so the League is two beats: Ethan at the gate, then Chadwick. If the engine builds a League interior, lg-champion should run inside it, in front of the Champion's seat.
+13. **The League.** Ethan at the foot of the plaza (lg-gate), the Elite Four, then Chadwick at the door of the hall (lg-champion, `where: { town: 'L3', r: 1.6, dy: -3.3 }`, so it waits until you step up to the door and you can use items after Hale). See "The Elite Four" below.
 
 ## Rosters
 
@@ -246,3 +247,23 @@ Also worth a look:
 - Mum appears in three beats. Some players like a family at home and some do not; she can be cut to one line.
 - The four Umbra lieutenants of the old bible are now three lieutenants (Wash, Soot, Jet) and a leader (Inkwell), with Chadwick as the Champion.
 - Badge names are still placeholders ("Goldacre Badge" and so on), and the game still has no title.
+
+## The Elite Four
+
+Added 2026-11-06 (the bible has no Elite Four, so these four are new). They are NPC trainers in `data/adv/npcs.js`, standing in a column up the League plaza and facing the road in; their teams are in `data/adv/rosters-league.js` (five each, Lv 47 to 52, the ace last), outside the generated `rosters.js`.
+
+| Order | Who | Type | Look | Who they are |
+|---|---|---|---|---|
+| 1 | Fenn | Ice | old man in white (avatar Pryce) | Keeps the foghorn on the cape, forty winters. Dry and calm. Ace Lapras. |
+| 2 | Bram | Fighting | burly docker (avatar Chuck) | Hauled crates on the Spindlewood docks for twenty years; some had Umbra's mark and he never asked. Now he asks about everything. Ace Conkeldurr. |
+| 3 | Odile | Psychic | white-haired seer (avatar Olympia) | A fortune teller who "saw you coming", mostly. Theatrical and sly. Ace Alakazam. |
+| 4 | Hale | Dragon | caped dragon tamer (avatar Lance) | The last of the four; two trainers have got past him in twenty years. "Mine feel all of it, and fly anyway": the game's idea, said by a dragon tamer. Ace Dragonite. |
+
+Rules, as in the classic games:
+- **Gate.** Each one needs eight badges (`trainer.badges`, else their `locked` lines) and lg-gate done (`trainer.gate`, else `gateSay`: Ethan is waiting first).
+- **Order.** `trainer.after` chains them; out of order you get their `wait` lines.
+- **No healing between.** There is no Pokemon Center on the cape; only the bag. The Champion's fight has `keep: true`, so the usual patch-up before a must-win story fight is skipped.
+- **Start over.** Lose to any of them or to the Champion (`league: true` on lg-champion) and you wake at the foot of the plaza, healed, with all four back in their places (`ADVSTORY.leagueReset`). Leaving the League (the place code in `trainer.league`) before the title does the same, with a message. A loss to them costs money like any trainer; a loss to the Champion does not.
+- **Teams.** `trainer.roster` names the roster (no badge to give, unlike `leader`). They get the leaders' AI tier and the gym battle theme.
+- **NEXT GOAL.** While lg-champion waits on its `beat` list, the panel reads its `beatGoal` ("Elite Four: challenge Odile (2 of 4 beaten)") with `beatSub` underneath, pinned on the next one, with the level hint from their ace.
+

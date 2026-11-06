@@ -567,26 +567,30 @@ window.ADV_STORY = {
       goal: 'Go to the Pokemon League on the north cape.',
       script: [
         { say: 'ethan', lines: ["There you are! I've been warming up for an hour. Pebble warmed up too. The ground's cracked.",
-          "This is it. Last battle before the Champion. Whoever wins walks through that gate.",
+          "This is it. Last battle before the Elite Four. Whoever wins walks up that plaza first.",
           "Pebble's sitting this one out. My six and your six. Everything we've got. C'mon!"] },
         { battle: 'ethan', mustWin: true },
         { win: [{ say: 'ethan', lines: ["Yeah. Yeah! That's how it should feel! I lost, and I didn't freeze once!",
-            "Go on. Walk through that gate and win it. I'll be right behind you. Like, next year."] }],
-          lose: [{ say: 'ethan', lines: ["Ha! Not today! Heal up and come back. The gate's not going anywhere, and neither am I."] }] },
+            "Four of the Elite Four up that plaza, then the Champion. Lose once and you start over.",
+            "No Pokemon Center up here either, so pack potions. Lots. I'll be right behind you. Like, next year."] }],
+          lose: [{ say: 'ethan', lines: ["Ha! Not today! Heal up and come back. The plaza's not going anywhere, and neither am I."] }] },
         { heal: true },
         { leave: 'ethan' }
       ]
     },
     {
       id: 'lg-champion', title: 'Holiday Is Over', stage: 8, after: ['lg-gate'],
-      where: { town: 'L3', r: 12 }, trigger: 'enter',
-      goal: 'Face the Champion at the Pokemon League.',
+      beat: ['l3-fenn', 'l3-bram', 'l3-odile', 'l3-hale'], league: true,   // the Elite Four first (data/adv/npcs.js); a loss here sends all four back to their places
+      beatGoal: 'Elite Four: challenge {next} ({k} of {n} beaten)', beatSub: 'No Pokemon Center up here. Heal with items between battles.',
+      where: { town: 'L3', r: 1.6, dy: -3.3 }, trigger: 'enter',   // at the door of the hall, a step past Hale, so you can see to your team first
+      goal: 'Face the Champion at the door of the League hall.',
       script: [
         { say: 'chadwick', lines: ["Hello, friend. Fancy meeting you here. Have a seat? No? Straight to it, then.",
           "Chadwick, Champion of Kenora. Chad to anyone who's watched me nap on a bench.",
           "I never lied, you know. I was on holiday. A long, busy holiday. Holiday's over.",
+          "Hale says you battle like you mean it. Hale never says anything.",
           "I've watched you all the way here. You fought for your Pokemon and for your friend. Now, me."] },
-        { battle: 'chadwick', mustWin: true },
+        { battle: 'chadwick', mustWin: true, keep: true },
         { win: [{ say: 'chadwick', lines: ["Splendid. Absolutely splendid. I knew it from the very first nap.",
             "Kenora has a new Champion. Take a bow. Persian, stop sulking, it's undignified."] }],
           lose: [{ say: 'chadwick', lines: ["Not quite, friend. Rest, think, come back. Never rush a battle. It goes cold."] }] },

@@ -552,6 +552,6 @@ const IN5 = [
         'Every Pokemon I own is one of a kind. I checked!', 'I shall have to add you to my collection of regrets.', 8, 3),
       gt('g5-gym-marigold', 'Smith', 'Marigold', 'npc2-yellow-jacket-woman', 6, 'blackbelt', [['tinkatink', 0], ['pawniard', 0], ['tinkatink', 1], ['klefki', 1], ['pawniard', 2], ['carbink', 2]],
         'I forged Sterling his badge. Let me see if you are worth one!', 'Good metal. You will do.', 7, 6),
-      npc('g5-gym-guide', 6, 7, 'gsman2', 0, ['Sterling collects steel and treasure Pokemon. They are hard to scratch, so bring fire or a punch.', 'His last one is worth more than this whole street.'])] },
+      npc('g5-gym-guide', 6, 7, 'gsman2', 0, ['Sterling collects steel and treasure Pokemon. Fire melts steel, and Dark moves rattle the treasure.', 'His last one is worth more than this whole street.'])] },
 ];
 emit('G1', IN1); emit('G2', IN2); emit('G3', IN3); emit('G4', IN4); emit('G5', IN5);

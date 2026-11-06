@@ -9,7 +9,8 @@ const ADVSTORY = {
   st(sv = ADV.player) { if (!sv) return { done: {}, flags: {} }; if (!sv.story || typeof sv.story !== 'object') sv.story = { done: {}, flags: {} }; sv.story.done ||= {}; sv.story.flags ||= {}; return sv.story; },
   beats() { return window.ADV_STORY?.beats || []; },
   castOf(id) { return window.ADV_STORY?.cast?.[id] || { name: id }; },
-  open(sv) { const s = this.st(sv), b = sv.badges | 0; return this.beats().filter(x => !s.done[x.id] && b >= x.stage && (x.maxBadges === undefined || b <= x.maxBadges) && (x.after || []).every(a => s.done[a])); },
+  open(sv) { const s = this.st(sv), b = sv.badges | 0; return this.beats().filter(x => this.ready(sv, x) && (x.beat || []).every(id => sv.beat?.[id])); },   // beat: trainers who must be beaten first (the Elite Four before the Champion)
+  ready(sv, x) { const s = this.st(sv), b = sv.badges | 0; return !s.done[x.id] && b >= x.stage && (x.maxBadges === undefined || b <= x.maxBadges) && (x.after || []).every(a => s.done[a]); },
   main(sv) { return this.open(sv).find(x => !x.optional); },
   fill(s, sv = ADV.player) { const lead = sv?.party?.find(m => m.hp > 0) || sv?.party?.[0]; return String(s).replace(/\{player\}/g, sv?.name || 'you').replace(/\{partner\}/g, lead ? ADVP.name(lead) : 'your partner').replace(/\{home\}/g, ADVS.town(sv?.home)?.name || 'home'); },
   // the place code the player is in: a gym city or town (its 28 tile disc), or a landmark (24 tiles round its centre), or ''
@@ -18,6 +19,8 @@ const ADVSTORY = {
     const W = window.ADV_WORLD?.towns || {}; for (const k in W) if (/^L/.test(k) && W[k].center && Math.hypot(p.x - W[k].center.x, p.y - W[k].center.y) < 24 * ADV.T) return k;
     return '';
   },
+  // where a beat happens: its town's centre, moved by where.dx / dy tiles (the Champion waits at the door of the League hall, 3 tiles north of the plaza's centre)
+  spot(w) { const c = w.town && ADVS.town(w.town)?.center; return c && { x: c.x + (w.dx || 0) * ADV.T, y: c.y + (w.dy || 0) * ADV.T }; },
   here(b, code, sc) {
     const w = b.where || {}, sv = sc.save;
     if (w.zone) return ADVW.zone(sc.p.x, sc.p.y) === w.zone;
@@ -25,7 +28,7 @@ const ADVSTORY = {
     if (w.town === 'any') return /^[GT]/.test(code);
     if (w.town === 'away') return /^[GT]/.test(code) && code !== sv.home;
     if (code !== w.town) return false;
-    const r = w.r || (b.trigger === 'enter' && /^[GT]/.test(code) ? 16 : 0), c = r && ADVS.town(code)?.center; return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= r * ADV.T;   // r: tiles from the town centre, 16 for any arrival scene in a town (the docks scene fired on the west road, and a Wash retry in the dark forest 27 tiles out)
+    const r = w.r || (b.trigger === 'enter' && /^[GT]/.test(code) ? 16 : 0), c = r && this.spot(w); return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= r * ADV.T;   // r: tiles from the town centre, 16 for any arrival scene in a town (the docks scene fired on the west road, and a Wash retry in the dark forest 27 tiles out)
   },
   // the ace level of a beat's must-win fight, as fight() would build it (NEXT GOAL suggests it: nothing said what level a story boss wanted)
   bossLevel(sv, b) {
@@ -36,8 +39,8 @@ const ADVSTORY = {
   },
   // NEXT GOAL: the next main-line beat's goal (tokens filled), pinned on its place when it has a fixed one
   goal(sc) {
-    const b = this.main(sc.save); if (!b || !b.goal) return null;
-    const w = b.where || {}, t = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null;
+    const b = this.main(sc.save); if (!b) return this.gauntlet(sc); if (!b.goal) return null;
+    const w = b.where || {}, t0 = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null, t = t0 && { ...t0, center: w.town !== 'home' && this.spot(w) || t0.center };   // pinned on the spot (the hall door), not the plaza's centre
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
     if (this.cool?.id === b.id && this.cool.who && t?.center) {   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
       const at = /^L/.test(w.town) ? `at the ${t.name.replace(/^the /i, '')}` : `in ${t.name}`, here = this.place(sc) === w.town;
@@ -46,6 +49,22 @@ const ADVSTORY = {
     }
     if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, lv: this.bossLevel(sc.save, b), x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, lv: this.bossLevel(sc.save, b), ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
+  },
+
+  // NEXT GOAL while a beat waits on trainers (beat): the next one to beat, pinned on them, with their ace's level for the level hint
+  gauntlet(sc) {
+    const sv = sc.save, b = this.beats().find(x => !x.optional && x.beat && this.ready(sv, x)); if (!b) return null;
+    const left = b.beat.filter(id => !sv.beat?.[id]), n = ADVN.list.find(q => q.id === left[0]), t = n?.def.trainer; if (!t) return null;
+    const team = ADVN.team(t, n.id, sv.badges | 0), at = n.e || n.home, k = b.beat.length - left.length;
+    return { line: this.fill(b.beatGoal || 'Beat {next} next ({k} of {n})', sv).replace('{next}', n.def.name || t.name).replace('{k}', k).replace('{n}', b.beat.length), sub: b.beatSub ? this.fill(b.beatSub, sv) : undefined,
+      story: b, lv: team.length ? Math.max(...team.map(m => m.level)) : 0, x: at.x, y: at.y };
+  },
+  // the Elite Four start over (lost to one of them or to the Champion, or left the League before the title): the first one's name when any had been beaten
+  leagueReset(sv) {
+    if (this.st(sv).flags.champion) return '';
+    const L = (window.ADV_NPCS || []).filter(d => d.trainer?.league), hit = L.filter(d => sv.beat?.[d.id]);
+    for (const d of hit) delete sv.beat[d.id];
+    return hit.length ? L[0].name || L[0].trainer.name : '';
   },
 
   // ---------- each frame in walk mode ----------
@@ -59,8 +78,10 @@ const ADVSTORY = {
     if ((this.wait -= dt) > 0) return; this.wait = 0.4;
     if (!sc.ready || sc.mode !== 'walk' || sc.uis.length || sc.dlg || sc.inB) return;
     const code = this.place(sc), open = this.open(sc.save), want = new Set();
+    const lg = (window.ADV_NPCS || []).find(d => d.trainer?.league && sc.save.beat?.[d.id]);
+    if (lg && code !== lg.trainer.league) { const k = this.leagueReset(sc.save); if (k) { sc.msg = { s: `You left the League, so the Elite Four start again with ${k}.`, t: 5 }; sc.persist(); } }   // no slipping off to a Center halfway up
     if (this.cool) {   // the lost beat waits until you have walked a short way off: out of the place, or 6 tiles past the beat's radius (it was the 28 tile town edge, with no distance given)
-      const cb = this.beats().find(x => x.id === this.cool.id), w = cb?.where || {}, c = w.town && ADVS.town(w.town)?.center, far = c && Math.hypot(sc.p.x - c.x, sc.p.y - c.y) > ((w.r || 16) + 6) * ADV.T;
+      const cb = this.beats().find(x => x.id === this.cool.id), w = cb?.where || {}, c = this.spot(w), far = c && Math.hypot(sc.p.x - c.x, sc.p.y - c.y) > ((w.r || 16) + 6) * ADV.T;
       if (this.cool.code === undefined) this.cool.code = code; else if (this.cool.code !== code || far) this.cool = null;
     }
     for (const b of open) {
@@ -147,7 +168,7 @@ const ADVSTORY = {
     let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, bb)   // an inline route-trainer team (grunts), held near the party
       : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace, shadow: !!m.shadow })) : ADVN.leaderTeam(s.battle, bb);
     if (!team.length) return this.next(sc);
-    if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
+    if (!s.keep && (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0))) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // keep: no patching up (the Champion, straight after the Elite Four)   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
     const cap = s.max || (typeof st === 'number' && !Array.isArray(s.team) ? (st <= 2 ? 3 : st <= 4 ? 4 : st <= 6 ? 5 : 6) : 0);   // story bosses are smaller than the gym leader of their stage, as admins are in the classic games (every boss brought a full leader's team: six mons from stage 5)
     if (cap) team = team.slice(-cap);

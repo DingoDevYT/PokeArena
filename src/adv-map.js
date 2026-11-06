@@ -176,7 +176,7 @@ const ADVMAP = {
     const top = ADVW.partyTop(sc.save);
     const n = sc.save.party.length, need = st && st.lv ? st.lv + (n >= 3 ? 0 : n === 2 ? 1 : 2) : 0;
     if (st && need && top < need) return { ...st, sub: `A tough battle ahead: train to about Lv ${need} (best: Lv ${top})` };   // a story boss's level, like the gyms' (playtest 5: no hint before the bosses or the League)
-    if (st) return { ...st, sub: gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}` };   // the story leads (adv-story.js); the gym hunt carries on underneath
+    if (st) return { ...st, sub: st.sub || (gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}`) };   // the story leads (adv-story.js); the gym hunt carries on underneath
     return gy;
   },
   gymGoal(sc) {

@@ -53,7 +53,7 @@ const AdventureScene = {
     if (!M) return '';
     if (this.mode === 'battle' || this.mode === 'pvp') {
       if (AUDIO.musicSrc === FLOWERY_MUSIC) return '';   // Flowery's own fight theme (render.js) takes over
-      return this.mode === 'pvp' ? M.battle.trainer : !this.tr ? M.battle.wild : this.tr.t.leader ? M.battle.leader : M.battle.trainer;
+      return this.mode === 'pvp' ? M.battle.trainer : !this.tr ? M.battle.wild : this.tr.t.leader || this.tr.t.roster || this.tr.t.mustWin ? M.battle.leader : M.battle.trainer;   // leaders, the Elite Four and the story's must-win fights get the big theme
     }
     if (this.vic && !this.vic.a.ended) return this.vic.name;
     if (this.room) return M.rooms[this.room.id.split('-').pop()] || M.zones[this.room.door.town] || '';
@@ -471,6 +471,8 @@ const AdventureScene = {
     const e = n.e, p = this.p;
     const t = n.def.trainer;
     if (t && !ADVN.beaten(n)) {   // not beaten yet: talking to a trainer is a challenge (a leader wants her ranch hands beaten first)
+      const shut = (this.save.badges | 0) < (t.badges || 0) ? t.locked : t.gate && typeof ADVSTORY !== 'undefined' && !ADVSTORY.st(this.save).done[t.gate] ? t.gateSay : null;   // the Elite Four: eight badges, then Ethan's last battle
+      if (shut) { n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false; return this.dialog(shut, n); }
       if (t.after && !t.after.every(id => this.save.beat[id])) { n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false; return this.dialog(t.wait, n); }
       return this.spotted(n);
     }
@@ -695,7 +697,7 @@ const AdventureScene = {
     n.busy = true;
     ar.extra = () => [{ x: p.x, y: p.y, z: p.z, f: () => this.drawFighter() }, ...this.npcItems(), ...this.itemFx(), ...this.wildItems(), ...this.remoteItems()];
     startBattleA({ arena: ar, weather: '', player: { name: this.save.name, avatar: this.save.avatar, team: order.map(i => mons[i]) },
-      cpu: { name: [t.cls, t.name].filter(Boolean).join(' '), cpu: true, tier: t.story || t.gym || t.leader || t.fixed ? (b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion') : b < 3 ? 'easy' : b < 6 ? 'normal' : 'hard', avatar: ADVN.avatar(t), team: team.map(m => Object.assign(ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {}), m.shadow ? { shadow: true } : {})) } });
+      cpu: { name: [t.cls, t.name].filter(Boolean).join(' '), cpu: true, tier: t.story || t.gym || t.leader || t.roster || t.fixed ? (b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion') : b < 3 ? 'easy' : b < 6 ? 'normal' : 'hard', avatar: ADVN.avatar(t), team: team.map(m => Object.assign(ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {}), m.shadow ? { shadow: true } : {})) } });
     order.forEach((i, k) => { const s = mons[i], m = B.sides[0].team[k]; m.hp = Math.min(m.maxHp, s.hp); m.status = s.status || ''; if (!(s.hp > 0)) { m.fainted = true; m.hp = 0; } });
     Object.assign(B.cam, { x: this.cam.x - ar.ox, y: this.cam.y - ar.oy + lv * T, z: ADVR.battleZoom() });
     B.sides[1].queue = true; callout({ idx: -1 }, `${t.cls} ${t.name} wants to battle!`);
@@ -1083,12 +1085,14 @@ const AdventureScene = {
   wakeUp() { const w = this.wake; this.wake = null; if (w) this.dialog(w, null); },
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
-    const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), lm = typeof ADVSTORY !== 'undefined' ? ADVSTORY.place(this) : '', L = /^L/.test(lm) && this.tr?.t.story ? ADVS.town(lm) : null, at = L?.center ? ADVSTORY.free(L.center.x, L.center.y + 4 * ADV.T) : ADVS.front(t);   // a story fight lost at a landmark (the League has no Center) wakes you there, not 341 tiles back at your last Center
+    const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), lm = typeof ADVSTORY !== 'undefined' ? ADVSTORY.place(this) : '', lg = !!(this.tr?.t.league || this.tr?.t.story && ADVSTORY.run?.beat.league), L = /^L/.test(lm) && (this.tr?.t.story || lg) ? ADVS.town(lm) : null, at = L?.center ? ADVSTORY.free(L.center.x, L.center.y + (lg ? 9 : 4) * ADV.T) : ADVS.front(t);   // lg: lost to the Elite Four or the Champion: you wake at the foot of the League plaza, below the four   // a story fight lost at a landmark (the League has no Center) wakes you there, not 341 tiles back at your last Center
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
+    const again = lg && ADVSTORY.leagueReset(sv);   // the classic rule: lose once and the Elite Four start over
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
     STORE.set('advSave', sv);   // what the fight earned is kept (a reload after a lost gym fight undid a level); not persist(), which waits for the world to be ready again and so skipped it (playtest 6)
     this.wake = [L ? (gaveUp ? `You gave up the battle and caught your breath by the ${L.name.replace(/^the /i, '')}.` : `Your team fainted. A passing ranger patched everyone up by the ${L.name.replace(/^the /i, '')}.`) : gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
+    if (again) this.wake.push(`The Elite Four are back in their places. The League starts again with ${again}.`);
     const cool = typeof ADVSTORY !== 'undefined' && ADVSTORY.cool; if (cool?.who && !cool.said) { cool.said = 1; this.wake.push(`${cool.who} won't be going anywhere. Train up a little, then go back.`); }
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }
