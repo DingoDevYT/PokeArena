@@ -109,12 +109,13 @@ function dimmed(src) {
   DIMMED.set(src, c); return c;
 }
 const tintCv = document.createElement('canvas'), tintCtx = tintCv.getContext('2d');
+let SPRITE_ALPHA = 1;   // a multiplier for every sprite drawn while it is set (Adventure ghosts bystanders during a fight)
 function drawFrame(im, sx, sy, sw, sh, dx, dy, tint, alpha = 1, scale = 1, scaleX = 1, scaleY = 1) {
   const dw = sw * scale * scaleX, dh = sh * scale * scaleY; // scaleX/Y = squash and stretch about the feet (dx/dy are for the unstretched frame)
   dx += (sw * scale - dw) / 2; dy += (sh * scale - dh) * 0.7;
   const wl = ADVWA.on && (ctx === ADVR.g || ADVR.rec) ? ADVWA.line(im, sx, sy, sw, sh, dx, dy, dw, dh) : 0;   // an Adventure person or mon in open water: its waterline
   if (ADVR.rec) { if (ADVR.rf && !ADVR.rf.ring) ADVR.rec.push([im, sx, sy, sw, sh, dx, dy, dw, dh, ADVR.rf[0], ADVR.rf[1], wl]); return; }   // the pre-pass only records Adventure sprites (adv-render.js: sun shadows, water reflections)
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha = alpha * SPRITE_ALPHA;
   const draw = () => {
     ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh);
     if (ADVR.shadeE && !tint && ADVR.rf) ADVR.shadeSprite(im, sx, sy, sw, sh, dx, dy, dw, dh);   // an Adventure person or mon standing in a sun shadow

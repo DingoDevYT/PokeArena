@@ -1198,7 +1198,7 @@ const AdventureScene = {
   // every NPC near the view, plus the "!" over a trainer that just spotted you
   npcItems() {
     const out = [], cx = this.cam.x, cy = this.cam.y;
-    for (const n of ADVN.list) { const e = n.e; if (e && Math.abs(e.x - cx) < 700 && Math.abs(e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: e.x, y: e.y, z: e.z, f: () => this.drawNPC(n) }); }
+    for (const n of ADVN.list) { const e = n.e; if (e && Math.abs(e.x - cx) < 700 && Math.abs(e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: e.x, y: e.y, z: e.z, f: this.inB ? () => { SPRITE_ALPHA = n === this.tr?.n ? 0.7 : 0.45; try { this.drawNPC(n); } finally { SPRITE_ALPHA = 1; } } : () => this.drawNPC(n) }); }   // people are see-through during a fight, bystanders more than your opponent (gym trainers, guides and the trainer stood on top of it)
     const b = this.bang, e = b && b.n.e; if (e) out.push({ x: e.x, y: e.y + 2, z: e.z, f: () => this.drawFx({ k: '!', t: b.t }, e) });
     const am = this.amb, ae = am && am.w.e; if (ae) out.push({ x: ae.x, y: ae.y + 2, z: ae.z, f: () => this.drawFx({ k: '!', t: am.t }, ae) });
     for (const n of ADVN.list) if (n.bub && n.e && n !== b?.n && Math.abs(n.e.x - cx) < 700 && Math.abs(n.e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: n.e.x, y: n.e.y + 2, z: n.e.z, top: true, f: () => this.drawBub(n) });   // top: over the weather (fog turned the bubble into a grey box)
