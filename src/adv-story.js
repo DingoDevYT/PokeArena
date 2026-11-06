@@ -25,7 +25,7 @@ const ADVSTORY = {
     if (w.town === 'any') return /^[GT]/.test(code);
     if (w.town === 'away') return /^[GT]/.test(code) && code !== sv.home;
     if (code !== w.town) return false;
-    const c = w.r && ADVS.town(code)?.center; return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= w.r * ADV.T;   // r: tiles from the town centre (the docks scene fired on Spindlewood's west road among the houses)
+    const r = w.r || (b.trigger === 'enter' && /^[GT]/.test(code) ? 16 : 0), c = r && ADVS.town(code)?.center; return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= r * ADV.T;   // r: tiles from the town centre, 16 for any arrival scene in a town (the docks scene fired on the west road, and a Wash retry in the dark forest 27 tiles out)
   },
   // the ace level of a beat's must-win fight, as fight() would build it (NEXT GOAL suggests it: nothing said what level a story boss wanted)
   bossLevel(sv, b) {
@@ -41,7 +41,8 @@ const ADVSTORY = {
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
     if (this.cool?.id === b.id && this.cool.who && t?.center) {   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
       const at = /^L/.test(w.town) ? `at the ${t.name.replace(/^the /i, '')}` : `in ${t.name}`, here = this.place(sc) === w.town;
-      return here ? { line: `${this.cool.who} is still ${at}. Train up, step away, then come back.`, story: b } : { line: `${this.cool.who} is waiting ${at}. Train up, then go back.`, story: b, x: t.center.x, y: t.center.y };   // no "HERE" glued on while you stand there; a landmark is "at the", and "out of town" was wrong 84 tiles away
+      const lv = this.bossLevel(sc.save, b);
+      return here ? { line: `${this.cool.who} is still ${at}. Train up, walk a short way off, then come back.`, story: b, lv } : { line: `${this.cool.who} is waiting ${at}. Train up, then go back.`, story: b, lv, x: t.center.x, y: t.center.y };   // the level hint stays (it dropped after a loss)   // no "HERE" glued on while you stand there; a landmark is "at the", and "out of town" was wrong 84 tiles away
     }
     if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, lv: this.bossLevel(sc.save, b), x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, lv: this.bossLevel(sc.save, b), ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
@@ -58,7 +59,10 @@ const ADVSTORY = {
     if ((this.wait -= dt) > 0) return; this.wait = 0.4;
     if (!sc.ready || sc.mode !== 'walk' || sc.uis.length || sc.dlg || sc.inB) return;
     const code = this.place(sc), open = this.open(sc.save), want = new Set();
-    if (this.cool) { if (this.cool.code === undefined) this.cool.code = code; else if (this.cool.code !== code) this.cool = null; }
+    if (this.cool) {   // the lost beat waits until you have walked a short way off: out of the place, or 6 tiles past the beat's radius (it was the 28 tile town edge, with no distance given)
+      const cb = this.beats().find(x => x.id === this.cool.id), w = cb?.where || {}, c = w.town && ADVS.town(w.town)?.center, far = c && Math.hypot(sc.p.x - c.x, sc.p.y - c.y) > ((w.r || 16) + 6) * ADV.T;
+      if (this.cool.code === undefined) this.cool.code = code; else if (this.cool.code !== code || far) this.cool = null;
+    }
     for (const b of open) {
       if (!this.here(b, code, sc) || b.id === this.cool?.id) continue;
       if (b.trigger === 'enter') { if (!sc.room) return this.start(sc, b); continue; }

@@ -174,7 +174,8 @@ const ADVMAP = {
     const st = typeof ADVSTORY !== 'undefined' && ADVSTORY.goal(sc), gy = this.gymGoal(sc);
     if (st && gy.g && sc.room?.id === gy.g.b) return gy;   // inside the gym its own steps lead, in a shorter panel (it said "Also: Sporehaven Gym, HERE" under the story, and the long panel sat over the leader on a phone)
     const top = ADVW.partyTop(sc.save);
-    if (st && st.lv && top < st.lv) return { ...st, sub: `A tough battle ahead: train to about Lv ${st.lv} (best: Lv ${top})` };   // a story boss's level, like the gyms' (playtest 5: no hint before the bosses or the League)
+    const n = sc.save.party.length, need = st && st.lv ? st.lv + (n >= 3 ? 0 : n === 2 ? 1 : 2) : 0;
+    if (st && need && top < need) return { ...st, sub: `A tough battle ahead: train to about Lv ${need} (best: Lv ${top})` };   // a story boss's level, like the gyms' (playtest 5: no hint before the bosses or the League)
     if (st) return { ...st, sub: gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}` };   // the story leads (adv-story.js); the gym hunt carries on underneath
     return gy;
   },
@@ -182,7 +183,7 @@ const ADVMAP = {
     const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
     if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
     const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
-    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + 1), top = ADVW.partyTop(sv);   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), n = sv.party.length, want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + (n >= 3 ? 1 : n === 2 ? 2 : 3)), top = ADVW.partyTop(sv);   // a lone starter or a pair is asked for a little more (a lone Lv15 starter still lost to Aspen's Lv12 ace)   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
     const sub = top < want ? `Train your team to about Lv ${want} (best: Lv ${top})` : left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;   // the trainers left count indoors and out
     return { x: g.x, y: g.y, line: `${g.town} Gym`, sub, g };

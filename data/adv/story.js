@@ -220,7 +220,7 @@ window.ADV_STORY = {
         { say: 'grunt', lines: ["Wait, who let a trainer in here? Nobody touches the instruments!"] },
         { battle: 'grunt', team: [['stunky', 0], ['grimer', 0], ['murkrow', 1], ['koffing', 1], ['gastly', 2]] },
         { win: [{ say: 'grunt', lines: ["My readings! You knocked them right off the scale."] }], lose: [{ say: 'grunt', lines: ["And stay down. These readings are important."] }] },
-        { say: 'wash', lines: ["Of course it is, darling. It's doing what it was planted to do. Isn't it clever?",
+        { say: 'wash', lines: ["That fence is doing just what it was planted to do, darling. Isn't it clever?",
           "Oh! It's you! My favourite survey answer. 'Isn't being scared part of being brave?' Adorable.",
           "I'm Wash, sweetie. Team Umbra's face, voice and wardrobe. I'm sure you have questions.",
           "Ask my Pokemon. They love an audience."] },

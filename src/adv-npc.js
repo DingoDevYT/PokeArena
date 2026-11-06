@@ -154,7 +154,8 @@ const ADVN = {
       const e = n.e; if (!e || e.lv !== p.lv || !this.vis(n)) continue;
       const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
       const k = ADV.Tp(e.x) / 32;   // reach is in scale 1 px (a 32 px tile): the world is drawn ADV.OUT times bigger, so it grows with it (it did not, and you had to stand inside people to talk)
-      if (d < (n.def.reach || this.TALK) * k && d < bd && (d < 14 * k || (dx * v[0] + dy * v[1]) / d > 0.35)) { best = n; bd = d; }
+      const al = d > 0.01 ? (dx * v[0] + dy * v[1]) / d : 1, sc = d * (2 - al) * (n.def.story || n.def.cast ? 0.6 : 1);   // whoever you face most squarely, a story character first (E picked a stall keeper over Linden, the PC over the nurse)
+      if (d < (n.def.reach || this.TALK) * k && sc < bd && (d < 14 * k || al > 0.35)) { best = n; bd = sc; }
     }
     return best;
   },
