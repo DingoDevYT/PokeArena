@@ -39,6 +39,8 @@ Mapped from the fifth playtest (phone, 104 minutes from badge 5 through the Cham
 | Ethan's Pebble (Shadow Tyranitar) | Showed as a plain Tyranitar; a prize-money line followed the scene. | Plate says SHADOW TYRANITAR with a dark outline; no prize line. |
 | The League | Two outdoor fights; losing to the Champion sent you 341 tiles back; the win was a prize line, four lines and a Master Ball. | You wake by the League after a loss; becoming Champion opens a Hall of Fame (your team, then the credits). |
 
+A desktop keyboard pass (sixth playtest, 79 minutes) confirmed the night's changes: one wild mon before the first badge, the gentler route trainers, the fight camera, corner correction at doors (4 of 4), the stat caps, gym fights staying in the hall, and every must-win story fix. Early fights take 5 to 35 s and feel good; at three badges 50 to 130 s, decided mostly by status moves. It found the blackout save and the one-Enter forget bug (both fixed), and the missing Controls page in Adventure (added).
+
 Still open from it: no Elite Four (the League is the gate rival and the Champion); the post-game beats point at Shadow Pokemon and a tower dungeon that do not exist yet; gym 8 (Bjorn) was not played; three sign pairs still disagree; money has nothing to buy in the late game.
 
 ## What players liked

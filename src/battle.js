@@ -1843,6 +1843,7 @@ function cpuThink(side, dt) {
   const foe = foeOf(side), fe = foe.ent, fm = activeMon(foe);
   I.use = -1; I.dodge = false; I.mega = false;
   if (m.fainted) return;
+  if (B.arena?.world && B.time < 1.2) { I.mx = I.my = 0; return; }   // Adventure: a short face-off before the CPU acts (a fight started at low HP was lost in two seconds, before the bag could open)
   const dx = fe.x - e.x, dy = fe.y - e.y, d = Math.hypot(dx, dy) || 1;
   if (e.hidden > 0 && e.flying) { I.mx = dx / d; I.my = dy / d; return; } // a CPU in the sky flies straight at the foe
   // CPU charges shots from range, where the telegraph matters less
