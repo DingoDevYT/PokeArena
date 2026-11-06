@@ -91,7 +91,7 @@ const ADVSTORY = {
       if (b.trigger === 'enter') { if (!sc.room) return this.start(sc, b); continue; }
       const who = b.who || b.script.find(s => s.say && s.say !== 'player')?.say; if (!who || !/^[GT]/.test(code)) continue;
       want.add(who); const n = this.cast.get(who);
-      if (!n) { const t = ADVS.town(code), f = ADVS.front(t), sp = b.spot || { dx: 2, dy: 1 }, at = this.free(f.x + sp.dx * ADV.T, f.y + sp.dy * ADV.T); this.spawn(who, at.x, at.y, b.id); }
+      if (!n) { const t = ADVS.town(code), f = ADVS.front(t), sp = b.spot || { dx: 2, dy: 1 }, at = this.free(f.x + clamp(sp.dx, -3, 2) * ADV.T, f.y + clamp(sp.dy, 1, 2) * ADV.T); this.spawn(who, at.x, at.y, b.id); }   // near the door, never more than 2 tiles right of it (on a phone Chad's "!" stood under the X button, playtest 10)
       else { n.def.story = b.id; if (!n.busy) n.bub = { s: '!', t: 0 }; }
     }
     for (const [k, n] of this.cast) if (!want.has(k) && !n.busy) this.drop(k);   // you left town, or the beat closed

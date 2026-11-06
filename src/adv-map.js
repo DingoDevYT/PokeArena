@@ -153,7 +153,7 @@ const ADVMAP = {
   hud(sc) {
     img(this.FILE);   // starts the load, so the map opens ready
     if (!sc.ready || sc.uis.length || sc.dlg || (sc.mode !== 'walk' && sc.mode !== 'fish')) return;
-    this.pins(sc); if (!(window.TOUCH?.on && sc.room)) this.info(sc); this.party(sc); this.mini(sc); if (window.TOUCH?.on && sc.room) ctx.globalAlpha = 0.55; this.goalBox(sc); ctx.globalAlpha = 1;   // on a phone the clock box hides indoors and the goal box goes see-through (both sat over the gym leader at the top of the hall)
+    this.pins(sc); this._gb = 0; this.party(sc); this.mini(sc); if (window.TOUCH?.on && sc.room) ctx.globalAlpha = 0.55; this.goalBox(sc); ctx.globalAlpha = 1; if (!(window.TOUCH?.on && sc.room)) this.info(sc);   // the goal box first: on a phone the clock box sits under it   // on a phone the clock box hides indoors and the goal box goes see-through (both sat over the gym leader at the top of the hall)
   },
 
   // ---------- where to go next: the nearest gym not beaten yet, and what the team needs first ----------
@@ -201,12 +201,12 @@ const ADVMAP = {
   goalBox(sc) {
     const G = this.goal(sc), fs = this.fs(), m = this.miniRect(), x = m.x + m.s + Math.round(fs * 0.6), y = m.y, padX = Math.round(fs * 0.8), pitch = Math.round(fs * 1.45);
     const l1 = G.line + (G.x !== undefined && !(sc.room && G.g && sc.room.id === G.g.b) ? '   ' + this.dir(sc, G.x, G.y) : ''), fs2 = Math.max(10, fs - 2);
-    const maxW = VW - x - 240; if (maxW < 140) return;   // no room beside the clock panel
+    const maxW = window.TOUCH?.on ? VW - x - 64 : VW - x - 240; if (maxW < 140) return;   // no room beside the clock panel; a phone keeps the clock box lower, so the goal runs on to the MENU button (it wrapped to four lines and covered doors, playtest 10)
     const wrap = (s, f) => { if (this.tw(s, f) + 2 * padX <= maxW) return [s]; const ws = s.split(' '), out = ['']; for (const w of ws) { const t = out[out.length - 1] ? out[out.length - 1] + ' ' + w : w; if (this.tw(t, f) + 2 * padX > maxW && out[out.length - 1]) out.push(w); else out[out.length - 1] = t; } return out.slice(0, 3); };   // long story goals take two lines on a phone
     const L1 = wrap(l1, fs), L2 = wrap(G.sub, fs2), rows = 1 + L1.length + L2.length;
     const w = Math.round(Math.max(...L1.map(s => this.tw(s, fs)), ...L2.map(s => this.tw(s, fs2)), this.tw('NEXT GOAL', fs2)) + 2 * padX), h = Math.round(rows * pitch + fs * 0.5);
     ctx.save(); if (w > maxW) { ctx.beginPath(); ctx.rect(x, y, maxW, h); ctx.clip(); }
-    this.panel(x, y, Math.min(w, maxW), h, Math.round(fs * 0.7));
+    this.panel(x, y, Math.min(w, maxW), h, Math.round(fs * 0.7)); this._gb = { r: x + Math.min(w, maxW), b: y + h };
     text('NEXT GOAL', x + padX, y + pitch * 0.62, fs2, '#ffde3b', 'left', null);
     L1.forEach((s, i) => text(s, x + padX, y + pitch * (1.55 + i), fs, '#fff', 'left', null));
     L2.forEach((s, i) => text(s, x + padX, y + pitch * (1.55 + L1.length - 0.1 + i), fs2, G.done ? '#7be07b' : '#7fd0e8', 'left', null));
@@ -264,7 +264,7 @@ const ADVMAP = {
     const wx = sc.room ? 'Indoors' : this.WX[typeof ADVWX !== 'undefined' ? ADVWX.cur.kind : ''] || 'Clear', place = this.placeAt(p.x, p.y), srv = N && N.online ? `${N.name}  ${N.count()} online` : 'Offline';
     const fs = this.fs(), g = Math.round(fs * 0.6), padX = Math.round(fs * 0.9), padY = Math.round(fs * 0.7), pitch = Math.round(fs * 1.5), gap = Math.round(fs * 1.2), mw = s => this.tw(s, fs), clk = pad(hh) + ':' + pad(mm);
     const w = Math.round(Math.max(mw(clk) + (date ? gap + mw(date) : 0), mw(wx) + (place ? gap + mw(place) : 0), mw(srv)) + 2 * padX), h2 = 3 * pitch + 2 * padY - Math.round(fs * 0.35);
-    const x = VW - g - w, y = window.TOUCH?.on ? 70 : g;
+    const x = VW - g - w, y = window.TOUCH?.on ? Math.max(70, this._gb && this._gb.r > x ? this._gb.b + 6 : 0) : g;   // on a phone, under the goal box when that reaches across
     this.panel(x, y, w, h2, Math.round(fs * 0.7));
     const y1 = y + padY + pitch * 0.5 - Math.round(fs * 0.17), y2 = y1 + pitch, y3 = y2 + pitch, t = (s, X, Y, c, al = 'left') => text(s, X, Y, fs, c, al, null);
     t(clk, x + padX, y1, '#ffde3b'); if (date) t(date, x + w - padX, y1, '#fff', 'right');
