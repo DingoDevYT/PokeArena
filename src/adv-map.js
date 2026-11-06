@@ -177,20 +177,21 @@ const ADVMAP = {
   goal(sc) {
     const st = typeof ADVSTORY !== 'undefined' && ADVSTORY.goal(sc), gy = this.gymGoal(sc);
     if (st && gy.g && sc.room?.id === gy.g.b) return gy;   // inside the gym its own steps lead, in a shorter panel (it said "Also: Sporehaven Gym, HERE" under the story, and the long panel sat over the leader on a phone)
-    const top = ADVW.partyTop(sc.save);
-    const n = sc.save.party.length, need = st && st.lv ? st.lv + (n >= 3 ? 0 : n === 2 ? 1 : 2) : 0;
-    if (st && need && top < need) return { ...st, sub: `A tough battle ahead: train to about Lv ${need} (best: Lv ${top})` };   // a story boss's level, like the gyms' (playtest 5: no hint before the bosses or the League)
+    const S = this.strength(sc.save), need = st && st.lv ? st.lv + S.plus : 0;
+    if (st && need && S.lv < need) return { ...st, sub: `A tough battle ahead: train to about Lv ${need} (${S.label})` };   // a story boss's level, like the gyms' (playtest 5: no hint before the bosses or the League)
     if (st) return { ...st, sub: st.sub || (gy.done ? gy.line : `Also: ${gy.line}${gy.x !== undefined ? ', ' + this.dir(sc, gy.x, gy.y) : ''}`) };   // the story leads (adv-story.js); the gym hunt carries on underneath
     return gy;
   },
+  // how ready the team is for a boss: the average of its best three (two for a pair), plus what a small team still needs on top (a Lv22 lead with a Lv17 and a Lv15 behind it lost twice to Jet's Lv22 ace while the hint, read off the lead alone, had gone, playtest 10)
+  strength(sv) { const L = (sv?.party || []).map(m => m.level | 0).sort((a, b) => b - a), n = L.length, k = L.slice(0, Math.min(3, n)); return { lv: k.length ? Math.round(k.reduce((a, b) => a + b, 0) / k.length) : 0, plus: n >= 3 ? 0 : n === 2 ? 1 : 2, label: n > 1 ? `team: Lv ${k.join(', ')}` : `best: Lv ${L[0] | 0}` }; },
   gymGoal(sc) {
     const sv = sc.save, here = this.here(sc), open = this.gyms().filter(g => !sv.beat?.[g.id]);
     if (!open.length) return { line: this.gyms().length ? 'Every gym beaten!' : 'Explore Kenora', sub: 'Catch new Pokemon and fill your team', done: true };
     const g = open.sort((a, b) => Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y))[0];
-    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), n = sv.party.length, want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + (n >= 3 ? 0 : n === 2 ? 1 : 2)), top = ADVW.partyTop(sv);   // the ace's level, one more for a pair, two for a lone starter (playtest 8 won the first badge alone at the ace +2; it was +1/+2/+3, the story bosses' +0/+1/+2 now)
+    const team = ADVN.leaderTeam(g.leader, sv.badges | 0), n = sv.party.length, S = this.strength(sv), want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + S.plus), top = S.lv;   // the ace's level, one more for a pair, two for a lone starter (playtest 8 won the first badge alone at the ace +2; it was +1/+2/+3, the story bosses' +0/+1/+2 now)
       // a lone starter or a pair is asked for a little more (a lone Lv15 starter still lost to Aspen's Lv12 ace)   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
-    const sub = top < want - 1 ? `Train your team to about Lv ${want} (best: Lv ${top})` : top < want ? `Ready to try. Lv ${want} is safer (best: Lv ${top})` :   // one level short says you may try (a tester won the badge at Lv14 while it still said Lv 15, playtest 8)
+    const sub = top < want - 1 ? `Train your team to about Lv ${want} (${S.label})` : top < want ? `Ready to try. Lv ${want} is safer (${S.label})` :   // one level short says you may try (a tester won the badge at Lv14 while it still said Lv 15, playtest 8)
       left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;   // the trainers left count indoors and out
     return { x: g.x, y: g.y, line: `${g.town} Gym`, sub, g };
   },
