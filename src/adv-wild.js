@@ -144,10 +144,10 @@ const ADVW = {
     if (!walk && (w.st === 'alert' || w.st === 'charge')) { w.st = 'wander'; w.cool = 4; }
     switch (w.st) {
       case 'wander':
-        if (walk && w.cool <= 0 && same) {
+        if (walk && w.cool <= 0 && same) {   // before the first badge an aggressive pack notices you at 3.5 tiles, not 6 (a Miltank charged a new player on the way to the grass, playtest 8)
           const hd = Math.hypot(P.x - g.home.x, P.y - g.home.y);
           if (tt === 'skittish' && d < 5 * T) return this.setAll(g, 'flee', 2);
-          if (tt === 'aggressive' && d < 6 * T && (d < 40 || (DIR_VEC[w.face][0] * dx + DIR_VEC[w.face][1] * dy) / d > 0.5)) return this.setAll(g, 'alert', 0.6);
+          if (tt === 'aggressive' && d < ((P.badges ?? ADV.player?.badges ?? 1) | 0 ? 6 : 3.5) * T && (d < 40 || (DIR_VEC[w.face][0] * dx + DIR_VEC[w.face][1] * dy) / d > 0.5)) return this.setAll(g, 'alert', 0.6);
           if (tt === 'territorial' && hd < 3 * T) return this.setAll(g, 'alert', 0.6);
         }
         if (w.go) { if (this.go(w, g, w.go.x, w.go.y, 40, dt) < 4 || (w.go.t -= dt) <= 0) { w.go = null; w.wait = 1 + this.rnd() * 3; } }

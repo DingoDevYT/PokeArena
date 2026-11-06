@@ -288,7 +288,7 @@ window.ADV_TEMPER = {
   mienshao: { t: 'aggressive', group: [1, 1] },
   milcery: { t: 'passive', group: [2, 4] },
   milotic: { t: 'passive', group: [1, 1], swims: true },
-  miltank: { t: 'aggressive', group: [2, 4] },
+  miltank: { t: 'territorial', group: [2, 4] },
   misdreavus: { t: 'skittish', group: [1, 1] },
   mismagius: { t: 'passive', group: [1, 1] },
   monferno: { t: 'aggressive', group: [1, 1] },

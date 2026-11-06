@@ -293,6 +293,8 @@ ADVW.reset(); g = mk('bidoof', [at(2, 0), at(2, 1)]); run(3); ok(g.m.every(w => 
 ADVW.reset(); g = mk('houndour', [at(5.5, 0), at(5.5, 1), at(6, -1)]); g.m.forEach(w => { w.face = 6; });                      // looking at the player (west)
 ADVW.fx = []; run(0.1); ok(g.m.every(w => w.st === 'alert') && ADVW.fx.filter(f => f.k === '!').length === g.m.length, 'an aggressive pack notices the player in its facing cone: "!" for each');
 run(0.8); ok(g.m.every(w => w.st === 'charge'), 'then charges'); const d0 = Math.min(...g.m.map(dist)); run(2 * S); ok(Math.min(...g.m.map(dist)) < d0 - 3 * T && Math.min(...g.m.map(dist)) < 40, 'and closes in for contact');
+ADVW.reset(); g = mk('houndour', [at(5.5, 0), at(5.5, 1)]); g.m.forEach(w => { w.face = 6; }); P.badges = 0; run(0.3); ok(g.m.every(w => w.st === 'wander'), 'before the first badge an aggressive pack 5.5 tiles off lets you pass');
+ADVW.reset(); g = mk('houndour', [at(3, 0), at(3, 1)]); g.m.forEach(w => { w.face = 6; }); run(0.1); ok(g.m.every(w => w.st === 'alert'), '... but notices you at 3 tiles'); delete P.badges;
 ADVW.reset(); g = mk('houndour', [at(5.5, 0), at(5.5, 1)]); g.m.forEach(w => { w.face = 2; });                                  // looking away
 run(0.3); ok(g.m.every(w => w.st === 'wander'), 'an aggressive pack facing away does not notice');
 ADVW.reset(); g = mk('houndour', [at(5.5, 0), at(5.5, 1)]); g.m.forEach(w => { w.face = 6; }); ADVW.update(1 / 60, { ...P, lv: 1 }, 'walk'); ok(g.m.every(w => w.st === 'wander'), 'nobody notices a player on another level');

@@ -53,7 +53,7 @@ const AdventureScene = {
     if (!M) return '';
     if (this.mode === 'battle' || this.mode === 'pvp') {
       if (AUDIO.musicSrc === FLOWERY_MUSIC) return '';   // Flowery's own fight theme (render.js) takes over
-      return this.mode === 'pvp' ? M.battle.trainer : !this.tr ? M.battle.wild : this.tr.t.leader || this.tr.t.roster || this.tr.t.mustWin ? M.battle.leader : M.battle.trainer;   // leaders, the Elite Four and the story's must-win fights get the big theme
+      return this.mode === 'pvp' ? M.battle.trainer : !this.tr ? M.battle.wild : this.tr.t.story && typeof ADVSTORY !== 'undefined' && ADVSTORY.run?.beat.league && M.battle.legendary ? M.battle.legendary : this.tr.t.leader || this.tr.t.roster || this.tr.t.mustWin ? M.battle.leader : M.battle.trainer;   // the Champion gets the biggest track   // leaders, the Elite Four and the story's must-win fights get the big theme
     }
     if (this.vic && !this.vic.a.ended) return this.vic.name;
     if (this.room) return M.rooms[this.room.id.split('-').pop()] || M.zones[this.room.door.town] || '';

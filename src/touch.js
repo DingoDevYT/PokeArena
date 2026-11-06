@@ -82,7 +82,8 @@ const TOUCH = window.TOUCH = (() => {
     root.classList.toggle('menu', m); root.classList.toggle('fight', f);
     for (const k in els) {
       const e = els[k], w = e.dataset.when, pad = m && T.padOn && k !== 'PADT';   // on screens A, B and the d-pad only show when PAD is on
-      const on = (w === 'bag' && bag) || (w === 'all' && (!m || pad)) || (w === 'play' && p) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m && (k === 'PADT' || pad));
+      const on = (w === 'bag' && bag) || (w === 'all' && (!m || pad)) || (w === 'play' && p && !m) || (w === 'fight' && p && f && !m) || (w === 'chat' && c) || (w === 'ride' && r) || (w === 'menu' && m && (k === 'PADT' || pad));
+      // play buttons (X, Y, MENU) hide with A and B while a text box or the like is up (X and Y stood alone beside the dialog, playtest 7)
       const megaNo = k === 'LTRT' && !(typeof B !== 'undefined' && B?.sides?.[0] && !B.sides[0].megaUsed && typeof megaTarget === 'function' && megaTarget(activeMon(B.sides[0])));   // MEGA only when your mon can mega evolve (it sat over the item wheel for nothing)
       e.style.display = on && !megaNo ? 'flex' : 'none';
       const l = m ? e.dataset.ml : e.dataset.l; if (e.textContent !== l) { e.textContent = l; e.classList.toggle('sm', l.length > 1); }
