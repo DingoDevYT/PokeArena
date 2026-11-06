@@ -3,7 +3,8 @@
 'use strict';
 const ADVN = {
   list: [], SIM: 40, SPEED: 40, TALK: 40, NEAR: 3.2,  // tiles an NPC thinks within the player, wander speed px/s, talk reach px, a spotting trainer stops this many tiles from you
-  SIZE: [[1, 1], [1, 2], [2, 3], [2, 3], [3, 4], [3, 4], [4, 6], [4, 6], [4, 6]],   // trainer team size by badges (min, max); one mon before the first badge
+  SIZE: [[1, 1], [1, 2], [2, 2], [2, 3], [3, 4], [3, 4], [4, 6], [4, 6], [4, 6]],   // two at two badges (every trainer brought three near your level and a lone strong lead could not carry it, playtest 10)
+    // trainer team size by badges (min, max); one mon before the first badge
   AVATAR: { youngster: 'youngster', lass: 'lass', picnicker: 'picnicker', hiker: 'hiker', fisherman: 'fisherman', rancher: 'cowgirl', farmer: 'cowgirl' },
   reset() { this.list = []; },
   load(defs = [...(window.ADV_NPCS || []), ...ADV.roomNpcs()]) {

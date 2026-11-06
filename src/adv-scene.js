@@ -957,6 +957,7 @@ const AdventureScene = {
     const s0 = B.sides[0], alive = [...this.part].filter(k => !s0.team[k].fainted); if (!alive.length) return;
     const base = ADVP.info(m.sp.id).baseExp ?? 100;
     alive.forEach(k => { const i = this.order[k], n = Math.round(ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr) * ADVP.expPace(this.save.badges) * ADVP.catchUp(this.save.party[i].level, ADVW.partyTop(this.save))); this.gain[i] = (this.gain[i] | 0) + n; if (k === s0.cur) callout({ idx: -1 }, `${ADVP.name(this.save.party[i])} +${n} EXP`); });
+    s0.team.forEach((t, k) => { const i = this.order[k]; if (this.part.has(k) || t.fainted || i === undefined || !this.save.party[i]) return; const n = Math.round(0.5 * ADVP.expGain(base, m.level, this.save.party[i].level, alive.length, !!this.tr) * ADVP.expPace(this.save.badges)); if (n > 0) this.gain[i] = (this.gain[i] | 0) + n; });   // the healthy bench gets half, without the catch-up bonus (a team share: a Hoppip and a Wooper never gained a level while the lead carried every fight, playtest 10)
   },
   // writes the fight back into the party (hp, status) and turns the EXP into the level-up pages
   settle() {

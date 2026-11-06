@@ -204,6 +204,8 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - In the Mart a tap picks a row and a second tap buys or sells (one tap bought a $4000 Bike); on a phone - and + buttons set the amount and a line says to tap the row again. The Bike's text names the RIDE button instead of "Press V".
 - Tenth playtest fixes (2026-11-06, the third hour on a phone, in progress):
   - The docks scene (Ethan, the grunt, Jet) happens at Spindlewood's docks on the east shore, within 8 tiles of the first pier, and NEXT GOAL says "Go to the docks at Spindlewood" and points there (it fired on the west road, with no water in sight).
+  - A team share: the healthy Pokemon who sat out a fight get half the EXP each, without the catch-up bonus (a Hoppip and a Wooper never gained a level while a Charmeleon carried every fight).
+  - Trainers bring two mons at two badges (every trainer brought three near your level).
   - Level hints for gyms and story bosses read the average of your best three (two for a pair) and show them ("team: Lv 21, 17, 15"); read off the lead alone, Jet's hint vanished for a Lv22 lead with a Lv17 and a Lv15 behind it, which lost twice.
   - Zoomed in a step, the world map marks each Mart with a blue M (a tester could not find Spindlewood's).
   - After a finger scroll in the Mart, the next tap only picks a row (the highlight rode along with the list and one tap bought).

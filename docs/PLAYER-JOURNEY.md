@@ -91,3 +91,17 @@ From a save just after the first badge in Goldacre (Charmeleon Lv17, Hoppip Lv12
 | The Mart's lower rows | Super Potion and Full Heal could not be reached by touch. | Long lists scroll with a finger. |
 | Aspen | Won at Lv20 after NEXT GOAL said "Challenge Aspen!". | Gym hints are one level lower; one short says "Ready to try". |
 
+## The third hour (tenth playtest)
+
+From a save just after the second badge at Pinegrove (Charmeleon Lv21, Hoppip Lv15, Wooper Lv17), touch only, 80 minutes: no third badge (about 20 minutes went to the tester's scripts), 5 blackouts, all heal items gone.
+
+| Problem | Now |
+|---|---|
+| Only the fighter earned EXP: Hoppip and Wooper never gained a level while Charmeleon carried every fight. | The healthy bench gets half the EXP of each fight. |
+| Every trainer brought three mons near your level. | Two at two badges. |
+| The docks scene fired on Spindlewood's west road, nowhere near the docks, and re-fired the moment you left the Center. | It happens at the docks on the east shore, and NEXT GOAL points there. |
+| Jet's level hint read only the lead (Lv22) and vanished. | Hints read the team's best three ("team: Lv 22, 17, 15"). |
+| A tap after a scroll bought in the Mart; no Marts on the map. | The first tap after a scroll only picks; Marts show as a blue M when zoomed in. |
+
+The story writing held up well (Chad, Linden, the docks, Jet's voice).
+

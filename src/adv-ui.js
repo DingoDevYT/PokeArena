@@ -701,11 +701,11 @@ const ADVUI = {
           const it = ADVP.item(id); ADVUI.icon(id, X(740), Y(210), L(44)); text(it.name, X(810), Y(186), L(26), '#fff', 'left', null); text('Owned: ' + (sv().bag[id] | 0), X(810), Y(224), L(15), '#ffde3b', 'left', null);
           wrapText(it.info, X(700), Y(290), L(550), L(17), '#dde');
           text(`< ${st.qty} >   ${ADVUI.money(price(id) * st.qty)}`, X(975), Y(390), L(26), '#fff', 'center', null);
-          if (window.TOUCH?.on) { [[-1, X(730), '-'], [1, X(1220), '+']].forEach(([d, bx, g]) => { ctx.beginPath(); ctx.arc(bx, Y(390), L(30), 0, 6.283); ctx.fillStyle = '#ffffff22'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffde3b'; ctx.stroke(); text(g, bx, Y(392), L(30), '#ffde3b', 'center', null); hot(bx - L(40), Y(350), L(80), L(80), { click: () => q(d) }); }); text(st.mode === 1 ? 'Tap the row again to buy.' : 'Tap the row again to sell.', X(975), Y(530), L(16), '#ffde3b', 'center', null); }   // a phone: the amount by tap, and the second tap does it
+          if (window.TOUCH?.on) { [[-1, X(730), '-'], [1, X(1220), '+']].forEach(([d, bx, g]) => { ctx.beginPath(); ctx.arc(bx, Y(390), L(30), 0, 6.283); ctx.fillStyle = '#ffffff22'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffde3b'; ctx.stroke(); text(g, bx, Y(392), L(30), '#ffde3b', 'center', null); hot(bx - L(40), Y(350), L(80), L(80), { click: () => q(d) }); }); text(st.mode === 1 ? 'Tap the row again to buy.' : 'Tap the row again to sell.', X(975), Y(540), L(16), '#ffde3b', 'center', null); }   // a phone: the amount by tap, and the second tap does it
         }
-        if (st.mode === 1 && mk) text('Stock and prices change every day.', X(975), Y(450), L(13), '#9aa6c0', 'center', null);
-        else if (st.mode === 1 && sv().badges < 7) text(`Better stock arrives with more badges (you have ${sv().badges}).`, X(975), Y(450), L(13), '#9aa6c0', 'center', null);
-        if (st.note) text(st.note, X(975), Y(490), L(16), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
+        if (st.mode === 1 && mk) text('Stock and prices change every day.', X(975), Y(462), L(13), '#9aa6c0', 'center', null);
+        else if (st.mode === 1 && sv().badges < 7) text(`Better stock arrives with more badges (you have ${sv().badges}).`, X(975), Y(462), L(13), '#9aa6c0', 'center', null);
+        if (st.note) text(st.note, X(975), Y(500), L(16), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
         hint(padUI() ? 'A do it   left / right amount   B back' : 'Enter or click to do it   left / right amount   Esc back'); backButton(() => pick(0));
       },
     };
