@@ -109,7 +109,7 @@ window.ADV_TEMPER = {
   dewott: { t: 'territorial', group: [1, 1], swims: true },
   dewpider: { t: 'passive', group: [2, 4] },
   diggersby: { t: 'passive', group: [1, 2] },
-  diglett: { t: 'skittish', group: [2, 4] },
+  diglett: { t: 'passive', group: [2, 4] },   // pops up and stays put: with Shellos and Staryu out in the water, Longshore's walkers were Krabby and Sandygast (immune to Normal) for a Meowth start (playtest 3)
   dipplin: { t: 'passive', group: [2, 4] },
   dolliv: { t: 'passive', group: [2, 3] },
   doublade: { t: 'territorial', group: [1, 1] },

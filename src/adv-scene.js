@@ -162,7 +162,7 @@ const AdventureScene = {
     if (!this.ready) {
       const sk = ADV.key(Math.floor(this.p.x / (ADV.Tp(this.p.x) * ADV.CH)), Math.floor(this.p.y / (ADV.Tp(this.p.x) * ADV.CH)));
       if (ADV.missing[sk]) this.err = 'Missing world data';
-      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late; this.late = null; this.grow(l, () => this.wakeUp()); } else if (this.wake) this.wakeUp(); else if (!this.save.intro && !this.net?.N?.online) this.intro(); }
+      if (this.loaded && ADV.chunks.has(sk) && this.place()) { this.ready = true; this.px = this.p.x; this.py = this.p.y; this.cam = { x: this.p.x, y: this.p.y - this.p.z - 16 }; ADVW.fill(this.p, this.view()); if (this.late) { const l = this.late, w = this.wake; this.late = this.wake = null; if (w) this.dialog(w, null, () => this.grow(l)); else this.grow(l); } else if (this.wake) this.wakeUp(); else if (!this.save.intro && !this.net?.N?.online) this.intro(); }   // the blackout lines first, then the EXP the fight earned (it read 'gained EXP' before 'Your team fainted')
       return;
     }
     const en = !!KEYS.Enter; this.enterHit = en && !this.enterPrev; this.enterPrev = en;
@@ -1126,8 +1126,9 @@ const AdventureScene = {
     }
   },
   drawWild(w) {
-    const e = w.e; ADVR.shadow(ctx, e.x, e.y - e.sz, 10, 4);
-    drawMonSprite(w.key, w.moving ? 'Walk' : 'Idle', w.animT, w.face, e.x, e.y, { z: e.z });
+    const e = w.e, gh = this.inB ? 0.45 : 1;   // a wild mon outside your fight is ghosted (they read as part of it, and crowded the HUD)
+    ADVR.shadow(ctx, e.x, e.y - e.sz, 10, 4, 0.32 * gh);
+    drawMonSprite(w.key, w.moving ? 'Walk' : 'Idle', w.animT, w.face, e.x, e.y, { z: e.z, alpha: gh });
     ADVR.wade(e, 36);
   },
   // an overworld sprite sheet for entity e facing face (0..7). Ranger sheets (ow.anims) carry walk.<dir> and idle.<dir> rows for all 8 facings;
@@ -1268,7 +1269,7 @@ const AdventureScene = {
       if (k < 0.02) return { a: 0, tint: '14,6,34', lights: [], glow: { r: 0.6, a: 0, g: 0.25 } };   // a bright day: no veil, just a faint glow pool round each lamp
       out.push({ x: p.x, y: p.y - p.z - 22, r: 84, a: 0.55 }, { x: f.x, y: f.y - f.z - 8, r: 42, a: 0.3 });
       if (this.inB) out.push({ x: this.cam.x, y: this.cam.y, r: 300, a: 0.9 });
-      return { a: k * (0.46 + 0.32 * nf) * (window.TOUCH?.on ? 0.8 : 1), tint: W.veil > 0.78 * nf && W.tint ? W.tint : '14,6,34', lights: out, glow: { r: 1 + 0.15 * lit, a: 0.55 + 0.45 * lit, g: 0.5 + 0.6 * lit } };
+      return { a: k * (0.46 + 0.32 * nf) * (window.TOUCH?.on ? 0.8 : 0.9), tint: W.veil > 0.78 * nf && W.tint ? W.tint : '14,6,34', lights: out, glow: { r: 1 + 0.15 * lit, a: 0.55 + 0.45 * lit, g: 0.5 + 0.6 * lit } };
     }
     if (!d || !d.dark) return null;
     if (this.inB) out.push({ x: this.cam.x, y: this.cam.y, r: 330, a: 1 }); else out.push({ x: p.x, y: p.y - p.z - 22, r: 150, a: 1 }, { x: f.x, y: f.y - f.z - 8, r: 64, a: 0.5 });

@@ -50,7 +50,10 @@ const ADVR = {
     const pick = ts => { const v = ts && ts.cliff && ts.cliff[name]; return role && v !== null && typeof v === 'object' ? v[role] : v; };
     const rg = !ADV.fallback && window.ADV_TILESET_REGION, cb = c !== undefined && rg && rg.cliffBy;
     if (cb) {   // a rim or face top on the generated island: the copy of the cliff art whose grass is the raised cell's own ground (tools/adv_lab_ground.py)
-      const m = ADV.palette[ADV.mat(c, r)], key = window.ADV_TILESET_DERIVED?.keys?.[m] || (this.GRASSY.has(m) ? 'grass' : null), v = key && cb[key] && cb[key][name];
+      const K = window.ADV_TILESET_DERIVED?.keys, kOf = m => (K?.[m] && cb[K[m]] ? K[m] : this.GRASSY.has(m) ? 'grass' : null);
+      let key = kOf(ADV.palette[ADV.mat(c, r)]);
+      if (!key) for (const [dc, dr] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) if (ADV.h(c + dc, r + dr) === ADV.h(c, r) && (key = kOf(ADV.palette[ADV.mat(c + dc, r + dr)]))) break;   // a road on a terrace takes its rim from the ground beside it (a snowy road's rim fell back to the grass art: green strips across it)
+      const v = key && cb[key] && cb[key][name];
       const id = role && v !== null && typeof v === 'object' ? v[role] : v;
       if (id >= 0) return this.tile(g, id, x, y, rg);
     }
@@ -75,6 +78,7 @@ const ADVR = {
   groundCell(g, ch, i, c, r) {
     const T = this.T, x = c * T, y = r * T, k = ch.kind[i];
     this.ground(g, ch, i, c, r, x, y);
+    this.depthSeam(g, ch, i, c, r, x, y);
     if (ADV.STAIR[k] && !(ch.bake && ch.bake[i] >= 0)) this.cliff(g, 'stairs' + 'NSEW'[k - 1], null, x, y);
     if (ch.deck[i] >= 0) { g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(x, y, T, T); }
   },
@@ -92,6 +96,57 @@ const ADVR = {
       if (od) this.tile(g, ADV.frameId(od, ch.orole[i], ch.otile[i], this.frame), x, y, ADV.originOf(od), od.density);
     }
   },
+  // deep and shallow open water meet on a dithered seam that runs a tile into each side, rounded at the corners, instead of along the tile grid (lakes and the sea read as a quilt of squares).
+  // Each side takes pixels of the other's centre tile on a 4 x 4 ordered dither, 50% at the seam fading to none a tile in; the deep side uses the low thresholds and the shallow side the high ones, so the pattern runs on unbroken across the seam.
+  // Only over the cell's own pixels of its material (tmask), so shore rims and other edge art stay. Baked with the chunk.
+  // the same for any two materials that autotile as one group with no seam art between them: grey ash ground under the northern snow read as flat grey stair-step patches
+  SEAMS: [[['waterDeep', 'sandWaterDeep'], ['water', 'sandWater']], [['ashGround'], ['snow']]],
+  N8: [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]],
+  BAYER: [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5],
+  depthSeam(g, ch, i, c, r, x, y) {
+    if (ch.bake && ch.bake[i] >= 0) return;
+    const P = ADV.palette; let D = this.dsets;
+    if (!D || D.P !== P) {   // side[m]: 1 or 2 for a material on either side of a seam pair, pair[m]: the set across from it
+      const ix = n => P.indexOf(n), side = new Uint8Array(P.length), pair = [];
+      for (const [A, B_] of this.SEAMS) { const a = new Set(A.map(ix).filter(v => v > 0)), b = new Set(B_.map(ix).filter(v => v > 0)); for (const v of a) { side[v] = 1; pair[v] = b; } for (const v of b) { side[v] = 2; pair[v] = a; } }
+      D = this.dsets = { P, side, pair, masks: new Map(), cells: new Map() };
+    }
+    const m = ch.mat[i], sd = D.side[m]; if (!sd) return;
+    const deep = sd === 1, other = D.pair[m]; let bits = 0, om = -1;
+    for (let k = 0; k < 8; k++) {
+      const [dc, dr] = this.N8[k], nc = ADV.chunkAt(c + dc, r + dr); if (!nc) continue;   // an unloaded neighbour continues the cell (its load re-bakes this chunk)
+      const j = ((r + dr) & 31) * 32 + ((c + dc) & 31); if (other.has(nc.mat[j]) && nc.h[j] === ch.h[i]) { bits |= 1 << k; if (om < 0) om = nc.mat[j]; }
+    }
+    if (!bits) return;
+    const def = ADV.defOf(P[m]), od = ADV.defOf(P[om]); if (!def || !od || def.quad || od.quad || typeof ADVWA === 'undefined') return;
+    const own = ADVWA.tmask(def, ADV.frameId(def, ch.role[i], ch.tile[i], this.frame)), ts = ADV.originOf(od), sh = ADV.sheet(ts);
+    if (!own || !sh) { this.miss = true; return; }
+    const key = bits * 2 + (deep ? 1 : 0); let mk = D.masks.get(key);
+    if (!mk) {   // 32 x 32 cells of the dither, one per art px of a cell
+      mk = document.createElement('canvas'); mk.width = mk.height = 32; const k = mk.getContext('2d'), id = k.createImageData(32, 32), a = id.data;
+      for (let py = 0; py < 32; py++) for (let px = 0; px < 32; px++) {
+        const u = (px + 0.5) / 32, v = (py + 0.5) / 32; let d = 9;
+        for (let q = 0; q < 8; q++) if (bits >> q & 1) { const [dc, dr] = this.N8[q]; d = Math.min(d, Math.hypot(Math.max(dc - u, 0, u - dc - 1), Math.max(dr - v, 0, v - dr - 1))); }
+        const pr = 0.5 * Math.max(0, 1 - d), b = (this.BAYER[(py & 3) * 4 + (px & 3)] + 0.5) / 16;
+        if (deep ? b < pr : b >= 1 - pr) a[(py * 32 + px) * 4 + 3] = 255;
+      }
+      k.putImageData(id, 0, 0); D.masks.set(key, mk);
+    }
+    const T = this.T, oid = ADV.frameId(od, 0, ADV.pick(od, 'C', c, r), this.frame), ownId = ADV.frameId(def, ch.role[i], ch.tile[i], this.frame), ck = key + '|' + m + '|' + ownId + '|' + om + '|' + oid + '|' + T;
+    let w = D.cells.get(ck); if (w) return g.drawImage(w, x, y, T, T);   // composed once per look: raised terraces draw every frame
+    if (D.cells.size > 600) D.cells.clear();
+    w = document.createElement('canvas'); w.width = w.height = T;
+    const t = w.getContext('2d'); t.imageSmoothingEnabled = false;
+    const z = 32 * (this.S === 1 ? 1 : this.S * (od.density ?? ts.density ?? 1)), n = Math.max(1, Math.round(T / z));
+    for (let v = 0; v < n; v++) for (let u = 0; u < n; u++) t.drawImage(sh, (oid % ts.cols) * 32, Math.floor(oid / ts.cols) * 32, 32, 32, u * z, v * z, z, z);
+    t.globalCompositeOperation = 'destination-in'; t.drawImage(mk, 0, 0, T, T);
+    const z2 = 32 * (this.S === 1 ? 1 : this.S * (def.density ?? ADV.originOf(def).density ?? 1)), n2 = Math.max(1, Math.round(T / z2));
+    const tmp = this.cv3 || (this.cv3 = document.createElement('canvas')); if (tmp.width !== T) tmp.width = tmp.height = T;
+    const t3 = tmp.getContext('2d'); t3.setTransform(1, 0, 0, 1, 0, 0); t3.imageSmoothingEnabled = false; t3.clearRect(0, 0, T, T);
+    for (let v = 0; v < n2; v++) for (let u = 0; u < n2; u++) t3.drawImage(own, u * z2, v * z2, z2, z2);
+    t.drawImage(tmp, 0, 0); t.globalCompositeOperation = 'source-over';
+    D.cells.set(ck, w); g.drawImage(w, x, y, T, T);
+  },
   // is the neighbour (c + dc, r + dr) a drop from height h that is not just the stairs leading up to this cell
   lower(c, r, h, dc, dr) {
     const nc = c + dc, nr = r + dr, nh = Math.max(ADV.h(nc, nr), ADV.deck(nc, nr));
@@ -102,7 +157,7 @@ const ADVR = {
   hasFace(c, r) { const h = ADV.h(c, r); return h > 0 && h > Math.max(0, ADV.h(c, r + 1), ADV.deck(c, r + 1)); },
   top(g, ch, i, c, r, h) {
     const T = this.T, x = c * T, y = r * T - h * T, k = ch.kind[i];
-    this.ground(g, ch, i, c, r, x, y);
+    this.ground(g, ch, i, c, r, x, y); this.depthSeam(g, ch, i, c, r, x, y);
     const baked = ch.bake && ch.bake[i] >= 0;   // a map-lab cell: its tile already carries the rim and the stairs art
     if (ADV.STAIR[k] && !baked) this.cliff(g, 'stairs' + 'NSEW'[k - 1], null, x, y);
     const n = this.lower(c, r, h, 0, -1), e = this.lower(c, r, h, 1, 0), w = this.lower(c, r, h, -1, 0);

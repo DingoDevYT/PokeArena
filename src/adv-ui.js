@@ -64,7 +64,7 @@ const ADVUI = {
   },
   // a short notice at the top of the screen; slot stacks several
   notice(s, slot = 0) {
-    const fs = clamp(Math.round(VH / 36), 13, 24), g = Math.round(fs * 0.9), padX = Math.round(fs * 1.1), padY = Math.round(fs * 0.7), maxW = Math.min(VW - 2 * g, fs * 36);
+    const fs = clamp(Math.round(VH / 36), 13, 24), g = Math.round(fs * 0.9), padX = Math.round(fs * 1.1), padY = Math.round(fs * 0.7), maxW = Math.min(VW - 2 * g, fs * 36, window.TOUCH?.on ? VW * 0.46 : 1e9);   // on a phone it fits between the stick and the X button (a long tip ran under X)
     ctx.font = this.font(fs); const lines = []; let cur = '';
     for (const wd of String(s).split(' ')) { const t = cur ? cur + ' ' + wd : wd; if (ctx.measureText(t).width > maxW - 2 * padX && cur) { lines.push(cur); cur = wd; } else cur = t; }
     if (cur) lines.push(cur);
@@ -481,7 +481,7 @@ const ADVUI = {
         panel(X(670), Y(140), L(610), L(300));
         const id = l[st.sel]; if (id) { const it = ADVP.item(id); ADVUI.icon(id, X(740), Y(230), L(44)); text(it.name, X(810), Y(206), L(26), '#fff', 'left', null); text('Owned: ' + B_()[id], X(810), Y(244), L(15), '#ffde3b', 'left', null); wrapText(it.info, X(700), Y(310), L(550), L(17), '#dde'); }
         if (st.note) text(st.note, X(975), Y(480), L(16), st.bad ? '#ff9a9a' : '#9f9', 'center', null);
-        hint(padUI() ? 'A use   LB/RB tab   B back' : 'Click or Enter to use   Q / E tab   Esc back'); backButton(() => sc.close());
+        hint(window.TOUCH?.on ? 'Tap an item to use it   tap a tab to switch' : padUI() ? 'A use   LB/RB tab   B back' : 'Click or Enter to use   Q / E tab   Esc back'); backButton(() => sc.close());
       },
     };
   },
@@ -544,7 +544,7 @@ const ADVUI = {
   grow(sc, events, done) {
     const ev = events.slice(), st = { e: null, t: 0, sel: 0, txt: '', fin: false };
     const next = () => {
-      st.t = 0; st.sel = 0; st.e = ev.shift();
+      st.t = 0; st.sel = 0; st.arm = -1; st.stop = false; st.e = ev.shift();
       if (!st.e) { sc.close(); if (done) done(); return; }
       const e = st.e, n = e.s && ADVP.name(e.s);
       st.txt = e.t === 'msg' ? e.s : e.t === 'lv' ? `${n} grew to Lv ${e.to}!` : e.t === 'learn' ? `${n} learned ${DEX.moves[e.mv].name}!`
@@ -559,11 +559,11 @@ const ADVUI = {
         const e = st.e; if (!e) return; st.t += dt;
         if (e.t === 'forget') {
           const n = 5; ADVUI.nav(st, n);
-          if (okHit() || st.go) { st.go = false; if (st.sel < 4) { const old = DEX.moves[e.s.moves[st.sel]].name; ADVP.replace(e.s, st.sel, e.mv); ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} forgot ${old} and learned ${DEX.moves[e.mv].name}!` }); } else ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} did not learn ${DEX.moves[e.mv].name}.` }); next(); }
+          if (okHit() || st.go) { st.go = false; st.arm = -1; if (st.sel < 4) { const old = DEX.moves[e.s.moves[st.sel]].name; ADVP.replace(e.s, st.sel, e.mv); ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} forgot ${old} and learned ${DEX.moves[e.mv].name}!` }); } else ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} did not learn ${DEX.moves[e.mv].name}.` }); next(); }
           return;
         }
         if (e.t === 'evo') {
-          if (st.t > 0.3 && st.t < 3 && backHit()) { ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} stopped evolving.` }); return next(); }
+          if (st.t > 0.3 && st.t < 3 && (backHit() || st.stop)) { st.stop = false; ev.unshift({ t: 'msg', s: `${ADVP.name(e.s)} stopped evolving.` }); return next(); }
           if (st.t > 3.4) { finish(e); next(); } return;
         }
         if (st.t > 0.25 && (okHit() || MOUSE.hit)) next();
@@ -586,16 +586,16 @@ const ADVUI = {
         } else if (e.t === 'forget') {
           const w = L(520), x = VW / 2 - w / 2; panel(x, Y(120), w, L(380), 'FORGET WHICH MOVE?');
           for (let i = 0; i < 5; i++) {
-            const y = Y(170) + i * L(58), on = st.sel === i; hot(x + L(20), y, w - L(40), L(50), { hover: () => st.sel = i, click: () => { st.sel = i; st.go = true; } });
+            const y = Y(170) + i * L(58), on = st.sel === i; hot(x + L(20), y, w - L(40), L(50), { hover: () => st.sel = i, click: () => { if (st.arm === i) st.go = true; else st.arm = i; st.sel = i; } });   // a tap picks the row, a second tap on it confirms (one tap on a phone replaced a move)
             if (i < 4) { rrect(x + L(20), y, w - L(40), L(50), L(10), on ? '#ffde3b' : '#ffffff12', on ? '#fff' : '#ffffff22', 2); const mv = DEX.moves[e.s.moves[i]]; text(mv.name, x + L(40), y + L(25), L(19), on ? '#111' : '#fff', 'left', null); text(mv.type.toUpperCase(), x + w - L(40), y + L(25), L(12), on ? '#111' : TYPE_COLOR[mv.type], 'right', null, 'Silkscreen'); }
             else { rrect(x + L(20), y, w - L(40), L(50), L(10), on ? '#ffde3b' : '#ffffff12', on ? '#fff' : '#ffffff22', 2); text(`Do not learn ${DEX.moves[e.mv].name}`, x + w / 2, y + L(25), L(17), on ? '#111' : '#9aa6c0', 'center', null); }
           }
         }
         if (e.t !== 'forget' && e.t !== 'lv') {
           ADVUI.say(ADVUI.pages(st.txt)[0], 1e4, null, e.t !== 'evo');
-          if (e.t === 'evo' && st.t < 3) ADVUI.notice(padUI() ? 'B stops it' : 'Esc stops it');
-        } else if (e.t === 'forget') ADVUI.say(ADVUI.pages(st.txt)[0], 1e4);
-        else if (Math.floor(performance.now() / 400) % 2) text('>', X(1010), Y(420), L(22), '#ffde3b', 'center', null);
+          if (e.t === 'evo' && st.t < 3) { if (window.TOUCH?.on) { if (st.t > 0.3) backButton(() => st.stop = true); ADVUI.notice('BACK stops it'); } else ADVUI.notice(padUI() ? 'B stops it' : 'Esc stops it'); }   // a phone has no B here: a corner button
+        } else if (e.t === 'forget') ADVUI.say(ADVUI.pages(st.arm >= 0 && st.arm === st.sel ? `${window.TOUCH?.on ? 'Tap' : 'Click'} again to ${st.sel < 4 ? 'forget ' + DEX.moves[e.s.moves[st.sel]].name : 'skip ' + DEX.moves[e.mv].name}.` : st.txt)[0], 1e4);
+        else if (Math.floor(performance.now() / 400) % 2) text('>', VW / 2 + L(186), Y(120) + L(306), L(22), '#ffde3b', 'center', null);   // inside the panel's bottom right (it floated off the panel on a phone)
       },
     };
   },
@@ -721,6 +721,6 @@ const ADVUI = {
     const sel = its[w.sel]; if (sel) {
       const it = ADVP.item(sel); text(it.name, cx, cy - L(18), L(24), '#fff', 'center'); text(cd ? `Ready in ${Math.ceil(sc.itemCd)}` : it.info, cx, cy + L(16), L(13), cd ? '#ff9a9a' : '#9aa6c0', 'center', null);
     }
-    hint(window.TOUCH?.on ? 'Tap an item to use it   B close' : padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close', Math.min(VH - 26, Math.round(cy + R + L(52))), true);   // in the wheel's lower rim, on a pill: the move bar owns the bottom row
+    hint(window.TOUCH?.on ? 'Tap an item to use it   B close' : padUI() ? 'D-pad pick   A use   B close' : 'Click or 1-6 to use   C or Esc close', Math.min(VH - 26, Math.round(cy + R + L(52))), true, cx);   // in the wheel's lower rim, on a pill: the move bar owns the bottom row
   },
 };

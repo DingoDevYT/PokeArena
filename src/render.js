@@ -813,6 +813,7 @@ function drawSideHUD(s, right) {
 const PAD_ICONS = ['xbox_a', 'xbox_b', 'xbox_x', 'xbox_y'], PC_ICONS = ['mouse_left', 'mouse_right', 'key_q', 'key_e'];
 function drawHUD() {
   const S = Math.min(1, VW / 1500);
+  if (B.arena.world) { const h = 150 * S + 30, gr = ctx.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(8,10,24,0.4)'); gr.addColorStop(1, 'rgba(8,10,24,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, h); }   // a soft shade behind the name plates: the Adventure world behind them is busy (sand, signs, wild mons)
   drawSideHUD(B.sides[0], false); drawSideHUD(B.sides[1], true);
   const t = Math.floor(B.time), clock = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
   const adv = typeof AdventureScene !== 'undefined' && SCENE === AdventureScene && SCENE.mode !== 'pvp';   // Adventure's wild and trainer fights have no clock to beat: no timer there
