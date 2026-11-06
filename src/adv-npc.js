@@ -65,7 +65,7 @@ const ADVN = {
   },
   team(t, id, badges = ADV.player?.badges | 0) {
     if (t.fixed) return t.fixed;   // a story battle's team, made by adv-story.js
-    if (t.leader || t.roster) return this.leaderTeam(t.leader || t.roster, badges);   // roster: a fixed team with no badge to give (the Elite Four)
+    if (t.leader || t.roster) { const tm = this.leaderTeam(t.leader || t.roster, badges); return t.rematch ? tm.map(m => { const lv = Math.min(100, m.level + t.rematch); return { ...m, level: lv, species: ADVW.evolve(m.species, lv), moves: this.armed(m.species, lv, m.moves) }; }) : tm; }   // roster: a fixed team with no badge to give (the Elite Four); rematch: that many levels up
     const b = Math.max(0, Math.min(8, badges | 0)), [lo, hi] = this.SIZE[b], n = Math.min(t.team.length, lo + this.hash(id) % (hi - lo + 1)), [a, z] = this.range(t.gym ? 'gym' : 'route', b);
     let l0 = a, h1 = z; const top = ADVW.partyTop(); if (!t.gym && top > 0 && h1 > top + ADVW.UP) { h1 = Math.max(2, top + ADVW.UP); l0 = Math.min(l0, Math.max(2, h1 - 3)); }   // route trainers: held near the party like the wild; gym trainers keep the band
     if (!t.gym && b === 0 && top > 0) { h1 = Math.min(h1, Math.max(2, top)); l0 = Math.min(l0, Math.max(2, h1 - 1)); }   // before the first badge no route trainer is over your best (a fresh starter lost every time)

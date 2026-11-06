@@ -476,6 +476,11 @@ const AdventureScene = {
       if (t.after && !t.after.every(id => this.save.beat[id])) { n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false; return this.dialog(t.wait, n); }
       return this.spotted(n);
     }
+    if (t?.league && typeof ADVSTORY !== 'undefined' && ADVSTORY.st(this.save).flags.champion) {   // the Champion may rematch the Elite Four, their teams eight levels up
+      n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false;
+      const L2 = n.def.lines2?.lines || n.def.lines;
+      return this.dialog(L2, n, () => this.open(ADVUI.ask(this, `Battle ${t.name} again? ${t.name}'s team is eight levels stronger now.`, () => { t.rematch = 8; this.spotted(n); }, () => { n.busy = false; }, ['Battle', 'Not now'])));
+    }
     n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false;
     if (n.def.script) return this.script(n);
     const L2 = n.def.lines2; this.dialog(L2 && typeof ADVSTORY !== 'undefined' && ADVSTORY.st(this.save).flags[L2.flag] ? L2.lines : n.def.lines, n);   // lines2: what they say once a story flag is set (the Elite Four after you are Champion)
@@ -684,7 +689,7 @@ const AdventureScene = {
     const s = this.sp, n = s.n, e = n.e, p = this.p, t = n.def.trainer; s.t += dt; if (this.bang) this.bang.t = s.t; n.moving = false;
     if (s.ph === 'bang') { if (s.t > 0.9) { s.ph = 'walk'; this.bang = null; } return; }
     const dx = p.x - e.x, dy = p.y - e.y, v = DIR_VEC[n.def.face];
-    if (Math.hypot(dx, dy) <= ADVN.NEAR * ADV.Tp(e.x) || s.stall > 0.4) { n.face = dirFromVec(dx, dy); this.sp = null; const say = [].concat(t.say2 && this.save.met[n.id] ? t.say2 : t.say); this.save.met[n.id] = 1; return this.dialog(say, n, () => this.open(ADVUI.card(this, n, () => this.startTrainer(n)))); }
+    if (Math.hypot(dx, dy) <= ADVN.NEAR * ADV.Tp(e.x) || s.stall > 0.4) { n.face = dirFromVec(dx, dy); this.sp = null; const say = [].concat(t.rematch ? ['Again, Champion? Good. We have been training too.'] : t.say2 && this.save.met[n.id] ? t.say2 : t.say); this.save.met[n.id] = 1; return this.dialog(say, n, () => this.open(ADVUI.card(this, n, () => this.startTrainer(n)))); }
     const x0 = e.x, y0 = e.y; ADV.move(e, v[0] * 110 * dt, v[1] * 110 * dt);
     const m = Math.hypot(e.x - x0, e.y - y0); n.moving = m > 0.01; n.walkD += m; n.animT += dt; s.stall = m > 0.01 ? 0 : s.stall + dt;
   },
@@ -1046,7 +1051,7 @@ const AdventureScene = {
     const ar = B.arena, s0 = B.sides[0], s1 = B.sides[1], we = s1.ent, f = this.f, party = this.save.party, ev = this.settle();
     if (ar.bld && ADV.bldAt(this.p.x, this.p.y) !== ar.bld) { const q = this.inRoom(ar.bld, this.p.x, this.p.y); this.p.x = q.x; this.p.y = q.y; }   // a fight indoors ends with you indoors
     f.x = ar.ox + s0.ent.x; f.y = ar.oy + s0.ent.y; this.back = true;
-    const tr = this.tr; this.tr = null; const dead = [];
+    const tr = this.tr; this.tr = null; const dead = []; if (tr?.t.rematch) tr.t.rematch = 0;
     if (set) ADVF.note(this.save, 'catch', { nm: DEX.species[toId(set.species)]?.name || set.species });
     else if (msg !== 'Got away safely!') ADVF.note(this.save, 'win', { foe: tr ? tr.t.cls + ' ' + tr.t.name : 'the wild ' + (DEX.species[this.w?.id]?.name || 'Pokemon') });
     Object.assign(f, { free: false, beh: 'follow', plan: null, hopT: 0, doing: '', idleT: 0 });
@@ -1088,6 +1093,7 @@ const AdventureScene = {
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
     const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), lm = typeof ADVSTORY !== 'undefined' ? ADVSTORY.place(this) : '', lg = !!(this.tr?.t.league || this.tr?.t.story && typeof ADVSTORY !== 'undefined' && ADVSTORY.run?.beat.league), L = /^L/.test(lm) && (this.tr?.t.story || lg) ? ADVS.town(lm) : null, at = L?.center ? ADVSTORY.free(L.center.x, L.center.y + (lg ? 9 : 4) * ADV.T) : ADVS.front(t);   // lg: lost to the Elite Four or the Champion: you wake at the foot of the League plaza, below the four   // a story fight lost at a landmark (the League has no Center) wakes you there, not 341 tiles back at your last Center
+    if (this.tr?.t.rematch) this.tr.t.rematch = 0;
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     const again = lg && ADVSTORY.leagueReset(sv);   // the classic rule: lose once and the Elite Four start over
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
