@@ -1112,6 +1112,7 @@ function selfEffect(side, move) {
   if (id === 'transform') { const fm = activeMon(foeOf(side)); if (!fm.fainted) transformInto(side, m, fm); }
   if (id === 'haze') for (const s of B.sides) activeMon(s).stages = blankStages();
   if (id === 'focusenergy') m.stages.crit = Math.max(m.stages.crit, 2);
+  if (side.cpu && (id === 'rest' || move.heal || ['synthesis', 'morningsun', 'moonlight', 'shoreup'].includes(id))) m.healsUsed = (m.healsUsed | 0) + 1;   // counted for the Adventure CPU's two-heal limit
   if (id === 'rest' && !statusImmune({ ...m, status: '' }, 'slp', side)) {
     m.hp = Math.min(m.maxHp, m.hp + m.maxHp * 0.5); m.status = 'slp'; m.statusT = TUNE.REST_SLEEP; m.vol.restSleep = true; floatText(e.x, e.y - 44 * SS, 'Slept & healed!', '#9f9', 12);
   } else if (move.heal || ['synthesis', 'morningsun', 'moonlight', 'shoreup'].includes(id)) {
@@ -1794,7 +1795,7 @@ function moveValue(side, slot) {
   const trapMul = arch === 'trap' ? (trapOut ? 0.2 : (bh.mul || 1) * Math.min(4, 1 + 1.6 / (bh.every || 2))) : 1;
   if (mv.category !== 'Status') return expectedFrac(m, fm, mv) * (mv.multihit ? 2.5 : 1) / Math.max(1, cooldownFor(mv, m) / 4) * (arch === 'area' || arch === 'wave' ? 1.2 : arch === 'sweep' ? 2.2 : 1) * trapMul; // a sweep reaches anywhere, which pays for its long cooldown
   const hp = m.hp / m.maxHp;
-  if (mv.heal || ['synthesis', 'morningsun', 'moonlight', 'rest'].includes(mv.id)) return hp < 0.5 ? 0.12 : 0;
+  if (mv.heal || ['synthesis', 'morningsun', 'moonlight', 'rest'].includes(mv.id)) return hp < 0.5 && !(B.arena?.world && (m.healsUsed | 0) >= 2) ? 0.12 : 0;   // Adventure: two heals per CPU mon a fight (Synthesis and Recover dragged late fights past five minutes)
   if (PROTECTS.has(mv.id)) return 0;
   if (mv.id === 'transform') return fm.moves.some(x => x.id !== 'transform' && x.category !== 'Status') ? 0.5 : 0;
   if (trapOut) return 0.005;

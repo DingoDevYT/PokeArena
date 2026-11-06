@@ -539,7 +539,7 @@ window.ADV_STORY = {
       goal: 'Professor Linden is at the next Pokemon Center.',
       script: [
         { say: 'linden', lines: ["{player}! Eight badges, and the tower shut! I'm writing it all down. My hand hurts. I love it.",
-          "Some Shadow Pokemon are still out there, the ones Umbra sold or set loose. They'll need finding.",
+          "Some of Umbra's Shadow Pokemon are still out there. If you ever meet one, call it by name.",
           "But that can wait a little while. The League gate on the north cape is open to you now. Go on!"] },
         { say: 'linden', lines: ["Oh! Inkwell is helping me put the Account back together. He has lovely handwriting. Who knew?"] },
         { give: 'maxrevive', n: 2 },

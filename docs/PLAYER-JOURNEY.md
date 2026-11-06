@@ -27,6 +27,20 @@ Mapped from the fourth playtest (phone, 76 minutes, a fight bot that plays below
 
 Still open from it: gym 4 (Claystone) is 336 tiles north of gym 3; the docks scene starts on Spindlewood's west road rather than at the docks; trainers standing in a gym hall can cover a fight.
 
+## The late game (badge five to the Champion)
+
+Mapped from the fifth playtest (phone, 104 minutes from badge 5 through the Champion and the post-game, levels set by eval at each stage) and its fixes.
+
+| Step | Before | Now |
+|---|---|---|
+| Gyms 6 and 7 | Six-mon leaders at 36-38 and 40-42; fights ran 200 to 500 s. Thorn's Gogoat reached Attack +5 with Bulk Up and swept five mons; his Leafeon fought from outside the hall walls for minutes. | Indoor fights have no floor outside the hall; CPU boosts stop at +2; a CPU mon heals at most twice; HP eases to 80% by Lv50 (late fights about a fifth shorter). |
+| Jet at Dunereach, Soot and Inkwell at the Statue | Each brought a full six-mon team a band above the gyms; no level hint; the tower climax fired 24 tiles out, in Dunereach's fields, with no tower or grey sky. | Boss teams of 5 (stage 6) and 6 (stage 7); NEXT GOAL names the boss's level; the Statue scenes fire within 12 tiles and the Statue lies under a grey gloom while the door is open. |
+| Losing a boss | Woke at the last Center; at a landmark the goal said "still in Statue of Umbra, step out of town" 84 tiles away. | The goal reads right everywhere; a story fight lost at a landmark wakes you there. |
+| Ethan's Pebble (Shadow Tyranitar) | Showed as a plain Tyranitar; a prize-money line followed the scene. | Plate says SHADOW TYRANITAR with a dark outline; no prize line. |
+| The League | Two outdoor fights; losing to the Champion sent you 341 tiles back; the win was a prize line, four lines and a Master Ball. | You wake by the League after a loss; becoming Champion opens a Hall of Fame (your team, then the credits). |
+
+Still open from it: no Elite Four (the League is the gate rival and the Champion); the post-game beats point at Shadow Pokemon and a tower dungeon that do not exist yet; gym 8 (Bjorn) was not played; three sign pairs still disagree; money has nothing to buy in the late game.
+
 ## What players liked
 
 - Character creation and the opening scene: about five minutes from title to the first battle, and the writing gives a reason to set out.
