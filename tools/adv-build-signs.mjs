@@ -19,14 +19,16 @@ globalThis.ADV = { chunk(cx, cy, d) { const m = rle(d.mat), k = rle(d.kind); for
 for (const f of fs.readdirSync(ROOT + 'data/adv/chunks')) vm.runInThisContext(fs.readFileSync(ROOT + 'data/adv/chunks/' + f, 'utf8'));
 const inside = (o, x, y) => Math.hypot(x - o.tx, y - o.ty) <= (R[o.code[0]] || 20);
 // breadth first along road tiles from (x, y), never back into `self`, up to 900 tiles of road: the other places it reaches, nearest first
+// roads.path: the road tiles from the start to the nearest place reached (for the route zones it crosses)
 function roads([x0, y0], self) {
-  const seen = new Uint8Array(CW * CHH), q = [[x0, y0, 0]], got = new Map();
+  const seen = new Uint8Array(CW * CHH), q = [[x0, y0, 0, -1]], got = new Map(); let hit = -1;
   for (let i = 0; i < q.length && q.length < 400000; i++) {
     const [x, y, n] = q[i]; if (n > 900) break;
-    for (const o of places) if (o !== self && !got.has(o) && inside(o, x, y)) got.set(o, n);
+    for (const o of places) if (o !== self && !got.has(o) && inside(o, x, y)) { got.set(o, n); if (hit < 0) hit = i; }
     if ([...got.keys()].length) continue;   // stop following past a place: what lies beyond is that place's own sign
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = ny * CW + nx; if (nx < 0 || ny < 0 || nx >= CW || ny >= CHH || seen[k] || !road[k] || inside(self, nx, ny)) continue; seen[k] = 1; q.push([nx, ny, n + 1]); }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, k = ny * CW + nx; if (nx < 0 || ny < 0 || nx >= CW || ny >= CHH || seen[k] || !road[k] || inside(self, nx, ny)) continue; seen[k] = 1; q.push([nx, ny, n + 1, i]); }
   }
+  roads.path = []; for (let i = hit; i >= 0; i = q[i][3]) roads.path.unshift([q[i][0], q[i][1]]);
   return [...got.entries()].sort((a, b) => a[1] - b[1]).map(e => e[0]);
 }
 const out = [];
@@ -37,10 +39,13 @@ for (const P of places) {
     // the route: the first route zone a few tiles out past the exit
     let route = '', at = null; for (let k = 2; k <= 16 && !route; k++) { const x = P.tx + ex + v[0] * k, y = P.ty + ey + v[1] * k, z = zoneAt(x, y); if (/^route/.test(z)) { route = z; at = [x, y]; } }
     // where it leads: walk the road out from the gate (path, paving, boardwalk, ford, bridge decks) to the first other places it reaches
-    let dest = '';
+    let dest = ''; const chain = [];
     {
       const self = P, start = [P.tx + ex + v[0] * 2 + (d === 'N' || d === 'S' ? Math.floor(w / 2) : 0), P.ty + ey + v[1] * 2 + (d === 'E' || d === 'W' ? Math.floor(w / 2) : 0)];
-      dest = roads(start, self).slice(0, 2).map(o => o.name).join(' and ');
+      const got = roads(start, self).slice(0, 2); dest = got.map(o => o.name).join(' and ');
+      if (got.length === 1 && route) {   // a road that crosses a second route zone on the way names both, so the signs at its two ends agree (Fernwell Park to Claystone is Route 134 then Route 133)
+        const run = new Map(); for (const [x, y] of roads.path) { const z = zoneAt(x, y); if (/^route/.test(z) && z !== route) { run.set(z, (run.get(z) || 0) + 1); if (run.get(z) === 6) chain.push(z); } }   // 6 tiles of road in it, not a corner clipped
+      }
       if (!dest && route) {   // no road to follow (a track across open ground): the other place the route's zone reaches furthest along the way out
         const id = Z.ids.indexOf(route), cells = []; rows.forEach((r, cy) => r.forEach((val, cx) => { if (val === id) cells.push([cx, cy]); }));
         const near = places.filter(o => o !== P && cells.some(([cx, cy]) => Math.hypot((cx + 0.5) * C - o.tx, (cy + 0.5) * C - o.ty) <= (R[o.code[0]] || 20) + 36));
@@ -49,7 +54,7 @@ for (const P of places) {
     }
     // the sign: three tiles inside the gate, beside the road (left of a north or south road, above an east or west one)
     const sx = d === 'N' || d === 'S' ? P.tx + ex - 1 : P.tx + ex - v[0] * 3, sy = d === 'E' || d === 'W' ? P.ty + ey - 1 : P.ty + ey - v[1] * 3;
-    const lines = [`${P.name[0].toUpperCase() + P.name.slice(1)}, ${WORD[d]} road.`, route ? `${label(route)}${dest ? ' leads on to ' + dest : ' starts here'}.` : dest ? `This road leads on to ${dest}.` : 'The road leads out of town.'];
+    const lines = [`${P.name[0].toUpperCase() + P.name.slice(1)}, ${WORD[d]} road.`, route ? (chain.length && dest ? `${[route, ...chain.slice(0, 2)].map(label).join(', ').replace(/, ([^,]*)$/, ' and $1')} lead on to ${dest}.` : `${label(route)}${dest ? ' leads on to ' + dest : ' starts here'}.`) : dest ? `This road leads on to ${dest}.` : 'The road leads out of town.'];
     out.push({ n: 'signGreen', x: (sx + 0.5) * T, y: (sy + 1) * T - 1, town: P.code, lines });
   }
 }

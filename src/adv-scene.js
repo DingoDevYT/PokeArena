@@ -122,9 +122,11 @@ const AdventureScene = {
   },
   // (re)starts the follower a trail-length behind a spot, standing still and facing face
   folReset(x, y, z, face) {
-    const D = ADVF.FD * ADV.Tp(x);
-    this.trail = [{ x, y: y + D, z, sz: z, s: 0 }, { x, y, z, sz: z, s: D }];
-    Object.assign(this.f, { x, y: y + D, z, sz: z, face, want: face, moving: false, animT: 0, at: 0, walkD: 0, vx: 0, vy: 0, sp: 0, loco: 'Idle', locoT: 0, turnT: 0, anim: 'Idle', beh: 'follow', bt: 0, idleT: 0, free: false, r: 6, hop: null, lv: 0, hopT: 0, plan: null, doing: '', lookT: 0, stall: 0 });
+    const T = ADV.Tp(x), D = ADVF.FD * T, fv = DIR_VEC[face] || [0, 1], lv = Math.max(0, ADV.h(Math.floor(x / T), Math.floor(y / T)));
+    let ox = 0, oy = D;   // behind you on dry ground at your level, else a step south (always south put it in the sea at the Claystone landing)
+    for (const [dx, dy] of [[-fv[0], -fv[1]], [0, 1], [0, -1], [-1, 0], [1, 0]]) { const fx = x + dx * D, fy = y + dy * D, c = Math.floor(fx / T), r = Math.floor(fy / T); if (ADV.h(c, r) === lv && !ADV.isWater(c, r) && !ADV.blocked(fx, fy, z, 6)) { ox = dx * D; oy = dy * D; break; } }
+    this.trail = [{ x: x + ox, y: y + oy, z, sz: z, s: 0 }, { x, y, z, sz: z, s: D }];
+    Object.assign(this.f, { x: x + ox, y: y + oy, z, sz: z, face, want: face, moving: false, animT: 0, at: 0, walkD: 0, vx: 0, vy: 0, sp: 0, loco: 'Idle', locoT: 0, turnT: 0, anim: 'Idle', beh: 'follow', bt: 0, idleT: 0, free: false, r: 6, hop: null, lv: 0, hopT: 0, plan: null, doing: '', lookT: 0, stall: 0 });
     this.back = false;
   },
   // Skills (save.skills): a surfer's entity walks on water (ADV.step), a cast line is dropped, the fight box goes back to treating water as a wall

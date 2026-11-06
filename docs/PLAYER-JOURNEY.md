@@ -24,7 +24,11 @@ Mapped on 2026-11-05 from two full playtests (phone and desktop, about 95 minute
 - The second gym is far from some starts (249 tiles from Goldacre); the map is fixed by the region's layout.
 - Phone fights still sit partly under the right-hand buttons in large rooms.
 - The desktop camera is about 10 tiles wide at Normal (the default Landon picked); one wheel notch out shows 13.
-- Status (paralysis) carries between fights with no reminder outside battle.
-- A few Kenora sign pairs disagree on route numbers where two routes join the same towns (Fernwell Park and Claystone).
+- Story bosses after a badge (Soot, then Jet with four mons at the next gym's levels) are a real step up; a must-win loss now restarts at that battle, not the whole scene.
+
+## Fixed after the third playtest
+
+- Status after a fight is named once the text boxes close, with the cure. Signs at both ends of a road agree on its routes. Lakes and the sea no longer show a grid of deep and shallow squares; snowfield grey patches and Route 103's shore look finished; the Route 4 west cave opens out of a cliff.
+- After a blackout the fainting lines come before the EXP pages, and the game saves at once. A tap on a forget-move row asks for a second tap. Wild mons outside your fight are faint.
 
 Reports in full: the session scratchpad's reports/playtest.md and reports/playtest2.md (not in the repo).
