@@ -155,7 +155,7 @@ Beats in story order. Each main-line beat waits for the one above it; the two op
 | s1-chad | 1 | any town (next Center) | talk (chad) | none | Chad, a sleepy traveller with an Alolan Meowth, notices how your partner watches you. Gives Great Balls. (The Champion, incognito.) |
 | s1-whitney (opt) | 1 to 4 | G7 Goldacre | talk (ethan) | none | Optional. Ethan hides from Whitney in Goldacre; she remembers him from Johto, and so does her Miltank. He flees. |
 | s2-tip | 2 | any town (next Center) | talk (linden) | none | Linden: wild Pokemon are vanishing; a Spindlewood boat takes crates out to a ship at night. Ethan has run off there. |
-| s2-docks | 2 | T6 Spindlewood | enter | jet | Ethan is fighting grunts on the quay. You battle Jet, who flees on the tender. The crates hold stolen wild Pokemon; one is stained with cold black ink. |
+| s2-docks | 2 | T6 Spindlewood, the docks (`dx: 21, dy: 5, r: 8`) | enter | jet | Ethan is fighting grunts on the quay. You battle Jet, who flees on the tender. The crates hold stolen wild Pokemon; one is stained with cold black ink. |
 | s2-ethan | 2 | T6 Spindlewood | talk (ethan) | none | Ethan confides that he froze in the Johto League final. He swears never to freeze again. |
 | s3-word | 3 | any town (next Center) | talk (linden) | none | Linden: the Sporehaven glow has climbed past the warden line toward Duskmoss. Rue asks for trainers. |
 | s3-duskmoss | 3 | T8 Duskmoss | enter | wash | At the glowing fence Wash reveals she was the surveyor. You battle her. Inkwell appears, calm and polite: a Pokemon with no fear, is that not a kindness? Rue sends you to the Quiet Plain. |

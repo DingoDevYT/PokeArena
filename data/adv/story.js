@@ -161,8 +161,8 @@ window.ADV_STORY = {
     },
     {
       id: 's2-docks', title: 'The Tender', stage: 2, after: ['s2-tip'],
-      where: { town: 'T6', r: 16 }, trigger: 'enter',
-      goal: 'Go to Spindlewood, the timber dock town in the south-east.',
+      where: { town: 'T6', r: 8, dx: 21, dy: 5 }, trigger: 'enter',   // at the docks on the east shore (it fired on the west road, with no water in sight, playtests 4 and 10)
+      goal: 'Go to the docks at Spindlewood in the south-east.',
       script: [
         { say: 'ethan', lines: ["{player}! Perfect timing! Okay, not perfect, my team's worn out. They just keep coming!"] },
         { say: 'grunt', lines: ["Crates on the tender! Move it! The lieutenant hates waiting!"] },

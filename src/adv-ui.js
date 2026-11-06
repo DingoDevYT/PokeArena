@@ -10,7 +10,7 @@ const ADVUI = {
   chip(label, x, y, h, col) { return hudChip(x, y, label, col, h); },
   // keeps the highlighted row inside the window of rows
   scroll(st, n, rows, px = 40) {
-    if (window.TOUCH?.on && n > rows) { TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { TOUCH.drag = null; st.dragY = (st.dragY || 0) + d.dy; while (st.dragY <= -px) { st.dragY += px; st.off = (st.off | 0) + 1; st.sel = Math.max(st.sel, st.off); } while (st.dragY >= px) { st.dragY -= px; st.off = Math.max(0, (st.off | 0) - 1); st.sel = Math.min(st.sel, st.off + rows - 1); } } }   // a finger drags a long list (the Mart's Super Potion sat on row 10, out of reach on a phone, playtest 9)
+    if (window.TOUCH?.on && n > rows) { TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { TOUCH.drag = null; st.dragY = (st.dragY || 0) + d.dy; while (st.dragY <= -px) { st.dragY += px; st.off = (st.off | 0) + 1; st.sel = Math.max(st.sel, st.off); } while (st.dragY >= px) { st.dragY -= px; st.off = Math.max(0, (st.off | 0) - 1); st.sel = Math.min(st.sel, st.off + rows - 1); } st.scrolled = true; } }   // scrolled: the next tap only picks a row (the highlight rode along with the list, and one tap bought, playtest 10)   // a finger drags a long list (the Mart's Super Potion sat on row 10, out of reach on a phone, playtest 9)
     st.off = clamp(st.off | 0, 0, Math.max(0, n - rows)); st.sel = clamp(st.sel, 0, Math.max(0, n - 1)); st.off = clamp(st.off | 0, 0, Math.max(0, n - rows)); if (st.sel < st.off) st.off = st.sel; if (st.sel >= st.off + rows) st.off = st.sel - rows + 1; },
   nav(st, n, dir = INPUT.menu) { if (dir === 'up' || dir === 'down') { st.sel = clamp(st.sel + (dir === 'down' ? 1 : -1), 0, Math.max(0, n - 1)); uiBlip(600, 0.03); } },
   // ---------- dialogue chrome: the talk box, question box and notices share one set of house panels ----------
@@ -690,7 +690,7 @@ const ADVUI = {
         text(st.mode === 1 ? 'BUY' : 'SELL', X(40), Y(100), L(22), '#9aa6c0', 'left', null);
         l.slice(st.off, st.off + rows).forEach((id, j) => {
           const i = j + st.off, y = Y(120) + j * L(64), on = i === st.sel, it = ADVP.item(id);
-          hot(X(40), y, L(600), L(58), { hover: () => st.sel = i, click: () => { if (st.sel !== i) { st.sel = i; st.qty = 1; uiBlip(600, 0.03); return; } go(); }, wheel: d => st.sel = clamp(st.sel + d, 0, l.length - 1) });   // a tap picks the row, a second tap buys (one tap bought a $4000 Bike, playtest 9; a mouse hovers first, so a click still buys)
+          hot(X(40), y, L(600), L(58), { hover: () => st.sel = i, click: () => { if (st.sel !== i || st.scrolled) { st.sel = i; st.qty = 1; st.scrolled = false; uiBlip(600, 0.03); return; } go(); }, wheel: d => st.sel = clamp(st.sel + d, 0, l.length - 1) });   // a tap picks the row, a second tap buys (one tap bought a $4000 Bike, playtest 9; a mouse hovers first, so a click still buys)
           rrect(X(40), y, L(600), L(58), L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
           ADVUI.icon(id, X(74), y + L(29), L(20)); text(it.name, X(112), y + L(29), L(20), on ? '#1a1a2a' : '#fff', 'left', null);
           text(ADVUI.money(price(id)), X(620), y + L(29), L(20), on ? '#1a1a2a' : '#ffde3b', 'right', null);
