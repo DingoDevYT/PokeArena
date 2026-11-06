@@ -303,10 +303,10 @@ P.x += 6 * T; run(0.1); ok(g.m.every(w => w.st === 'alert'), 'and charge once th
 // pile-on queue: same species within 10 legacy tiles (320 world px: the fight box keeps its size), nearest first, target first
 ADVW.reset(); g = mk('houndour', [{ x: 20 * T, y: 20 * T }, { x: 20 * T + 3 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 2 * DT }, { x: 20 * T + 8 * DT, y: 20 * T }, { x: 20 * T, y: 20 * T + 11 * DT }, { x: 20 * T + DT, y: 20 * T + DT }, { x: 20 * T - DT, y: 20 * T }]);
 const [tg, m3, m2, m8, m11, m1, m1b] = g.m; m1b.id = 'rockruff'; m1.st = 'fight';
-const pl0 = ADV.player; ADV.player = { ...(pl0 || {}), badges: 3 };
+const pl0 = ADV.player; ADV.player = { ...(pl0 || {}), badges: 4 };
 const q = ADVW.queue(tg);
 ok(q.length === ADVW.PACK && q[0] === tg && q[1] === m2 && q[2] === m3, 'queue = target, then group mates nearest first, at most ADVW.PACK (3) in one fight');
-ADV.player.badges = 0; eq(ADVW.queue(tg).length, 1, 'before the first badge a wild fight is one mon'); ADV.player.badges = 1; eq(ADVW.queue(tg).length, 2, 'before the second badge, two'); ADV.player = pl0;
+ADV.player.badges = 0; eq(ADVW.queue(tg).length, 1, 'before the first badge a wild fight is one mon'); ADV.player.badges = 1; eq(ADVW.queue(tg).length, 2, 'before the second badge, two'); ADV.player.badges = 3; eq(ADVW.queue(tg).length, 2, 'and two up to the fourth badge'); ADV.player = pl0;
 ok(!q.includes(m11) && !q.includes(m1) && !q.includes(m1b), 'mates 11 legacy tiles away, mates already fighting and other species stay out');
 const cx = 20 * T + 1.5 * DT, cy = 20 * T, es = q.slice(1).map(w => ADVW.edge(w, cx, cy));
 ok(es.every(s => Math.hypot(s.x - cx, s.y - cy) >= 7 * DT - 0.01 && Math.hypot(s.x - cx, s.y - cy) <= 8 * DT + 0.01), 'queued mons wait 7-8 legacy tiles (224-256 px) from the fight centre');

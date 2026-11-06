@@ -83,7 +83,7 @@ const ADVMAP = {
         if (!mx) mx = INPUT.mx; if (!my) my = INPUT.my;
         if (mx || my) { st.ms = false; st.cx += mx * 420 / z() * dt; st.cy += my * 420 / z() * dt; }
         if (INPUT.hit('TABR')) zoom(1); if (INPUT.hit('TABL')) zoom(-1);
-        if (window.TOUCH?.on) { TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { st.ms = false; st.cx -= d.dx / z(); st.cy -= d.dy / z(); TOUCH.drag = null; } }   // touch: a finger drags the map
+        if (window.TOUCH?.on) { TOUCH.onPinch = zoom; TOUCH.onPinchT = performance.now(); TOUCH.dragT = performance.now(); const d = TOUCH.drag; if (d) { st.ms = false; st.cx -= d.dx / z(); st.cy -= d.dy / z(); TOUCH.drag = null; } }   // touch: a finger drags the map
         if (MOUSE.hit) { st.ms = true; st.drag = { x: MOUSE.x, y: MOUSE.y, cx: st.cx, cy: st.cy, mv: false }; }
         if (st.drag) {
           const d = st.drag;
@@ -102,9 +102,13 @@ const ADVMAP = {
         if (!im) text('LOADING', VW / 2, VH / 2, 28, '#fff', 'center');
         else { const [x0, y0] = scr(0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x0, y0, im.naturalWidth * k, im.naturalHeight * k); }
         const on = (x, y, m = 40) => x > -m && y > -m && x < VW + m && y < VH + m, pk = Math.max(2, Math.round(VH / 300));
-        if (st.zi >= 1) for (const rt of A.routes()) { const [x, y] = scr(rt.c, rt.r); if (on(x, y)) text(rt.name, x, y, 10, '#dfe8f5', 'center', '#101428', 'Silkscreen'); }   // route names once you zoom in a step
-        for (const [id, t] of Object.entries(window.ADV_WORLD?.towns || {})) {
-          const [x, y] = scr(t.center.x / T, t.center.y / T); if (!on(x, y, 80)) continue;
+        // labels never overlap: town names and gym marks claim their boxes first, then a route name only shows where it fits (Route 3 sat on Route 104)
+        const tw = (str, sz) => { ctx.font = `${Math.max(sz, TEXT_MIN || 0)}px Silkscreen`; return ctx.measureText(str).width; }, lbox = (x, y, sz, w) => [x - w / 2 - 3, y - sz / 2 - 3, x + w / 2 + 3, y + sz / 2 + 3];
+        const taken = [], hit = b => taken.some(o => o[0] < b[2] && b[0] < o[2] && o[1] < b[3] && b[1] < o[3]), towns = [];
+        for (const [id, t] of Object.entries(window.ADV_WORLD?.towns || {})) { const [x, y] = scr(t.center.x / T, t.center.y / T); if (!on(x, y, 80)) continue; towns.push([id, t, x, y]); taken.push(lbox(x, y - 13, 11, tw(t.name, 11)), [x - 9, y - 9, x + 9, y + 9]); }
+        for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); taken.push([x - 10, y - 10, x + 10, y + 10]); }
+        if (st.zi >= 1) for (const rt of A.routes()) { const [x, y] = scr(rt.c, rt.r); if (!on(x, y)) continue; const b = lbox(x, y, 10, tw(rt.name, 10)); if (hit(b)) continue; taken.push(b); text(rt.name, x, y, 10, '#dfe8f5', 'center', '#101428', 'Silkscreen'); }   // route names once you zoom in a step
+        for (const [id, t, x, y] of towns) {
           const g = id[0] === 'G', l = id[0] === 'L';
           A.sq(x, y, g ? 9 : 7, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff'); text(t.name, x, y - 13, 11, g ? '#ffde3b' : l ? '#7fd0e8' : '#fff', 'center', '#101428', 'Silkscreen');
         }
@@ -134,7 +138,7 @@ const ADVMAP = {
           });
         }
         if (st.nt > 0) text(st.note, VW / 2, by - 14, Math.max(14, L(17)), '#9f9', 'center', '#101428');
-        hint(padUI() ? (window.TOUCH?.on ? 'drag to pan' : 'stick pan') + '   LB/RB zoom   ' + (window.TOUCH?.on ? 'tap or A' : 'A') + ' waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
+        hint(window.TOUCH?.on ? 'drag to pan   pinch to zoom   tap a waypoint   X remove   B back' : padUI() ? 'stick pan   LB/RB zoom   A waypoint   X remove   B back' : 'WASD or drag pan   wheel zoom   Enter or click waypoint   X remove   M or Esc back');
         backButton(() => sc.close());
       },
     };

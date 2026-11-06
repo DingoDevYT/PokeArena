@@ -140,10 +140,11 @@ const TOUCH = window.TOUCH = (() => {
   // two fingers on the world (not on a button or the stick) pinch the camera in or out, a tier per ~30% of spread
   let pin = 0;
   function pinch(t, o) {
-    const free = [...tps.values()].filter(q => !q.k && !q.stick); if (free.length !== 2 || !adv() || !play() || typeof ADVR === 'undefined') { pin = 0; return false; }
+    const free = [...tps.values()].filter(q => !q.k && !q.stick), hook = T.onPinch && performance.now() - (T.onPinchT || 0) < 250 ? T.onPinch : null;   // a screen with its own zoom (the world map) renews onPinch every frame it is open
+    if (free.length !== 2 || !adv() || !(hook || play()) || (!hook && typeof ADVR === 'undefined')) { pin = 0; return false; }
     o.x = t.clientX; o.y = t.clientY; for (const q of free) q.swipe = true;   // neither finger taps or scrolls
     const d = Math.hypot(free[0].x - free[1].x, free[0].y - free[1].y); if (!pin) pin = d;
-    if (d > pin * 1.3) { ADVR.zoomBy(1); pin = d; } else if (d < pin / 1.3) { ADVR.zoomBy(-1); pin = d; }
+    const zb = hook || (k => ADVR.zoomBy(k)); if (d > pin * 1.3) { zb(1); pin = d; } else if (d < pin / 1.3) { zb(-1); pin = d; }
     return true;
   }
   const end = (e, cancel) => {

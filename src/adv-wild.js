@@ -190,7 +190,7 @@ const ADVW = {
   // the player walked d px: every 32 px in tall grass at ground level has a 1.2 % chance to pop an aggressive mon 1.5 tiles ahead (null or the new wild mon);
   // none for GRACE seconds after a fight ends (balance pass 2026-11-05: it was 3 % with no grace, an ambush every 5 to 9 s of walking in grass)
   PACK: 3, GRACE: 20, calm: 0,
-  packFor(badges) { return badges >= 2 ? this.PACK : badges + 1; },   // how many of a group join one fight: 1 before the first badge, 2 before the second (playtest 2: packs of 4 flattened a Lv7)
+  packFor(badges) { return badges >= 4 ? this.PACK : badges >= 1 ? 2 : 1; },   // how many of a group join one fight: 1 before the first badge (playtest 2: packs of 4 flattened a Lv7), 2 up to the fourth (playtest 4: a pack of Zubats beat a Lv23 Ivysaur and its Carbink twice at 2 badges), then 3
   grass(P, d) {
     const T = ADV.Tp(P.x), c = Math.floor(P.x / T), r = Math.floor(P.y / T);
     if (ADV.palette[ADV.over(c, r)] !== 'tallgrass' || Math.abs(P.z - ADV.h(c, r) * T) > 1) { this.gd = 0; return null; }
