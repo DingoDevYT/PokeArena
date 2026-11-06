@@ -298,7 +298,7 @@ const ControlsScene = {
     const rows = [
       ['Move', ['xbox_ls'], ['key_w', 'key_a', 'key_s', 'key_d', ' or arrows']], ['Aim', ['xbox_rs', ' held ~1s after release'], ['mouse', ' cursor (still mouse: at the foe)']],
       ['Move 1 / 2', ['xbox_a', ' ', 'xbox_b'], ['mouse_left', ' ', 'mouse_right', '  or J K']], ['Move 3 / 4', ['xbox_x', ' ', 'xbox_y'], ['key_q', ' ', 'key_e', '  or L I']],
-      ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' tap for the next, or hold and point a stick'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
+      ['Dodge roll', ['xbox_lb'], ['key_space', ' or ', 'key_shift']], ['Swap', ['xbox_rb', ' tap, or hold + stick'], ['key_1', 'key_2', 'key_3', 'key_4', 'key_5', 'key_6', ' party slot']],
       ['Mega Evolve', ['xbox_lt', ' + ', 'xbox_rt'], ['key_f']], ['Items in a fight', ['xbox_back'], [' C']], ['Pause, forfeit', ['xbox_start'], ['key_esc', ' or P']],
       ['ADVENTURE', [], []],
       ['Talk, read signs', ['xbox_a'], ['key_enter', ' or ', 'key_e']], ['Run', ['xbox_b', ' hold'], ['key_shift', ' hold']], ['Map', [' pause menu'], ['M']],
@@ -309,7 +309,7 @@ const ControlsScene = {
     rows.forEach(([a, p, k], i) => { const y = 145 * s + i * RH; if (!p.length) return text(a, VW / 2 - 400 * s, y, 14 * s, '#ffde3b', 'left', null); text(a, VW / 2 - 400 * s, y, 16 * s, '#fff', 'left', null); iconRow(p, VW / 2 - 200 * s, y, ih, 13 * s, '#cde'); iconRow(k, VW / 2 + 150 * s, y, ih, 13 * s, '#cde'); });
     text('Hold a move button to fire it the moment its cooldown ends. Pressing a little early is buffered.', VW / 2, 145 * s + rows.length * RH + 6 * s, 14 * s, '#ffe7a8', 'center', null);
     // live controller readout, so a pad that isn't being read is obvious
-    const y0 = 145 * s + rows.length * RH + 46 * s, pads = INPUT.pads || [];
+    const y0 = Math.min(145 * s + rows.length * RH + 46 * s, VH - 50), pads = INPUT.pads || [];   // clear of the back hint at the bottom
     if (!pads.length) {
       const slots = navigator.getGamepads ? [...navigator.getGamepads()] : null;
       text('No controller connected (keyboard works fine). Using a pad? Press any button on it now.', VW / 2, y0, 15 * s, '#9aa6c0', 'center', null);

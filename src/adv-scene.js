@@ -1201,7 +1201,7 @@ const AdventureScene = {
     for (const n of ADVN.list) { const e = n.e; if (e && Math.abs(e.x - cx) < 700 && Math.abs(e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: e.x, y: e.y, z: e.z, f: () => this.drawNPC(n) }); }
     const b = this.bang, e = b && b.n.e; if (e) out.push({ x: e.x, y: e.y + 2, z: e.z, f: () => this.drawFx({ k: '!', t: b.t }, e) });
     const am = this.amb, ae = am && am.w.e; if (ae) out.push({ x: ae.x, y: ae.y + 2, z: ae.z, f: () => this.drawFx({ k: '!', t: am.t }, ae) });
-    for (const n of ADVN.list) if (n.bub && n.e && n !== b?.n && Math.abs(n.e.x - cx) < 700 && Math.abs(n.e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: n.e.x, y: n.e.y + 2, z: n.e.z, f: () => this.drawBub(n) });
+    for (const n of ADVN.list) if (n.bub && n.e && n !== b?.n && Math.abs(n.e.x - cx) < 700 && Math.abs(n.e.y - cy) < 600 && ADVN.vis(n)) out.push({ x: n.e.x, y: n.e.y + 2, z: n.e.z, top: true, f: () => this.drawBub(n) });   // top: over the weather (fog turned the bubble into a grey box)
     return out;
   },
   drawDlg() {
