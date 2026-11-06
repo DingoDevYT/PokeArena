@@ -89,5 +89,5 @@ From a save just after the first badge in Goldacre (Charmeleon Lv17, Hoppip Lv12
 | Pinegrove: Surveyor, Soot, Ethan | Good writing; three bad matchups in a row for a Fire starter. After losing to Soot he vanished from NEXT GOAL and the town. | Soot's first fight brings two mons; a lost talk scene stays on screen and in NEXT GOAL. |
 | Training | About 15 wild fights a level at 0.71x EXP; trainers gave 300 to 400 EXP. | 0.92x EXP at one badge. |
 | The Mart's lower rows | Super Potion and Full Heal could not be reached by touch. | Long lists scroll with a finger. |
-| Aspen | Won at Lv20 after NEXT GOAL said "Challenge Aspen!". | Gym hints are one level lower; one short says "Close enough to try". |
+| Aspen | Won at Lv20 after NEXT GOAL said "Challenge Aspen!". | Gym hints are one level lower; one short says "Ready to try". |
 

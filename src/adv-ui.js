@@ -758,7 +758,8 @@ const ADVUI = {
 
   // ---------- battle item wheel ----------
   // sc.wh = { sel }; the sim runs in slow motion while it is open (adv-scene.js), and side.itemWheel makes playerIntent stand still (battle.js hook)
-  wheelItems(sc) { return Object.keys(sc.save.bag).filter(id => { const it = ADVP.item(id); return it.ball || it.heal || it.cure || it.revive; }).sort((a, b) => ADVP.item(a).cat.localeCompare(ADVP.item(b).cat)); },
+  wheelItems(sc) { return Object.keys(sc.save.bag).filter(id => { const it = ADVP.item(id); return it.ball || it.heal || it.cure || it.revive; }).sort((a, b) => ADVP.item(a).cat.localeCompare(ADVP.item(b).cat) || this.itemRank(a) - this.itemRank(b)); },   // and in the item table's order, so a Potion bought again comes back to its old place (it went to the end, playtest 9)
+  itemRank(id) { const k = (this._ir ||= Object.keys(ADVP.ITEMS)).indexOf(id); return k < 0 ? 999 : k; },
   wheelUpdate(sc, dt) {
     const w = sc.wh, its = this.wheelItems(sc), n = its.length;
     if (!n) { sc.wh = null; return; }

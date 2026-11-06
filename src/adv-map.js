@@ -187,7 +187,7 @@ const ADVMAP = {
     const team = ADVN.leaderTeam(g.leader, sv.badges | 0), n = sv.party.length, want = Math.max(5, Math.max(0, ...team.map(m => m.level)) + (n >= 3 ? 0 : n === 2 ? 1 : 2)), top = ADVW.partyTop(sv);   // the ace's level, one more for a pair, two for a lone starter (playtest 8 won the first badge alone at the ace +2; it was +1/+2/+3, the story bosses' +0/+1/+2 now)
       // a lone starter or a pair is asked for a little more (a lone Lv15 starter still lost to Aspen's Lv12 ace)   // want: the ace's level (a starter two under it loses to Miltank in the sims, balance pass 2026-11-05)
     const inGym = !!sc.room && sc.room.id === g.b, left = g.after.filter(id => !sv.beat?.[id]).length;
-    const sub = top < want - 1 ? `Train your team to about Lv ${want} (best: Lv ${top})` : top < want ? `Close enough to try. Lv ${want} is safer (best: Lv ${top})` :   // one level short says you may try (a tester won the badge at Lv14 while it still said Lv 15, playtest 8)
+    const sub = top < want - 1 ? `Train your team to about Lv ${want} (best: Lv ${top})` : top < want ? `Ready to try. Lv ${want} is safer (best: Lv ${top})` :   // one level short says you may try (a tester won the badge at Lv14 while it still said Lv 15, playtest 8)
       left ? `Beat the gym's ${left} trainer${left > 1 ? 's' : ''}, then ${g.who}` : inGym ? `Challenge ${g.who}!` : `Gym Leader ${g.who} awaits`;   // the trainers left count indoors and out
     return { x: g.x, y: g.y, line: `${g.town} Gym`, sub, g };
   },
