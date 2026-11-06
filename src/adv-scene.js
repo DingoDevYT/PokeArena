@@ -117,7 +117,7 @@ const AdventureScene = {
   cy() { return Math.floor(this.cam.y / (ADV.Tp(this.cam.x) * ADV.CH)); },
   spawn(s) {
     const p = this.p = ADV.entity(s.x, s.y, 0);
-    p.face = 0; p.walkD = 0; p.moving = false; p.placed = false;
+    p.face = 0; p.walkD = 0; p.moving = false; p.placed = false; p.assist = true;   // corner correction at doors and gaps (ADV.corner)
     this.f = {}; this.folReset(p.x, p.y, 0, 0);
   },
   // (re)starts the follower a trail-length behind a spot, standing still and facing face

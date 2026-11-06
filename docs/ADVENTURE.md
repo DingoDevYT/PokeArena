@@ -157,6 +157,8 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
 - Fifth playtest fixes (2026-11-06, late game, in progress):
   - An indoor fight's box has no floor outside the building: a kiting Leafeon slipped past the wall rocks in Thorn's hall and fought from the road for minutes.
   - In Adventure the CPU stops using a boost move once any stat it raises is at +2 (Bulk Up kept climbing on Attack while Defence lagged).
+  - Story bosses are smaller than the gym leader of their stage: 3 mons up to stage 2, 4 for stages 3-4, 5 for 5-6, 6 for stage 7, the League in full (every boss brought a full leader's team, six mons from stage 5; Jet at Dunereach stopped the late-game tester).
+  - Corner correction: pushing straight into a wall with an opening up to 24 px to one side slides you into it (a gym door needed lining up within 6 px on a phone). On a phone indoors the goal box is see-through, so a leader at the top of the hall shows through it.
 - Phone stick (2026-11-05): speed follows the push on a gentle curve, so a small push creeps (lining up to face someone took several tries) and a full push is full speed; pushed to the rim it runs.
 - Settings (2026-11-05): Text speed (Slow, Normal, Fast, Instant) everywhere; on a phone also Full push runs and Touch buttons (Small, Normal, Large: every button's size and distance from the corner scale together).
 - NPC writing pass (2026-11-05): 171 people rewritten with a voice per town, small arcs inside towns, a useful hint from about one in three (route exits from the signs, catch spots, Skill teachers, gym type tips) and quiet foreshadowing of the story. Lines pinned by STORY.md and the checks were kept.

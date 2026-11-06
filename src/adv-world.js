@@ -337,8 +337,19 @@ const ADV = (() => {
     // Moves e by (dx, dy) world px: axis-separated, sub-stepped, wall sliding. A ledge step starts e.hop instead.
     move(e, dx, dy) {
       if (e.hop) return;
-      const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 4)), sx = dx / n, sy = dy / n;
+      const x0 = e.x, y0 = e.y, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 4)), sx = dx / n, sy = dy / n;
       for (let i = 0; i < n && !e.hop; i++) { if (sx) this.axis(e, sx, 0); if (sy && !e.hop) this.axis(e, 0, sy); this.settle(e); }
+      if (e.assist && !e.hop && e.x === x0 && e.y === y0 && (!dx !== !dy)) this.corner(e, dx, dy);
+    },
+    // corner correction for the player: a straight push into a wall with an opening up to 24 px to one side slides toward it (a gym door needed lining up within 6 px)
+    corner(e, dx, dy) {
+      const d = Math.hypot(dx, dy); if (d < 0.01) return;
+      for (const k of [6, 12, 18, 24]) for (const s of [1, -1]) {
+        const t = { ...e, x: e.x + (dy ? s * k : 0), y: e.y + (dx ? s * k : 0), hop: null };
+        if (this.propHit(t.x, t.y, e.r, e.z) || this.blocked(t.x, t.y, e.z, e.r)) continue;   // the side spot itself must be open
+        this.axis(t, dx ? Math.sign(dx) * 4 : 0, dy ? Math.sign(dy) * 4 : 0); if (t.hop || (t.x === e.x + (dy ? s * k : 0) && t.y === e.y + (dx ? s * k : 0))) continue;   // and the way on from it
+        this.axis(e, dy ? s * Math.min(d, k) : 0, dx ? s * Math.min(d, k) : 0); return;
+      }
     },
     axis(e, dx, dy) {
       const r = e.r, nx = e.x + dx, ny = e.y + dy, E = 0.01, s = (dx || dy) > 0 ? 1 : -1, T = this.Tp(e.x);

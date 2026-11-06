@@ -134,7 +134,8 @@ const ADVSTORY = {
     if (!team.length) return this.next(sc);
     if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
-    if (s.max) team = team.slice(-s.max);
+    const cap = s.max || (typeof st === 'number' && !Array.isArray(s.team) ? (st <= 2 ? 3 : st <= 4 ? 4 : st <= 6 ? 5 : 6) : 0);   // story bosses are smaller than the gym leader of their stage, as admins are in the classic games (every boss brought a full leader's team: six mons from stage 5)
+    if (cap) team = team.slice(-cap);
     if (s.minus) team = team.map(m => ({ ...m, level: Math.max(2, m.level - s.minus), moves: undefined }));   // a softer first meeting (moves follow the new level)
     this.run.bn = (this.run.bn || 0) + 1;
     n.def.trainer = { cls: c.cls && !(c.name || '').toLowerCase().includes(c.cls.toLowerCase()) ? c.cls : '', name: c.name || s.battle,   // no 'Grunt Umbra Grunt' on the plate

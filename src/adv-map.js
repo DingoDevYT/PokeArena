@@ -149,7 +149,7 @@ const ADVMAP = {
   hud(sc) {
     img(this.FILE);   // starts the load, so the map opens ready
     if (!sc.ready || sc.uis.length || sc.dlg || (sc.mode !== 'walk' && sc.mode !== 'fish')) return;
-    this.pins(sc); if (!(window.TOUCH?.on && sc.room)) this.info(sc); this.party(sc); this.mini(sc); this.goalBox(sc);   // on a phone the clock box hides indoors (it sat over the gym leader at the top of the hall)
+    this.pins(sc); if (!(window.TOUCH?.on && sc.room)) this.info(sc); this.party(sc); this.mini(sc); if (window.TOUCH?.on && sc.room) ctx.globalAlpha = 0.55; this.goalBox(sc); ctx.globalAlpha = 1;   // on a phone the clock box hides indoors and the goal box goes see-through (both sat over the gym leader at the top of the hall)
   },
 
   // ---------- where to go next: the nearest gym not beaten yet, and what the team needs first ----------
