@@ -31,6 +31,7 @@ const ADVSTORY = {
     const b = this.main(sc.save); if (!b || !b.goal) return null;
     const w = b.where || {}, t = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null;
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
+    if (this.cool?.id === b.id && this.cool.who && t?.center) return { line: `${this.cool.who} is still in ${t.name}. Train up, step out of town, then come back.`, story: b, x: t.center.x, y: t.center.y };   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
     if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
   },
@@ -59,9 +60,23 @@ const ADVSTORY = {
   },
   // the nearest free, walkable spot to (x, y) on the ground there
   free(x, y) {
-    const T = ADV.T, ok = (px, py) => { const c = Math.floor(px / T), r = Math.floor(py / T), h = ADV.h(c, r); return h >= 0 && !ADV.blocked(px, py, ADV.heightAt ? ADV.heightAt(px, py, h) : 0, 12) && !ADV.isWater(c, r); };
+    const T = ADV.T, ok = (px, py) => { const c = Math.floor(px / T), r = Math.floor(py / T), h = ADV.h(c, r); return h >= 0 && !ADV.blocked(px, py, ADV.heightAt ? ADV.heightAt(px, py, h) : 0, 12) && !ADV.isWater(c, r) && !this.hidden(px, py); };
     for (let rr = 0; rr <= 6; rr++) for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== rr) continue; const px = x + dx * T * 0.5, py = y + dy * T * 0.5; if (ok(px, py)) return { x: px, y: py }; }
     return { x, y };
+  },
+  // would a tall prop just south of (x, y) be drawn over someone standing there (Ethan spoke from behind a tree at the Spindlewood docks)
+  hidden(x, y) {
+    const T = ADV.T, c = Math.floor(x / T), r = Math.floor(y / T), seen = new Set();
+    for (const [dc, dr] of [[-1, 0], [0, 0], [1, 0], [-1, 2], [0, 2], [1, 2]]) {
+      const ch = ADV.chunkAt?.(c + dc, r + dr); if (!ch || seen.has(ch)) continue; seen.add(ch);
+      for (const p of ch.props) {
+        if (p.y <= y || p.y > y + 2.5 * T) continue;
+        const pd = ADV.propDef(p.n); if (!pd || !pd.sh) continue;
+        const k = ADV.dk ? ADV.dk(pd, p.x) : 1, top = p.y - (pd.ay ?? pd.sh) * k, l = p.x - (pd.ax ?? pd.sw / 2) * k, rr = l + pd.sw * k;
+        if (pd.sh * k > 1.2 * T && top < y - 24 && l < x + 10 && rr > x - 10) return true;
+      }
+    }
+    return false;
   },
   spawn(who, x, y, beat) {
     const c = this.castOf(who), d = { id: 'story-' + who, sprite: c.sprite || 'normal-normal', face: 0, move: 'still', name: this.label(c, who), lines: ['...'], script: 'story', story: beat, cast: who };
@@ -131,6 +146,6 @@ const ADVSTORY = {
     this.next(sc);
   },
   abort() {
-    if (this.run?.fighting) { const r = this.run, who = r.steps[r.i]?.battle; (this.lost ||= {})[r.beat.id] = r.bn || 1; this.cool = { id: r.beat.id, who: (who && this.castOf(who)?.name) || '' }; }   // a must-win loss: that beat waits until you have left town and come back (it restarted the moment you woke at that town's Center, with no way out to train)
+    if (this.run?.fighting) { const r = this.run, who = r.steps[r.i - 1]?.battle || r.steps[r.i]?.battle; (this.lost ||= {})[r.beat.id] = r.bn || 1; this.cool = { id: r.beat.id, who: (who && this.castOf(who)?.name) || '' }; }   // a must-win loss: that beat waits until you have left town and come back (it restarted the moment you woke at that town's Center, with no way out to train)
     this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
 };
