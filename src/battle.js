@@ -1802,10 +1802,11 @@ function moveValue(side, slot) {
   if (trapOut) return 0.005;
   // trap clouds are big and linger, so they land far more often than a plain status shot
   if (mv.status) return fm.status || statusImmune(fm, mv.status, foe) ? 0 : arch === 'trap' ? 0.1 : 0.07;
-  if (arch === 'trap' && mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -2 : (fm.stages[k] | 0) < 2) ? 0.05 : 0;   // Smokescreen and other stat clouds stop at -2 as well
+  const lim = B.arena?.world && typeof ADV !== 'undefined' && !(ADV.player?.badges | 0) && typeof AdventureScene !== 'undefined' && SCENE === AdventureScene && !SCENE.tr ? 1 : 2;   // a wild mon before the first badge stops at one stage (an Oddish Growthed to +2 and a Miltank Growled Scratch to 3 damage, playtest 8)
+  if (arch === 'trap' && mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -lim : (fm.stages[k] | 0) < lim) ? 0.05 : 0;   // Smokescreen and other stat clouds stop at -2 as well
   if (mv.target === 'foeSide') return B.hazards.filter(h => h.owner === side.idx).length < 3 ? 0.05 : 0;
-  if (mv.boosts && SELF_TARGETS.has(mv.target)) return hp > 0.6 && (B.arena?.world ? Object.keys(mv.boosts).every(k => m.stages[k] < 2) : Object.keys(mv.boosts).some(k => m.stages[k] < 2)) ? 0.08 : 0;   // Adventure: a boost move stops once any stat it raises is at +2 (Bulk Up kept climbing on Attack while Defence lagged: +5 Gogoat swept a team)
-  if (mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -2 : (fm.stages[k] | 0) < 2) ? 0.03 : 0;   // Growl and the like: down to -2, no further (a CPU that could not hurt you stacked them to -6)
+  if (mv.boosts && SELF_TARGETS.has(mv.target)) return hp > 0.6 && (B.arena?.world ? Object.keys(mv.boosts).every(k => m.stages[k] < lim) : Object.keys(mv.boosts).some(k => m.stages[k] < 2)) ? 0.08 : 0;   // Adventure: a boost move stops once any stat it raises is at +2 (Bulk Up kept climbing on Attack while Defence lagged: +5 Gogoat swept a team)
+  if (mv.boosts) return Object.entries(mv.boosts).some(([k, n]) => n < 0 ? (fm.stages[k] | 0) > -lim : (fm.stages[k] | 0) < lim) ? 0.03 : 0;   // Growl and the like: down to -2, no further (a CPU that could not hurt you stacked them to -6)
   if (mv.weather) return B.field.weather ? 0 : 0.04;
   if (mv.terrain) return B.field.terrain ? 0 : 0.04;
   if (mv.sideCondition) return side.screens[toId(mv.sideCondition)] > 0 ? 0 : 0.05;
