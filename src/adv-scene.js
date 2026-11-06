@@ -124,7 +124,7 @@ const AdventureScene = {
   folReset(x, y, z, face) {
     const T = ADV.Tp(x), D = ADVF.FD * T, fv = DIR_VEC[face] || [0, 1], lv = Math.max(0, ADV.h(Math.floor(x / T), Math.floor(y / T)));
     let ox = 0, oy = D;   // behind you on dry ground at your level, else a step south (always south put it in the sea at the Claystone landing)
-    for (const [dx, dy] of [[-fv[0], -fv[1]], [0, 1], [0, -1], [-1, 0], [1, 0]]) { const fx = x + dx * D, fy = y + dy * D, c = Math.floor(fx / T), r = Math.floor(fy / T); if (ADV.h(c, r) === lv && !ADV.isWater(c, r) && !ADV.blocked(fx, fy, z, 6)) { ox = dx * D; oy = dy * D; break; } }
+    for (const [dx, dy] of [[-fv[0], -fv[1]], [0, 1], [0, -1], [-1, 0], [1, 0]]) { const fx = x + dx * D, fy = y + dy * D, c = Math.floor(fx / T), r = Math.floor(fy / T); if (ADV.h(c, r) === lv && !ADV.isWater(c, r) && !ADV.blocked(fx, fy, z, 6) && !(typeof ADVSTORY !== 'undefined' && ADVSTORY.hidden(fx, fy))) { ox = dx * D; oy = dy * D; break; } }   // and not tucked behind a building's front (after a blackout it stood behind the Pokemon Center's)
     this.trail = [{ x: x + ox, y: y + oy, z, sz: z, s: 0 }, { x, y, z, sz: z, s: D }];
     Object.assign(this.f, { x: x + ox, y: y + oy, z, sz: z, face, want: face, moving: false, animT: 0, at: 0, walkD: 0, vx: 0, vy: 0, sp: 0, loco: 'Idle', locoT: 0, turnT: 0, anim: 'Idle', beh: 'follow', bt: 0, idleT: 0, free: false, r: 6, hop: null, lv: 0, hopT: 0, plan: null, doing: '', lookT: 0, stall: 0 });
     this.back = false;
@@ -924,7 +924,11 @@ const AdventureScene = {
     s1.team.forEach((m, k) => { if (m.fainted && !m.paid) { m.paid = true; this.award(m); } });
     this.cam.x = ar.ox + B.cam.x; this.cam.y = ar.oy + B.cam.y - ar.lv * ar.T; // streaming follows the fight
     this.bvTick(dt);
-    if (B.over) { if (B.winner === 0 ? B.endT > 0.3 : B.endT > 1.2) { if (B.winner === 0) this.endFight(''); else if (this.tr?.t.story && !this.tr.t.mustWin) this.storyLoss(); else { this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; } } return; }
+    if (B.over && B.winner !== 0 && this.tr && !this.tr.t.story && !this.tr.quip) {   // a trainer who beats you says so before the fade (Teamster Dale just walked off)
+      const t = this.tr.t, Q = ['Better luck next time!', 'Ha! Train up and come back.', 'Good try! That one was close.', 'Not today! Come back stronger.'], h = [...(t.name || '')].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+      this.tr.quip = 1; callout({ idx: -1 }, `${t.name}: ${(Array.isArray(t.win) ? t.win[0] : t.win) || Q[h % Q.length]}`);
+    }
+    if (B.over) { if (B.winner === 0 ? B.endT > 0.3 : B.endT > (this.tr && !this.tr.t.story ? 2 : 1.2)) { if (B.winner === 0) this.endFight(''); else if (this.tr?.t.story && !this.tr.t.mustWin) this.storyLoss(); else { this.late = this.settle(); this.wh = null; this.mode = 'fade'; this.fadeT = 0; } } return; }
     // running away (wild fights only): the wild mon keeps up with you, so besides gaining ADV_FLEE px on it for ADV_FLEE_T s you can run out through the edge of the fight box (ADV_EDGE px in, held ADV_EDGE_T s)
     const I = s0.intent, out = a.x < ADV_EDGE && I.mx < -0.3 || a.x > ar.w - ADV_EDGE && I.mx > 0.3 || a.y < ADV_EDGE && I.my < -0.3 || a.y > ar.h - ADV_EDGE && I.my > 0.3;
     this.far = Math.hypot(a.x - b.x, a.y - b.y) > ADV_FLEE ? this.far + dt : 0; this.edge = out ? this.edge + dt : 0;
