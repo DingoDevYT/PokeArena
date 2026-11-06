@@ -150,7 +150,7 @@ const ADVP = {
     revive: { name: 'Revive', cat: 'med', revive: 0.5, info: 'Revives a fainted Pokemon with half its HP.' },
     maxrevive: { name: 'Max Revive', cat: 'med', revive: 1, info: 'Revives a fainted Pokemon with all its HP.' },
     fishingrod: { name: 'Fishing Rod', cat: 'key', info: 'Face the water and press F (X on a pad) to cast. Needs the Fishing skill.' },
-    bike: { name: 'Bike', cat: 'key', info: 'Press V (Select on a pad) to get on or off. Much faster than running. Not indoors, not through tall grass, not on water.' },
+    bike: { name: 'Bike', cat: 'key', info: 'The RIDE button gets you on or off (V on a keyboard, Select on a pad). Much faster than running. Not indoors, not through tall grass, not on water.' },
     rarecandy: { name: 'Rare Candy', cat: 'grow', candy: true, info: 'Raises a Pokemon by one level.' },
   },
   STONES: ['firestone', 'waterstone', 'thunderstone', 'leafstone', 'moonstone', 'sunstone', 'shinystone', 'duskstone', 'dawnstone', 'icestone', 'ovalstone'],

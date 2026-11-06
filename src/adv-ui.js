@@ -688,7 +688,7 @@ const ADVUI = {
         text(st.mode === 1 ? 'BUY' : 'SELL', X(40), Y(100), L(22), '#9aa6c0', 'left', null);
         l.slice(st.off, st.off + rows).forEach((id, j) => {
           const i = j + st.off, y = Y(120) + j * L(64), on = i === st.sel, it = ADVP.item(id);
-          hot(X(40), y, L(600), L(58), { hover: () => st.sel = i, click: () => { st.sel = i; go(); }, wheel: d => st.sel = clamp(st.sel + d, 0, l.length - 1) });
+          hot(X(40), y, L(600), L(58), { hover: () => st.sel = i, click: () => { if (st.sel !== i) { st.sel = i; st.qty = 1; uiBlip(600, 0.03); return; } go(); }, wheel: d => st.sel = clamp(st.sel + d, 0, l.length - 1) });   // a tap picks the row, a second tap buys (one tap bought a $4000 Bike, playtest 9; a mouse hovers first, so a click still buys)
           rrect(X(40), y, L(600), L(58), L(12), on ? '#ffde3b' : '#ffffff18', on ? '#fff' : '#ffffff33', 2);
           ADVUI.icon(id, X(74), y + L(29), L(20)); text(it.name, X(112), y + L(29), L(20), on ? '#1a1a2a' : '#fff', 'left', null);
           text(ADVUI.money(price(id)), X(620), y + L(29), L(20), on ? '#1a1a2a' : '#ffde3b', 'right', null);
@@ -699,6 +699,7 @@ const ADVUI = {
           const it = ADVP.item(id); ADVUI.icon(id, X(740), Y(210), L(44)); text(it.name, X(810), Y(186), L(26), '#fff', 'left', null); text('Owned: ' + (sv().bag[id] | 0), X(810), Y(224), L(15), '#ffde3b', 'left', null);
           wrapText(it.info, X(700), Y(290), L(550), L(17), '#dde');
           text(`< ${st.qty} >   ${ADVUI.money(price(id) * st.qty)}`, X(975), Y(390), L(26), '#fff', 'center', null);
+          if (window.TOUCH?.on) { [[-1, X(730), '-'], [1, X(1220), '+']].forEach(([d, bx, g]) => { ctx.beginPath(); ctx.arc(bx, Y(390), L(30), 0, 6.283); ctx.fillStyle = '#ffffff22'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffde3b'; ctx.stroke(); text(g, bx, Y(392), L(30), '#ffde3b', 'center', null); hot(bx - L(40), Y(350), L(80), L(80), { click: () => q(d) }); }); text(st.mode === 1 ? 'Tap the row again to buy.' : 'Tap the row again to sell.', X(975), Y(530), L(16), '#ffde3b', 'center', null); }   // a phone: the amount by tap, and the second tap does it
         }
         if (st.mode === 1 && mk) text('Stock and prices change every day.', X(975), Y(450), L(13), '#9aa6c0', 'center', null);
         else if (st.mode === 1 && sv().badges < 7) text(`Better stock arrives with more badges (you have ${sv().badges}).`, X(975), Y(450), L(13), '#9aa6c0', 'center', null);
