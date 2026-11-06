@@ -72,7 +72,8 @@ function natureMod(nat, stat) { const n = DEX.natures[nat]; if (!n) return 1; re
 // Displayed HP = real HP x HP_MULT x a level curve: low levels get more (fights don't end in seconds), lv100 gets less (they don't drag on).
 // lv5 x1.6, lv20 x1.55, lv50 x1.07, lv100 x0.82
 let HP_CAP = 1.6;   // Adventure sets 1.0 while it runs (adv-scene.js): its fights happen on the map, one after another, so early ones should not drag (balance pass 2026-11-05)
-const hpScale = L => TUNE.HP_MULT * clamp(Math.pow(60 / L, 0.4), 0.7, HP_CAP);
+let HP_FALL = 0;   // Adventure sets 1: HP eases from full at Lv25 to 80% at Lv50, so late fights do not run eight minutes (playtest 5: Vesper took 499 s)
+const hpScale = L => TUNE.HP_MULT * clamp(Math.pow(60 / L, 0.4), 0.7, HP_CAP) * (HP_FALL ? clamp(1 - (L - 25) / 125, 0.8, 1) : 1);
 function calcStats(sp, L, nat) {
   const b = sp.baseStats, s = {};
   if (sp.fixedStats) { const v = sp.fixedStats; return { hp: v / hpScale(L), atk: v, def: v, spa: v, spd: v, spe: v }; } // joke species: every shown stat (and max HP) is exactly this

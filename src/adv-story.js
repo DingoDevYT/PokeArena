@@ -32,7 +32,10 @@ const ADVSTORY = {
     const b = this.main(sc.save); if (!b || !b.goal) return null;
     const w = b.where || {}, t = w.town && !['home', 'any', 'away'].includes(w.town) ? ADVS.town(w.town) : w.town === 'home' ? ADVS.town(sc.save.home) : null;
     const who = b.trigger === 'talk' && (b.who || b.script.find(s => s.say && s.say !== 'player')?.say), n = who && this.cast.get(who);
-    if (this.cool?.id === b.id && this.cool.who && t?.center) return { line: `${this.cool.who} is still in ${t.name}. Train up, step out of town, then come back.`, story: b, x: t.center.x, y: t.center.y };   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
+    if (this.cool?.id === b.id && this.cool.who && t?.center) {   // after a lost must-win fight (it said "Go to Spindlewood" while you stood in it)
+      const at = /^L/.test(w.town) ? `at the ${t.name.replace(/^the /i, '')}` : `in ${t.name}`, here = this.place(sc) === w.town;
+      return here ? { line: `${this.cool.who} is still ${at}. Train up, step away, then come back.`, story: b } : { line: `${this.cool.who} is waiting ${at}. Train up, then go back.`, story: b, x: t.center.x, y: t.center.y };   // no "HERE" glued on while you stand there; a landmark is "at the", and "out of town" was wrong 84 tiles away
+    }
     if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
     return { line: this.fill(b.goal, sc.save), story: b, ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
   },

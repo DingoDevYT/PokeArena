@@ -77,7 +77,7 @@ const ADVP = {
     return s;
   },
   // battle-unit max HP and the real-game HP behind it (memoised: makeMon sorts the learnset)
-  maxes(s) { const k = s.species + '|' + s.level + '|' + s.nature + '|' + (typeof HP_CAP === 'undefined' ? '' : HP_CAP); if (!this.mc[k]) { const m = makeMon({ species: s.species, level: s.level, nature: s.nature }); this.mc[k] = { max: m.maxHp, real: m.stats.hp }; } return this.mc[k]; },   // HP_CAP is in the key: the cache may fill on the starter screen, before Adventure sets its own cap
+  maxes(s) { const k = s.species + '|' + s.level + '|' + s.nature + '|' + (typeof HP_CAP === 'undefined' ? '' : HP_CAP) + '|' + (typeof HP_FALL === 'undefined' ? '' : HP_FALL); if (!this.mc[k]) { const m = makeMon({ species: s.species, level: s.level, nature: s.nature }); this.mc[k] = { max: m.maxHp, real: m.stats.hp }; } return this.mc[k]; },   // HP_CAP is in the key: the cache may fill on the starter screen, before Adventure sets its own cap
   max(s) { return this.maxes(s).max; },
   heal(s) { s.hp = this.max(s); s.status = ''; },
   fainted: s => !(s.hp > 0),

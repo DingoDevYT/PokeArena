@@ -46,7 +46,7 @@ const AdventureScene = {
     ADVW.hourSet = tm ? (tm === 'night' ? 23 : tm === 'day' ? 12 : +tm) : null;
     if (W) { this.open(this.resume || ADVUI.start(this)); this.resume = null; }
   },
-  exit() { HP_CAP = 1.6; ADVR.dark = null; this.persist(); this.closeChat(); this.stopNet(); this.uis.forEach(u => u.exit && u.exit()); this.uis = []; ADV.reset(); ADVW.reset(); ADVN.reset(); ADV.player = null; if (this.inB) B = null; ADVM.stop(); this.vic = null; },
+  exit() { HP_CAP = 1.6; HP_FALL = 0; ADVR.dark = null; this.persist(); this.closeChat(); this.stopNet(); this.uis.forEach(u => u.exit && u.exit()); this.uis = []; ADV.reset(); ADVW.reset(); ADVN.reset(); ADV.player = null; if (this.inB) B = null; ADVM.stop(); this.vic = null; },
   // the track this moment wants: a fight, a win fanfare still playing, a room, else the zone (the night table after dark); '' = silence
   musicName() {
     const M = window.ADV_MUSIC, p = this.p;
@@ -85,7 +85,7 @@ const AdventureScene = {
   // start (or restart) the world from a save
   go(save, want) {
     const W = window.ADV_WORLD; this.uis.forEach(u => u.exit && u.exit()); this.uis = []; B = null;
-    HP_CAP = 1.0; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); if (!Number.isFinite(m.exp)) m.exp = ADVP.expFor(ADVP.rate(m.species), m.level); });   // and saves hit by the NaN EXP bug get their EXP back   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
+    HP_CAP = 1.0; HP_FALL = 1; save.party.concat(save.box || []).forEach(m => { if (m.hp > ADVP.max(m)) m.hp = ADVP.max(m); if (!Number.isFinite(m.exp)) m.exp = ADVP.expFor(ADVP.rate(m.species), m.level); });   // and saves hit by the NaN EXP bug get their EXP back   // Adventure's flatter HP curve (battle.js); saves from before it are trimmed
     this.save = ADV.save = ADV.player = save; ADVF.fix(save); ADV.reset(); ADV.setWorld(W); ADV.fallback = false; ADVW.reset(); ADVN.load(); this.dlg = this.sp = this.tr = this.bang = this.room = this.heal = this.warpTo = null;
     this.startNet(want); this.ready = false; this.mode = 'walk'; this.inB = false; this.msg = null; this.back = false; this.fadeT = 9; this.step = null; this.bHeld = 0; this.wh = null; this.cs = this.iu = null; this.itemCd = 0; this.inDoor = ''; this.flash = 0; this.late = null; this.mount = ''; this.lent = null; this.alt = 0; this.landing = false; this.running = false; this.amb = null;
     const ow = this.ow = this.pickOW(), files = [ow.file]; this.key = this.leadKey();
@@ -1263,7 +1263,7 @@ const AdventureScene = {
   // the glowing zones (G8 Sporehaven and its routes) lie under a dim canopy, darker at night; Route 101's fungus thins toward Duskmoss. The level eases in and out as you cross a zone edge.
   GLOOM: { sporehaven: 0.4, route2: 0.7, route101: 0.5 },   // lighter since the 2026-11-05 world review: Sporehaven read as murky even at noon
   gloom() {
-    const p = this.p, z = ADVW.zone(p.x, p.y) || '', g = this.GLOOM[z] || 0, W = window.ADV_WORLD;
+    const p = this.p, z = ADVW.zone(p.x, p.y) || '', st = this.save?.story, g = this.GLOOM[z] || (z === 'statueofumbra' && st?.flags?.['key-stolen'] && !st?.done?.['s7-tower'] ? 0.55 : 0), W = window.ADV_WORLD;   // the statue lies under the grey sky Chad talks about while the tower door stands open (it was a bright garden at noon)
     const k = z === 'route101' ? g * clamp(1 - (p.x - W.towns.G8.x - 1400 * ADV.OUT) / (2800 * ADV.OUT), 0.2, 1) : g, dt = Math.min(0.1, this.t - (this.glT ?? this.t));
     this.glT = this.t; return this.gl = this.gl === undefined ? k : this.gl + (k - this.gl) * Math.min(1, dt * 1.5);
   },

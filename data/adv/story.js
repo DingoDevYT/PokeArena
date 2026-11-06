@@ -412,7 +412,7 @@ window.ADV_STORY = {
         { leave: 'jet' },
         { say: 'soot', lines: ["Ma'am. Sorry about the pots."] },
         { leave: 'soot' },
-        { say: 'vesper', lines: ["Thank you, child. I am Vesper, keeper of the door. And of the pots, it seems.",
+        { say: 'vesper', lines: ["Thank you, child. Out here I am simply Vesper, keeper of the door. And of the pots, it seems.",
           "They were too late, and so was I. A charming young lady came by last night with a survey.",
           "She asked if my Yamask ever felt afraid. I said it used to be a person, dear. It is past all that.",
           "When she left, the key went with her. The tower door can be opened now."] },
@@ -448,7 +448,7 @@ window.ADV_STORY = {
         { say: 'chad', lines: ["Friend. Look to the north-west. See how grey the sky's gone up there, in the middle of the day?",
           "That's the tower. Umbra has opened the door. Vesper is holding the road with what she has."] },
         { say: 'chad', lines: ["I'm going too. I'm a sort of caretaker for this region. Unofficially. Mostly unofficially.",
-          "Meet me at the Statue of Umbra. Bring everything you've got. Bring your friend if you can find him."] },
+          "Meet me at the Statue of Umbra. Bring everything you've got. Your friend is headed there too."] },
         { give: 'fullrestore', n: 3 },
         { leave: 'chad' }
       ]

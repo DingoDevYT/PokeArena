@@ -50,9 +50,10 @@ const ADVN = {
   // a roster's moves with the banned ones gone (data/dex.js) and, if fewer than two attacks are left, the mon's own best attacks for its level added back
   armed(sp, lv, moves = []) {
     const ok = moves.filter(m => DEX.moves[m] && !DEX.moves[m].banned), atk = m => DEX.moves[m]?.category !== 'Status' && DEX.moves[m]?.basePower > 0;
-    if (ok.filter(atk).length >= 2) return ok;
-    const add = ADVP.moves(sp, lv).filter(m => atk(m) && !ok.includes(m)), out = [...ok];
+    if (ok.filter(atk).length >= 2 && ok.length >= 4) return ok;
+    const add = ADVP.moves(sp, lv).filter(m => atk(m) && !ok.includes(m) && !DEX.moves[m]?.banned), out = [...ok];
     while (out.filter(atk).length < 2 && add.length) out.splice(out.length >= 4 ? out.findIndex(m => !atk(m)) : out.length, out.length >= 4 ? 1 : 0, add.shift());
+    while (out.length < 4 && add.length) out.push(add.shift());   // and a full set of four where the roster's own moves fell to the ban list (Vesper's ghosts were left with Hex and one more)
     return out.slice(0, 4);
   },
   // beating trainer n: pays, remembers it, and a leader hands out the badge and the TM the first time only. Returns { pay, badge?, tm? }
