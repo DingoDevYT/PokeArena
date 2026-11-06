@@ -100,19 +100,22 @@ const ADVR = {
   // Each side takes pixels of the other's centre tile on a 4 x 4 ordered dither, 50% at the seam fading to none a tile in; the deep side uses the low thresholds and the shallow side the high ones, so the pattern runs on unbroken across the seam.
   // Only over the cell's own pixels of its material (tmask), so shore rims and other edge art stay. Baked with the chunk.
   // the same for any two materials that autotile as one group with no seam art between them: grey ash ground under the northern snow read as flat grey stair-step patches
-  SEAMS: [[['waterDeep', 'sandWaterDeep'], ['water', 'sandWater']], [['ashGround'], ['snow']]],
+  SEAMS: [[['waterDeep', 'sandWaterDeep'], ['water', 'sandWater']], [['ashGround'], ['snow']], [['snow'], ['grass']]],   // snow on grass met on square steps (Route 16, Route 20)
   N8: [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]],
   BAYER: [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5],
   depthSeam(g, ch, i, c, r, x, y) {
     if (ch.bake && ch.bake[i] >= 0) return;
     const P = ADV.palette; let D = this.dsets;
-    if (!D || D.P !== P) {   // side[m]: 1 or 2 for a material on either side of a seam pair, pair[m]: the set across from it
-      const ix = n => P.indexOf(n), side = new Uint8Array(P.length), pair = [];
-      for (const [A, B_] of this.SEAMS) { const a = new Set(A.map(ix).filter(v => v > 0)), b = new Set(B_.map(ix).filter(v => v > 0)); for (const v of a) { side[v] = 1; pair[v] = b; } for (const v of b) { side[v] = 2; pair[v] = a; } }
-      D = this.dsets = { P, side, pair, masks: new Map(), cells: new Map() };
+    if (!D || D.P !== P) {   // pairs[m]: [first side?, the set across] for every seam pair a material is in (snow meets both ash and grass)
+      const ix = n => P.indexOf(n), pairs = [];
+      for (const [A, B_] of this.SEAMS) { const a = new Set(A.map(ix).filter(v => v > 0)), b = new Set(B_.map(ix).filter(v => v > 0)); for (const v of a) (pairs[v] ||= []).push([true, b]); for (const v of b) (pairs[v] ||= []).push([false, a]); }
+      D = this.dsets = { P, pairs, masks: new Map(), cells: new Map() };
     }
-    const m = ch.mat[i], sd = D.side[m]; if (!sd) return;
-    const deep = sd === 1, other = D.pair[m]; let bits = 0, om = -1;
+    const m = ch.mat[i], ps = D.pairs[m]; if (!ps) return;
+    for (const [deep, other] of ps) this.seamPair(g, ch, i, c, r, x, y, m, deep, other, D, P);
+  },
+  seamPair(g, ch, i, c, r, x, y, m, deep, other, D, P) {
+    let bits = 0, om = -1;
     for (let k = 0; k < 8; k++) {
       const [dc, dr] = this.N8[k], nc = ADV.chunkAt(c + dc, r + dr); if (!nc) continue;   // an unloaded neighbour continues the cell (its load re-bakes this chunk)
       const j = ((r + dr) & 31) * 32 + ((c + dc) & 31); if (other.has(nc.mat[j]) && nc.h[j] === ch.h[i]) { bits |= 1 << k; if (om < 0) om = nc.mat[j]; }
@@ -121,7 +124,7 @@ const ADVR = {
     const def = ADV.defOf(P[m]), od = ADV.defOf(P[om]); if (!def || !od || def.quad || od.quad || typeof ADVWA === 'undefined') return;
     const own = ADVWA.tmask(def, ADV.frameId(def, ch.role[i], ch.tile[i], this.frame)), ts = ADV.originOf(od), sh = ADV.sheet(ts);
     if (!own || !sh) { this.miss = true; return; }
-    const key = bits * 2 + (deep ? 1 : 0); let mk = D.masks.get(key);
+    const key = bits * 2 + (deep ? 1 : 0); let mk = D.masks.get(key);   // the dither depends only on the neighbours and the side
     if (!mk) {   // 32 x 32 cells of the dither, one per art px of a cell
       mk = document.createElement('canvas'); mk.width = mk.height = 32; const k = mk.getContext('2d'), id = k.createImageData(32, 32), a = id.data;
       for (let py = 0; py < 32; py++) for (let px = 0; px < 32; px++) {

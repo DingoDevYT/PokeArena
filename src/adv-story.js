@@ -24,7 +24,8 @@ const ADVSTORY = {
     if (w.town === 'home') return code === sv.home;
     if (w.town === 'any') return /^[GT]/.test(code);
     if (w.town === 'away') return /^[GT]/.test(code) && code !== sv.home;
-    return code === w.town;
+    if (code !== w.town) return false;
+    const c = w.r && ADVS.town(code)?.center; return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= w.r * ADV.T;   // r: tiles from the town centre (the docks scene fired on Spindlewood's west road among the houses)
   },
   // NEXT GOAL: the next main-line beat's goal (tokens filled), pinned on its place when it has a fixed one
   goal(sc) {

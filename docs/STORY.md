@@ -196,6 +196,7 @@ Set by `{ flag }` steps, for other systems to read: `met-ethan`, `survey`, `umbr
 The data follows the schema in the brief. These extra fields are used, and each has a safe fallback:
 
 1. **`where.town: 'any'` and `'away'`.** `'any'`: the town (G or T code) the player is in now, or the next one they reach; the cast stands near that town's Center. `'away'`: the same, but never the hometown (used once, for the survey). `'home'`, place codes and `{ zone }` work as in the schema.
+   `where.r` (tiles): an arrival beat fires only within that distance of the town's centre (the docks scene uses 16, so it starts by the wharf, not on the west road).
 2. **`who`** on every `talk` beat: the cast member who stands at `spot` and starts the beat when talked to. It is always the first speaker, so an engine that ignores `who` still works. Other speakers in the beat can stand a tile or two away, or appear when they first speak.
 3. **`optional: true`**: a side scene (s1-whitney, pg-cutter). It never blocks the main chain and never takes over the NEXT GOAL panel.
 4. **`title`**: a short name for a quest log or the debug menu.
