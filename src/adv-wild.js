@@ -110,7 +110,7 @@ const ADVW = {
   // flies cross water at their level; swims stay in water; everyone else walks with ADV.move
   mv(w, dx, dy) {
     const e = w.e, tm = w.tm; if (!tm.swims && !tm.flies) return ADV.move(e, dx, dy);
-    const T = ADV.Tp(e.x), can = (x, y) => tm.swims ? this.ok(x, y, tm) : (c => ADV.h(c[0], c[1]) === e.lv && !ADV.STAIR[ADV.kind(c[0], c[1])] && !ADV.propHit(x, y, e.r, e.z))([Math.floor(x / T), Math.floor(y / T)]);
+    const T = ADV.Tp(e.x), dry = w.st === 'flee' && !ADV.isWater(Math.floor(e.x / T), Math.floor(e.y / T)), can = (x, y) => tm.swims ? this.ok(x, y, tm) : (c => ADV.h(c[0], c[1]) === e.lv && !ADV.STAIR[ADV.kind(c[0], c[1])] && !ADV.propHit(x, y, e.r, e.z) && !(dry && ADV.isWater(c[0], c[1])))([Math.floor(x / T), Math.floor(y / T)]);   // a flier running from you keeps to land, where you can follow (Salt Bay's Wingull fled out over the harbour, playtest 11a)
     for (const [ax, ay] of [[dx, dy], [dx, 0], [0, dy]]) if ((ax || ay) && can(e.x + ax, e.y + ay)) { e.x += ax; e.y += ay; return; }
   },
   // walk toward (tx, ty) at sp px/s with separation from the rest of the group; returns the distance left
