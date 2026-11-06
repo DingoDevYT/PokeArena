@@ -1058,12 +1058,13 @@ const AdventureScene = {
     this.step = null; if (!tr) this.endClaim(msg === 'Got away safely!' ? 'fled' : caught >= 0 ? 'caught' : 'won', dead); else this.net.N.bv([]);
     if (msg !== 'Got away safely!' && window.ADV_MUSIC) this.vic = ADVM.to(tr ? ADV_MUSIC.battle.winTrainer : ADV_MUSIC.battle.winWild, true);   // the win fanfare plays over the zone, which resumes after it
     if (set) { const box = party.length >= 6; (box ? this.save.box : party).push(set); if (box) msg += ' Sent to the PC box.'; }
-    this.msg = msg && { s: msg, t: 3 };
+    const got = set && msg; if (got && ev.length) ev.unshift({ t: 'msg', s: msg });   // a catch is a page of its own, before the EXP (a 3 s toast went by under the EXP pages, playtest 7)
+    this.msg = !got && msg && { s: msg, t: 3 };
     if (!this.msg) { const sm = this.save.party.find(m => m.status && !ADVP.fainted(m)), W = { par: ['paralysed', 'A Paralyze Heal'], psn: ['poisoned', 'An Antidote'], tox: ['badly poisoned', 'An Antidote'], brn: ['burned', 'A Burn Heal'], slp: ['asleep', 'An Awakening'], frz: ['frozen', 'An Ice Heal'] }[sm?.status];
       if (W) this.msg = { s: `${ADVP.name(sm)} is still ${W[0]}. ${W[1]} or a Pokemon Center fixes it.`, t: 4.5 }; }   // a status outlives the fight: say so (a tester walked into a gym battle still paralysed)
     this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
     this.refreshLead(); this.persist();
-    if (ev.length) this.grow(ev);
+    if (ev.length) this.grow(ev); else if (got) this.dialog([msg], null);
     if (tr && tr.t.story) { const sv = this.save, pay = tr.t.money ? ADVN.pay(tr.t, tr.team) : 0; sv.money += pay; this.persist(); if (!pay) return ADVSTORY.after(this, true); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
