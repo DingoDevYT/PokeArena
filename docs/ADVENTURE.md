@@ -202,7 +202,9 @@ Design decisions locked with Landon on 2026-10-14. Nothing is built yet.
   - The fight's item wheel keeps the item table's order, so a Potion bought again returns to its old place.
   - Long lists (the Mart, the Bag, the PC box) scroll with a finger drag on a phone; the Mart's Super Potion and Full Heal sat on rows 10 and 11, out of reach.
   - In the Mart a tap picks a row and a second tap buys or sells (one tap bought a $4000 Bike); on a phone - and + buttons set the amount and a line says to tap the row again. The Bike's text names the RIDE button instead of "Press V".
-- Tenth playtest fixes (2026-11-06, the third hour on a phone, in progress):
+- Eleventh playtest fixes (2026-11-06, a first hour from Salt Bay with a Water starter, and the third hour again, in progress):
+  - A water-only wild Pokemon can be met from the shore, about two tiles out, and the fight plays on land (Salt Bay's harbour mons floated just off the dock, where nothing could reach them).
+- Tenth playtest fixes (2026-11-06, the third hour on a phone; no third badge in 80 minutes):
   - The docks scene (Ethan, the grunt, Jet) happens at Spindlewood's docks on the east shore, within 8 tiles of the first pier, and NEXT GOAL says "Go to the docks at Spindlewood" and points there (it fired on the west road, with no water in sight).
   - A team share: the healthy Pokemon who sat out a fight get half the EXP each, without the catch-up bonus (a Hoppip and a Wooper never gained a level while a Charmeleon carried every fight).
   - Trainers bring two mons at two badges (every trainer brought three near your level).

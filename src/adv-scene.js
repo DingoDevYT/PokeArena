@@ -831,8 +831,8 @@ const AdventureScene = {
     }
     if (!this.loaded || p.hop || !flat(p.x, p.y) || !flat(f.x, f.y) || Math.abs(f.z - Math.round(f.z / T) * T) > 1) return;
     for (const g of ADVW.groups) for (const w of g.m) {
-      const e = w.e; if (w.st === 'fight' || w.st === 'wait' || w.cool > 0 || e.hop || e.lv !== p.lv || Math.abs(e.x - p.x) > 80 || Math.abs(e.y - p.y) > 80 || !flat(e.x, e.y)) continue;
-      if (Math.hypot(e.x - p.x, e.y - p.y) < ADV_TOUCH || Math.hypot(e.x - f.x, e.y - f.y) < ADV_TOUCH + 4) {
+      const e = w.e, sw = w.tm?.swims && !this.wet(), reach = sw ? 2.2 * T : ADV_TOUCH, far = sw ? 2.4 * T : 80; if (w.st === 'fight' || w.st === 'wait' || w.cool > 0 || e.hop || e.lv !== p.lv || Math.abs(e.x - p.x) > far || Math.abs(e.y - p.y) > far || !flat(e.x, e.y)) continue;   // a swimmer can be met from the shore, about two tiles out (Salt Bay's harbour mons floated off the dock, out of reach, playtest 11a)
+      if (Math.hypot(e.x - p.x, e.y - p.y) < reach || Math.hypot(e.x - f.x, e.y - f.y) < ADV_TOUCH + 4) {
         if (w.claiming) return; w.claiming = true;   // online the host decides who gets the group: the fight starts when it says yes
         return this.net.N.claim(w, ok => {
           w.claiming = false;
