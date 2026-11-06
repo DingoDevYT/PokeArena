@@ -1085,6 +1085,7 @@ const AdventureScene = {
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
     this.persist();   // what the fight earned is kept (a reload after a lost gym fight undid a level)
     this.wake = [gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
+    const cool = typeof ADVSTORY !== 'undefined' && ADVSTORY.cool; if (cool?.who && !cool.said) { cool.said = 1; this.wake.push(`${cool.who} won't be going anywhere. Train up a little, then go back.`); }
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }
   useBag(id, i) {

@@ -46,8 +46,9 @@ const ADVSTORY = {
     if ((this.wait -= dt) > 0) return; this.wait = 0.4;
     if (!sc.ready || sc.mode !== 'walk' || sc.uis.length || sc.dlg || sc.inB) return;
     const code = this.place(sc), open = this.open(sc.save), want = new Set();
+    if (this.cool) { if (this.cool.code === undefined) this.cool.code = code; else if (this.cool.code !== code) this.cool = null; }
     for (const b of open) {
-      if (!this.here(b, code, sc)) continue;
+      if (!this.here(b, code, sc) || b.id === this.cool?.id) continue;
       if (b.trigger === 'enter') { if (!sc.room) return this.start(sc, b); continue; }
       const who = b.who || b.script.find(s => s.say && s.say !== 'player')?.say; if (!who || !/^[GT]/.test(code)) continue;
       want.add(who); const n = this.cast.get(who);
@@ -129,5 +130,7 @@ const ADVSTORY = {
     const s = r.steps[r.i]; if (s && (s.win || s.lose)) r.steps.splice(r.i, 1, ...((won ? s.win : s.lose) || []));
     this.next(sc);
   },
-  abort() { if (this.run?.fighting) (this.lost ||= {})[this.run.beat.id] = this.run.bn || 1; this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
+  abort() {
+    if (this.run?.fighting) { const r = this.run, who = r.steps[r.i]?.battle; (this.lost ||= {})[r.beat.id] = r.bn || 1; this.cool = { id: r.beat.id, who: (who && this.castOf(who)?.name) || '' }; }   // a must-win loss: that beat waits until you have left town and come back (it restarted the moment you woke at that town's Center, with no way out to train)
+    this.run = null; for (const k of [...this.cast.keys()]) this.drop(k); },   // a must-win fight lost: the retry skips the scene before it
 };
