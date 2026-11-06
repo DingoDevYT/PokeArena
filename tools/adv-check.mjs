@@ -530,11 +530,11 @@ ok(ADVP.mon('magikarp', 5).moves.length > 0, "a species without level-up data st
     ok(d.face % 2 === 0 || !d.trainer, d.id + ': trainers face a cardinal direction');
     if (!d.trainer) continue;
     if (d.trainer.roster) {   // the Elite Four: a fixed roster, talked to (no sight), gated on eight badges and Ethan's last battle, every line short
-      const t = d.trainer, R = window.ADV_ROSTERS[t.roster]?.true, all = [t.say, t.lose, t.locked, t.gateSay, t.wait].filter(Boolean).flat();
+      const t = d.trainer, R = window.ADV_ROSTERS[t.roster]?.true, all = [t.say, t.lose, t.locked, t.gateSay, t.wait, d.lines2?.lines].filter(Boolean).flat();
       ok(R?.length === 5 && R.at(-1).ace && R.every(m => DEX.species[m.species] && m.level >= 47 && m.level <= 52 && m.moves.length === 4 && m.moves.every(x => DEX.moves[x] && !DEX.moves[x].banned && ADVP.legalSet(m.species).has(x))), d.id + ': five legal mons, Lv 47-52, the ace last');
       ok(t.sight === 0 && t.money > 0 && t.cls === 'Elite Four' && t.name && t.badges === 8 && t.gate === 'lg-gate' && t.league === 'L3' && !t.leader, d.id + ': talked to, no badge to give, gated, a League trainer');
       ok(all.length >= 6 && all.every(s => typeof s === 'string' && s.length <= 100 && !/[\u2014\u2013]/.test(s) && !/\s{2}/.test(s)), d.id + ': every line under 100 characters, no dashes');
-      eq(ADVN.team(t, d.id, 8).length, 5, d.id + ': fights with all five'); continue;
+      eq(ADVN.team(t, d.id, 8).length, 5, d.id + ': fights with all five'); eq(d.lines2?.flag, 'champion', d.id + ': has a line for after the title'); continue;
     }
     const t = d.trainer, z = where(d.id), allowed = new Set([...enc(z)].flatMap(s => [...kin(s)]));
     ok(t.team.length === 6 && t.team.every(([s, rel]) => DEX.species[s] && enc(z).has(s) && rel >= 0 && rel <= 3), d.id + ': six species from the ' + z + ' tables');

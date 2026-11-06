@@ -16,7 +16,7 @@ Object.assign(ADVUI, {
       draw() {
         bgFill('#14283a', '#1b3a2f'); const { X, Y, L } = layout(), s = S();
         text('ONLINE OR OFFLINE', VW / 2, 90 * s, 50 * s, '#ffde3b', 'center', '#1a2a6c');   // it was HOW TO PLAY, which read like a tutorial
-        text(`${save.name}   ${save.party.length} Pokemon   ${save.badges} badges`, VW / 2, 140 * s, 18 * s, '#9aa6c0', 'center', null);
+        text(`${save.name}   ${save.party.length} Pokemon   ${save.badges} ${save.badges === 1 ? 'badge' : 'badges'}`, VW / 2, 140 * s, 18 * s, '#9aa6c0', 'center', null);
         drawMenu(items(), st, VW / 2, 190 * s, 520 * s, 64);
         const hintS = ['Joins the fullest server with room, or starts one', 'Pick a server and see who is on it', 'Type a friend\'s trainer name to find their server', 'No network, just you'][st.sel];
         if (hintS) text(hintS, VW / 2, 190 * s + 5 * 64 * s + 20 * s, 15 * s, '#9aa6c0', 'center', null);
@@ -112,7 +112,7 @@ Object.assign(ADVUI, {
         panel(X(380), Y(160), L(560), L(340), 'TRAINER');
         avatarTile(cleanAvatar(p.av) || AVATAR_DEFAULT, X(410), Y(210), L(150), '#ffde3b');
         text(p.name || '?', X(590), Y(250), L(30), '#fff', 'left', null);
-        text(`${p.b | 0} badges`, X(590), Y(292), L(18), '#ffde3b', 'left', null);
+        text(`${p.b | 0} ${(p.b | 0) === 1 ? 'badge' : 'badges'}`, X(590), Y(292), L(18), '#ffde3b', 'left', null);
         const sp = DEX.species[p.lead]; if (sp) { text('Leads with ' + sp.name, X(590), Y(330), L(15), '#9aa6c0', 'left', null); const im = portrait(sp.id); if (im) ctx.drawImage(im, X(590), Y(350), L(100), L(100)); }
         hint(padUI() ? 'A / B back' : 'Enter / Esc back');
       },

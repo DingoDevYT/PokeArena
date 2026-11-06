@@ -402,7 +402,7 @@ const IN7 = [
         say2: ['Back again! Wonderful. Shall we?'],
         lose: ['Oh, you did it! Congratulations, truly. That was a lovely battle.', 'I do hope Miltank was not too much trouble. She never did learn to be gentle.'],
         sorry: ['Oh, I do apologise, dear. Miltank gets so carried away.', 'Sorry again! She really does not know her own strength.'] } } }),
-      farm('g7-gym-hank', 'Rancher', 'Hank', 'farmer', 2, 5, 30, [['mareep', 0], ['wooloo', 0], ['ponyta', 1], ['tauros', 1], ['girafarig', 2], ['miltank', 2]], 'Miss Whitney trusts me with the stock. Let us see you handle it!', 'Fair enough. On you go.', 1, 4),
+      farm('g7-gym-hank', 'Rancher', 'Hank', 'farmer', 2, 5, 30, [['mareep', 0], ['wooloo', 0], ['ponyta', 1], ['tauros', 1], ['girafarig', 2], ['miltank', 2]], 'Miss Whitney trusts me with the stock. Let's see you handle it!', 'Fair enough. On you go.', 1, 4),
       farm('g7-gym-mabel', 'Farmer', 'Mabel', 'cowgirl', 6, 5, 30, [['oddish', 0], ['hoppip', 0], ['sunkern', 1], ['cherubi', 1], ['bounsweet', 2], ['lechonk', 2]], 'The crops do not grow themselves, and neither do trainers. Come on!', 'Well, there goes my harvest.', 8, 2),
       npc('g7-gym-guide', 6, 5, 'gsman2', 0, ['Whitney came all the way from Johto. Her Miltank knows Rollout, so watch it build up speed.', 'Fighting moves hit Miltank hardest. But beat her ranch hands first, they\'re in your way.'])] },
 ];

@@ -265,5 +265,6 @@ Rules, as in the classic games:
 - **No healing between.** There is no Pokemon Center on the cape; only the bag. The Champion's fight has `keep: true`, so the usual patch-up before a must-win story fight is skipped.
 - **Start over.** Lose to any of them or to the Champion (`league: true` on lg-champion) and you wake at the foot of the plaza, healed, with all four back in their places (`ADVSTORY.leagueReset`). Leaving the League (the place code in `trainer.league`) before the title does the same, with a message. A loss to them costs money like any trainer; a loss to the Champion does not.
 - **Teams.** `trainer.roster` names the roster (no badge to give, unlike `leader`). They get the leaders' AI tier and the gym battle theme.
+- **After the title.** Each has a line for after you are Champion (`lines2: { flag: 'champion', lines }` on the NPC; any NPC can use it): Fenn offers soup, Bram tells the docks he hit you first, Odile saw it coming (this morning), Hale: "Fly well, Champion."
 - **NEXT GOAL.** While lg-champion waits on its `beat` list, the panel reads its `beatGoal` ("Elite Four: challenge Odile (2 of 4 beaten)") with `beatSub` underneath, pinned on the next one, with the level hint from their ace.
 

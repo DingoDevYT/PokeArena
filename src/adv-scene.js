@@ -478,7 +478,7 @@ const AdventureScene = {
     }
     n.busy = true; n.face = dirFromVec(p.x - e.x, p.y - e.y); p.face = dirFromVec(e.x - p.x, e.y - p.y); p.moving = false;
     if (n.def.script) return this.script(n);
-    this.dialog(n.def.lines, n);
+    const L2 = n.def.lines2; this.dialog(L2 && typeof ADVSTORY !== 'undefined' && ADVSTORY.st(this.save).flags[L2.flag] ? L2.lines : n.def.lines, n);   // lines2: what they say once a story flag is set (the Elite Four after you are Champion)
   },
   // ---------- fishing (Skills): face water, F casts the rod, the zone's fishing table decides the bite ----------
   fish() {

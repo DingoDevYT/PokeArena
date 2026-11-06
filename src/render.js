@@ -17,7 +17,7 @@ function updateCamera(dt) {
   z = ar.world ? ADVR.zoomFor() : clamp(z, zMin, zMax) * (1 + c.punch * 0.6) * (ck ? 1.3 : 1);
   c.punch = Math.max(0, c.punch - dt * 0.8);
   c.z = lerp(c.z, z, 1 - Math.pow(0.02, dt));
-  const tb = ar.world && window.TOUCH?.on ? VW * 0.1 / Math.max(0.1, c.z) : 0;   // a phone in an Adventure fight: the fighters sit left of centre, clear of the buttons on the right
+  const tb = ar.world && window.TOUCH?.on ? VW * 0.14 / Math.max(0.1, c.z) : 0;   // a phone in an Adventure fight: the fighters sit left of centre, clear of the buttons on the right (0.1 left the foe under SWAP and DODGE, playtest 8)
   mx += tb;
   c.x = lerp(c.x, mx, 1 - Math.pow(0.01, dt)); c.y = lerp(c.y, my, 1 - Math.pow(0.01, dt));
   const hw = VW / 2 / c.z, hh = VH / 2 / c.z;
