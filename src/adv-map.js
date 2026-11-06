@@ -97,14 +97,14 @@ const ADVMAP = {
       },
       draw() {
         const s = S(), { X, Y, L } = layout(), k = z(), im = img(A.FILE), T = A.T(), me = A.here(sc), w = A.wps(sc), N = sc.net && sc.net.N;
-        ctx.fillStyle = '#0b1020'; ctx.fillRect(0, 0, VW, VH);
+        ctx.fillStyle = '#3b7392'; ctx.fillRect(0, 0, VW, VH);   // past the map's edge is open sea, not a black band (playtest 7)
         hot(0, 0, VW, VH, { wheel: d => zoom(d < 0 ? 1 : -1) });
         if (!im) text('LOADING', VW / 2, VH / 2, 28, '#fff', 'center');
         else { const [x0, y0] = scr(0, 0); ctx.imageSmoothingEnabled = false; ctx.drawImage(im, x0, y0, im.naturalWidth * k, im.naturalHeight * k); }
         const on = (x, y, m = 40) => x > -m && y > -m && x < VW + m && y < VH + m, pk = Math.max(2, Math.round(VH / 300));
         // labels never overlap: town names and gym marks claim their boxes first, then a route name only shows where it fits (Route 3 sat on Route 104)
         const tw = (str, sz) => { ctx.font = `${Math.max(sz, TEXT_MIN || 0)}px Silkscreen`; return ctx.measureText(str).width; }, lbox = (x, y, sz, w) => [x - w / 2 - 3, y - sz / 2 - 3, x + w / 2 + 3, y + sz / 2 + 3];
-        const taken = [], hit = b => taken.some(o => o[0] < b[2] && b[0] < o[2] && o[1] < b[3] && b[1] < o[3]), towns = [];
+        const taken = [[X(660) - L(140), Y(40) - L(24), X(660) + L(140), Y(40) + L(24)], [0, VH - Math.max(54, L(70)) - Math.max(52, 60 * s) - 6, Math.max(300, L(420)), VH], [0, VH - 48, VW, VH]], hit = b => taken.some(o => o[0] < b[2] && b[0] < o[2] && o[1] < b[3] && b[1] < o[3]), towns = [];   // the title, the place box and the hint bar are claimed first: no route name under them
         for (const [id, t] of Object.entries(window.ADV_WORLD?.towns || {})) { const [x, y] = scr(t.center.x / T, t.center.y / T); if (!on(x, y, 80)) continue; towns.push([id, t, x, y]); taken.push(lbox(x, y - 13, 11, tw(t.name, 11)), [x - 9, y - 9, x + 9, y + 9]); }
         for (const gy of A.gyms()) { const [x, y] = scr(gy.x / T, gy.y / T); taken.push([x - 10, y - 10, x + 10, y + 10]); }
         if (st.zi >= 1) for (const rt of A.routes()) { const [x, y] = scr(rt.c, rt.r); if (!on(x, y)) continue; const b = lbox(x, y, 10, tw(rt.name, 10)); if (hit(b)) continue; taken.push(b); text(rt.name, x, y, 10, '#dfe8f5', 'center', '#101428', 'Silkscreen'); }   // route names once you zoom in a step

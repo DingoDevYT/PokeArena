@@ -361,7 +361,8 @@ const ADVUI = {
         text('SKILLS', cx + pad, Y(top + 266), L(13), '#9aa6c0', 'left', null, 'Silkscreen'); wrapText(Object.keys(sv.skills || {}).map(k => ADVP.SKILLS[k]?.name || k).join(', ') || 'None yet. Teachers in towns can show you one.', cx + pad, Y(top + 292), cw - 2 * pad, L(15), '#7fd0e8');
         if (sc.chatOn()) text(`${sc.net.N.role === 'host' ? 'Hosting' : 'On'} ${sc.net.N.name}  ${sc.net.N.count()}/16`, cx + pad, Y(top + 352), L(13), '#7be07b', 'left', null);
         const ps = L(48), gap = (cw - 2 * pad - 6 * ps) / 5; sv.party.forEach((m, i) => { const im = portrait(toId(m.species)), x = cx + pad + i * (ps + gap), y = Y(top + H - 72); rrect(x, y, ps, ps, L(8), '#00000066', '#ffffff33', 1); if (im) { ctx.globalAlpha = ADVP.fainted(m) ? 0.35 : 1; ctx.drawImage(im, x, y, ps, ps); ctx.globalAlpha = 1; } });
-        drawMenu(its, st, X(870), Y(top), L(500), rowH);
+        if (window.TOUCH?.on) { const half = Math.ceil(its.length / 2), st2 = { get sel() { return st.sel - half; }, set sel(v) { st.sel = v + half; } }; drawMenu(its.slice(0, half), st, X(760), Y(top), L(300), 92); drawMenu(its.slice(half), st2, X(1090), Y(top), L(300), 92); }   // a phone: two columns of rows a finger can hit (one column of 22 px rows, playtest 7)
+        else drawMenu(its, st, X(870), Y(top), L(500), rowH);
         if (note.s) wrapText(note.s, cx + pad, Y(top + 420), cw - 2 * pad, L(15), note.bad ? '#ff9a9a' : '#9f9');   // in the left panel, above the party (under the menu it ran over Quit to menu, playtest 7)
         hint(padUI() ? 'A select   B resume' : 'Enter or click select   Esc resume');
         backButton(() => sc.close());   // like every other screen: a corner button back to the game
