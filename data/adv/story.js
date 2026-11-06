@@ -455,7 +455,7 @@ window.ADV_STORY = {
     },
     {
       id: 's7-gate', title: 'The Gate', stage: 7, after: ['s7-call'],
-      where: { town: 'L1' }, trigger: 'enter',
+      where: { town: 'L1', r: 12 }, trigger: 'enter',
       goal: 'Go to the Statue of Umbra in the far north-west.',
       script: [
         { say: 'vesper', lines: ["You came. Good. Inkwell's people went in through the court. The dark is rising from the door."] },
@@ -481,7 +481,7 @@ window.ADV_STORY = {
     },
     {
       id: 's7-pebble', title: 'Pebble', stage: 7, after: ['s7-gate'],
-      where: { town: 'L1' }, trigger: 'enter',
+      where: { town: 'L1', r: 12 }, trigger: 'enter',
       goal: 'Find Ethan at the Statue of Umbra.',
       script: [
         { say: 'ethan', lines: ["{player}! It got out! I didn't let it, it just got out! It won't stop!",
@@ -503,7 +503,7 @@ window.ADV_STORY = {
     },
     {
       id: 's7-tower', title: 'The Door', stage: 7, after: ['s7-pebble'],
-      where: { town: 'L1' }, trigger: 'enter',
+      where: { town: 'L1', r: 12 }, trigger: 'enter',
       goal: 'Stop Inkwell at the tower door.',
       script: [
         { say: 'inkwell', lines: ["Ah. The child with the sweet survey answer. And Ethan. I see the Tyranitar has... woken up.",
@@ -517,7 +517,7 @@ window.ADV_STORY = {
           lose: [{ say: 'inkwell', lines: ["You see? Fear loses. Rest, child. Then come back and lose again."] }] },
         { say: 'inkwell', lines: ["The door! The dark is pushing back out. It will not stop now. Weezing, get behind me!",
           "Weezing? You're shaking. You're terrified. And you are standing in front of me anyway."] },
-        { say: 'soot', lines: ["Ma'am! Got something of yours. Took it off Wash on my way out. She bites."] },
+        { say: 'soot', lines: ["Ma'am! Got something of yours. Lifted it from Wash's bag the day I quit. She'll be livid."] },
         { say: 'vesper', lines: ["My key. Thank you, Soot. Stand back, all of you. A Keeper's work is not complicated.",
           "There. The door is shut, and the tower holds the dark again. Look up. The sky is clearing."] },
         { say: 'chad', lines: ["Nicely done, all of you. Wash and Jet took a boat out to that ship of theirs. They'll keep.",
@@ -563,7 +563,7 @@ window.ADV_STORY = {
     // ================= the League =================
     {
       id: 'lg-gate', title: 'The Last Rival Battle', stage: 8, after: ['s8-ethan'],
-      where: { town: 'L3' }, trigger: 'enter',
+      where: { town: 'L3', r: 12 }, trigger: 'enter',
       goal: 'Go to the Pokemon League on the north cape.',
       script: [
         { say: 'ethan', lines: ["There you are! I've been warming up for an hour. Pebble warmed up too. The ground's cracked.",
@@ -579,7 +579,7 @@ window.ADV_STORY = {
     },
     {
       id: 'lg-champion', title: 'Holiday Is Over', stage: 8, after: ['lg-gate'],
-      where: { town: 'L3' }, trigger: 'enter',
+      where: { town: 'L3', r: 12 }, trigger: 'enter',
       goal: 'Face the Champion at the Pokemon League.',
       script: [
         { say: 'chadwick', lines: ["Hello, friend. Fancy meeting you here. Have a seat? No? Straight to it, then.",
@@ -605,7 +605,7 @@ window.ADV_STORY = {
       where: { town: 'home' }, trigger: 'enter',
       goal: 'Go home to {home}. Someone wants to see you.',
       script: [
-        { say: 'mum', lines: ["{player}! The Champion! My Champion! The whole town's been waiting at the Center all week.",
+        { say: 'mum', lines: ["{player}! The Champion! My Champion! The whole town ran to the Center the minute they heard.",
           "Ethan came by. He ate everything in the kitchen and told me you were brilliant. Twice.",
           "Professor Linden left a note, too. Something about the old tower humming. She said to see Vesper.",
           "After dinner. Champions still eat dinner. Oh, and your gran sent sweets for your Pokemon."] },
@@ -615,7 +615,7 @@ window.ADV_STORY = {
     },
     {
       id: 'pg-vesper', title: 'Stairs Going Down', stage: 8, after: ['pg-home'],
-      where: { town: 'L1' }, trigger: 'enter',
+      where: { town: 'L1', r: 12 }, trigger: 'enter',
       goal: 'Visit Vesper at the Statue of Umbra.',
       script: [
         { say: 'vesper', lines: ["Ah, the Champion. Come here, child. Put your ear to the door. Do you hear it?",

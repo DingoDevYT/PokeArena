@@ -147,6 +147,7 @@ function outlineTell(s, e, m) {
   if (mv) return Math.floor(B.time * 10) % 4 ? TYPE_COLOR[mv.type] || '#fff' : '#fff';
   if (e.hurtT > 0.12) return '#fff';
   if (m.hp / m.maxHp < 0.25 && B.time % 1.2 < 0.15) return '#ff3b30';
+  if (m.shadow) return Math.floor(B.time * 3) % 2 ? '#6a2aa0' : '#2a0a44';
   return null;
 }
 function drawParticle(f) {
@@ -762,7 +763,7 @@ function drawSideHUD(s, right) {
     ctx.restore();
   }
   const nx = right ? px - 12 * S : px + P + 12 * S;
-  const name = (m.sp.name + (m.vol.as ? ` (${m.vol.as})` : '')).toUpperCase(), lv = `Lv${m.level}`;
+  const name = ((m.shadow ? 'Shadow ' : '') + m.sp.name + (m.vol.as ? ` (${m.vol.as})` : '')).toUpperCase(), lv = `Lv${m.level}`;
   text(name, nx, pad + 17 * S, 26 * S, '#fff', right ? 'right' : 'left', '#000');
   ctx.font = `${26 * S}px Bungee, "Arial Black", sans-serif`; const nw = ctx.measureText(name).width + 10 * S;
   text(lv, nx + (right ? -nw : nw), pad + 19 * S, 18 * S, '#ffe36b', right ? 'right' : 'left', '#000');

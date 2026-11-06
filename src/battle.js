@@ -100,7 +100,7 @@ function makeMon(set) {
     ability: abil, baseAbility: abil, item: toId(set.item), moves, cds: [0, 0, 0, 0],
     status: '', statusT: 0, toxN: 0, tickT: 0, stages: blankStages(), vol: {}, fainted: false, megaed: false,
   };
-  m.stats = calcStats(sp, m.level, nat);
+  m.stats = calcStats(sp, m.level, nat); if (set.shadow) m.shadow = true;   // a Shadow Pokemon (Ethan's Tyranitar): its plate says so and it wears a dark outline
   m.maxHp = Math.round(m.stats.hp * hpScale(m.level)); m.hp = m.maxHp;
   return m;
 }

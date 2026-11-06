@@ -27,6 +27,13 @@ const ADVSTORY = {
     if (code !== w.town) return false;
     const c = w.r && ADVS.town(code)?.center; return !c || Math.hypot(sc.p.x - c.x, sc.p.y - c.y) <= w.r * ADV.T;   // r: tiles from the town centre (the docks scene fired on Spindlewood's west road among the houses)
   },
+  // the ace level of a beat's must-win fight, as fight() would build it (NEXT GOAL suggests it: nothing said what level a story boss wanted)
+  bossLevel(sv, b) {
+    const s = b.script.find(x => x.battle && x.mustWin); if (!s || Array.isArray(s.team)) return 0;
+    const st = b.stage, bb = typeof st === 'number' ? Math.min(sv.badges | 0, st) : sv.badges | 0, R = window.ADV_ROSTERS?.[s.battle];
+    const team = s.team && R?.[s.team] ? R[s.team] : ADVN.leaderTeam(s.battle, bb);
+    return team.length ? Math.max(...team.map(m => m.level)) - (s.minus || 0) : 0;
+  },
   // NEXT GOAL: the next main-line beat's goal (tokens filled), pinned on its place when it has a fixed one
   goal(sc) {
     const b = this.main(sc.save); if (!b || !b.goal) return null;
@@ -36,8 +43,8 @@ const ADVSTORY = {
       const at = /^L/.test(w.town) ? `at the ${t.name.replace(/^the /i, '')}` : `in ${t.name}`, here = this.place(sc) === w.town;
       return here ? { line: `${this.cool.who} is still ${at}. Train up, step away, then come back.`, story: b } : { line: `${this.cool.who} is waiting ${at}. Train up, then go back.`, story: b, x: t.center.x, y: t.center.y };   // no "HERE" glued on while you stand there; a landmark is "at the", and "out of town" was wrong 84 tiles away
     }
-    if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
-    return { line: this.fill(b.goal, sc.save), story: b, ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
+    if (n?.e) return { line: this.fill(b.goal, sc.save).replace('the next Pokemon Center', 'the Pokemon Center'), story: b, lv: this.bossLevel(sc.save, b), x: n.e.x, y: n.e.y };   // they are here now, not at the next one   // the cast member is standing there now: the pin and bearing point at them, not at the town
+    return { line: this.fill(b.goal, sc.save), story: b, lv: this.bossLevel(sc.save, b), ...(t?.center ? { x: t.center.x, y: t.center.y } : {}) };
   },
 
   // ---------- each frame in walk mode ----------
@@ -127,13 +134,14 @@ const ADVSTORY = {
     this.st(sc.save).done[r.beat.id] = 1; if (this.lost) delete this.lost[r.beat.id];
     for (const k of [...this.cast.keys()]) this.drop(k);
     sc.persist(); this.wait = 0.2; sc.mode = 'walk';
+    const sv = sc.save; if (this.st(sv).flags.champion && !sv.hof) { sv.hof = { at: Date.now(), team: sv.party.map(m => ({ species: m.species, name: ADVP.name(m), level: m.level })) }; sc.persist(); sc.open(ADVUI.hallOfFame(sc)); }   // the title, the team and the credits, once (the win was a prize line and back to walking)
   },
   // a story battle: the cast member's roster for the challenger's band (or a named list), the ace last; hold keeps it near the party like a route trainer, max sends the last n
   fight(sc, s) {
     const sv = sc.save, c = this.castOf(s.battle), n = this.speaker(sc, s.battle), R = window.ADV_ROSTERS?.[s.battle], st = this.run.beat.stage;
     const bb = typeof st === 'number' ? Math.min(sv.badges | 0, st) : sv.badges | 0;   // the team of the stage the beat opened at: winning a gym while a boss waits for a retry made the boss bigger (Jet went from 4 mons at Lv22-24 to 5 at Lv27-29)
     let team = Array.isArray(s.team) ? ADVN.team({ team: s.team, cls: c.cls || '' }, 'story-' + this.run.beat.id, bb)   // an inline route-trainer team (grunts), held near the party
-      : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace })) : ADVN.leaderTeam(s.battle, bb);
+      : s.team && R?.[s.team] ? R[s.team].map(m => ({ species: m.species, level: m.level, moves: m.moves, ace: !!m.ace, shadow: !!m.shadow })) : ADVN.leaderTeam(s.battle, bb);
     if (!team.length) return this.next(sc);
     if (s.mustWin || sv.party.reduce((s, m) => s + Math.max(0, m.hp | 0), 0) < 0.5 * sv.party.reduce((s, m) => s + ADVP.max(m), 0)) { sv.party.forEach(m => ADVP.heal(m)); sc.flash = 0.5; }   // a worn-out team is patched up before a story battle, and always before one you must win (Soot's came straight after the survey)
     if (s.hold) { const cap = Math.max(5, ADVW.partyTop(sv) + ((sv.badges | 0) ? ADVW.UP : 0)); team = team.map(m => ({ ...m, level: Math.min(m.level, cap), moves: m.level > cap ? undefined : m.moves })); }   // the very first fight meets your level; later held fights may be 2 over
@@ -142,7 +150,7 @@ const ADVSTORY = {
     if (s.minus) team = team.map(m => ({ ...m, level: Math.max(2, m.level - s.minus), moves: undefined }));   // a softer first meeting (moves follow the new level)
     this.run.bn = (this.run.bn || 0) + 1;
     n.def.trainer = { cls: c.cls && !(c.name || '').toLowerCase().includes(c.cls.toLowerCase()) ? c.cls : '', name: c.name || s.battle,   // no 'Grunt Umbra Grunt' on the plate
-      avatar: c.avatar, money: 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
+      avatar: c.avatar, money: s.team === 'shadow' ? 0 : 50, story: true, mustWin: !!s.mustWin, fixed: team, say: '', lose: [] };
     n.busy = true; this.run.fighting = true; sc.startTrainer(n);
   },
   // the scene calls this when a story battle ends: won, or lost without mustWin (a mustWin loss is a blackout: abort())

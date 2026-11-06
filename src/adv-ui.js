@@ -537,6 +537,37 @@ const ADVUI = {
     };
   },
   // a mon drawn from its overworld sheet (first frame, facing you), feet at (x, y), h px tall; white = a plain white silhouette
+  // the Hall of Fame after the champion: the team on a pedestal row, then the credits roll up; A or a tap moves on, and closes at the end
+  hallOfFame(sc) {
+    const sv = sc.save, team = (sv.hof?.team || sv.party).slice(0, 6), st = { t: 0, phase: 0, y: 0 };
+    const C = window.ADV_CREDITS?.authors || [], roll = [['KENORA', 34, '#ffde3b'], ['', 18], [`Champion ${sv.name}`, 26, '#fff'], ['', 18], ['PokeArena Adventure', 22, '#7fd0e8'], ['', 30], ['ART', 20, '#ffde3b'],
+      ...C.flatMap(a => [[a.name, 18, '#fff'], [a.work, 14, '#9aa6c0'], ['', 10]]), ['', 20], ['Pokemon and its characters belong to Nintendo,', 14, '#9aa6c0'], ['Game Freak and The Pokemon Company. A fan game, made for fun.', 14, '#9aa6c0'], ['', 40], ['Thanks for playing!', 26, '#ffde3b']];
+    return {
+      update(dt) {
+        st.t += dt; if (st.phase === 1) st.y += dt * 46;
+        const go = (okHit() || MOUSE.hit || backHit()) && st.t > 0.8;
+        if (go && st.phase === 0) { st.phase = 1; st.t = 0; uiBlip(880, 0.05); }
+        else if (go && st.phase === 1) sc.close();
+      },
+      draw() {
+        const { L } = layout(); ctx.fillStyle = '#05070f'; ctx.fillRect(0, 0, VW, VH);
+        for (let i = 0; i < 40; i++) { const x = (i * 97.3 % 1) * VW, y = ((i * 53.7 + st.t * 8 * (1 + i % 3)) % VH), a = 0.3 + 0.7 * Math.abs(Math.sin(st.t * 1.5 + i)); ctx.fillStyle = `rgba(255,236,160,${a * 0.5})`; ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
+        if (st.phase === 0) {
+          const k = Math.min(1, st.t / 1.2); ctx.globalAlpha = k;
+          text('HALL OF FAME', VW / 2, L(70), L(44), '#ffde3b', 'center', '#1a2a6c');
+          text(`${sv.name}, Champion of Kenora`, VW / 2, L(118), L(20), '#fff', 'center', null);
+          const n = team.length, gap = Math.min(L(190), (VW - L(80)) / Math.max(1, n)), x0 = VW / 2 - gap * (n - 1) / 2, base = VH * 0.58;
+          team.forEach((m, i) => { const x = x0 + i * gap, bob = Math.sin(st.t * 2 + i) * L(3); ctx.fillStyle = '#1a2340'; ctx.beginPath(); ctx.ellipse(x, base + L(6), L(52), L(14), 0, 0, 6.2832); ctx.fill();
+            ADVUI.fig(toId(m.species), x, base + bob, L(Math.min(130, gap / L(1) * 0.8)), false); text(m.name, x, base + L(36), L(16), '#fff', 'center', null); text(`Lv ${m.level}`, x, base + L(58), L(14), '#ffde3b', 'center', null); });
+          ctx.globalAlpha = 1; if (st.t > 1.5) hint(window.TOUCH?.on ? 'Tap to continue' : padUI() ? 'A continue' : 'Enter continue');
+        } else {
+          let y = VH + L(20) - st.y * L(1); const lo = VH - L(70); for (const [s, fs, col] of roll) { if (s && y > -L(40) && y < lo) { ctx.globalAlpha = clamp(Math.min((lo - y) / L(60), (y + L(20)) / L(80)), 0, 1); text(s, VW / 2, y, L(fs), col || '#fff', 'center', null); ctx.globalAlpha = 1; } y += L(fs) * 1.6; }   // lines fade in above the hint row and out at the top
+          if (y < VH * 0.55) st.y = Math.max(0, st.y - (VH * 0.55 - y) / L(1));   // the last line rests mid-screen
+          hint(window.TOUCH?.on ? 'Tap to finish' : padUI() ? 'A finish' : 'Enter finish');
+        }
+      },
+    };
+  },
   fig(id, x, y, h, white) {
     const sp = spriteOf(DEX.species[id]?.sprite), a = sp?.anims?.Walk || sp?.anims?.Idle, im = a && img(a.file); if (!im) return;
     const k = h / a.fh, w = a.fw * k; ctx.save(); ctx.imageSmoothingEnabled = false; if (white) ctx.filter = 'brightness(0) invert(1)';

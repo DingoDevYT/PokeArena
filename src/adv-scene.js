@@ -695,7 +695,7 @@ const AdventureScene = {
     n.busy = true;
     ar.extra = () => [{ x: p.x, y: p.y, z: p.z, f: () => this.drawFighter() }, ...this.npcItems(), ...this.itemFx(), ...this.wildItems(), ...this.remoteItems()];
     startBattleA({ arena: ar, weather: '', player: { name: this.save.name, avatar: this.save.avatar, team: order.map(i => mons[i]) },
-      cpu: { name: [t.cls, t.name].filter(Boolean).join(' '), cpu: true, tier: t.story || t.gym || t.leader || t.fixed ? (b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion') : b < 3 ? 'easy' : b < 6 ? 'normal' : 'hard', avatar: ADVN.avatar(t), team: team.map(m => ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {})) } });
+      cpu: { name: [t.cls, t.name].filter(Boolean).join(' '), cpu: true, tier: t.story || t.gym || t.leader || t.fixed ? (b < 3 ? 'normal' : b < 6 ? 'hard' : 'champion') : b < 3 ? 'easy' : b < 6 ? 'normal' : 'hard', avatar: ADVN.avatar(t), team: team.map(m => Object.assign(ADVP.mon(m.species, m.level, m.moves ? { moves: [...m.moves] } : {}), m.shadow ? { shadow: true } : {})) } });
     order.forEach((i, k) => { const s = mons[i], m = B.sides[0].team[k]; m.hp = Math.min(m.maxHp, s.hp); m.status = s.status || ''; if (!(s.hp > 0)) { m.fainted = true; m.hp = 0; } });
     Object.assign(B.cam, { x: this.cam.x - ar.ox, y: this.cam.y - ar.oy + lv * T, z: ADVR.battleZoom() });
     B.sides[1].queue = true; callout({ idx: -1 }, `${t.cls} ${t.name} wants to battle!`);
@@ -1062,7 +1062,7 @@ const AdventureScene = {
     this.mode = 'walk'; this.inB = false; B = null; this.wh = null; this.cs = this.iu = null; ADVW.calm = performance.now() + ADVW.GRACE * 1000; ADVW.calmA = performance.now() + 6000;   // no grass ambush straight after a fight, and no charging pack for 6 s
     this.refreshLead(); this.persist();
     if (ev.length) this.grow(ev);
-    if (tr && tr.t.story) { const sv = this.save, pay = ADVN.pay(tr.t, tr.team); sv.money += pay; this.persist(); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
+    if (tr && tr.t.story) { const sv = this.save, pay = tr.t.money ? ADVN.pay(tr.t, tr.team) : 0; sv.money += pay; this.persist(); if (!pay) return ADVSTORY.after(this, true); return this.dialog([`${sv.name} got ${ADVUI.money(pay)} for winning!`], null, () => ADVSTORY.after(this, true)); }   // a story battle: paid, then the script goes on
     if (tr) { // won: it pays, remembers the defeat, says its goodbye
       const sv = this.save, r = ADVN.win(sv, tr.n, tr.team); this.persist();
       const prize = [`${sv.name} got ${ADVUI.money(r.pay)} for winning!`, ...(r.badge ? [`${sv.name} received the ${r.badge}!`] : []), ...(r.tm ? [`${sv.name} got ${ADVP.item(r.tm).name}!`] : [])];
@@ -1083,12 +1083,12 @@ const AdventureScene = {
   wakeUp() { const w = this.wake; this.wake = null; if (w) this.dialog(w, null); },
   // whole party down: wake at the Pokemon Center of the last town visited (the hometown to begin with) with a healed party, minus a quarter of the money (at most 2000; nothing before the first badge)
   blackout() {
-    const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), at = ADVS.front(t);
+    const sv = this.save, lost = (sv.badges | 0) && !this.tr?.t.story ? Math.min(Math.floor(sv.money / 10), 1000) : 0,   /* a tenth, at most $1000, and nothing for a must-win story fight (an eighth drained $6400 of $8000 in 70 mid-game minutes, playtest 4) */ t = ADVS.town(sv.last || sv.home), lm = typeof ADVSTORY !== 'undefined' ? ADVSTORY.place(this) : '', L = /^L/.test(lm) && this.tr?.t.story ? ADVS.town(lm) : null, at = L?.center ? ADVSTORY.free(L.center.x, L.center.y + 4 * ADV.T) : ADVS.front(t);   // a story fight lost at a landmark (the League has no Center) wakes you there, not 341 tiles back at your last Center
     const gaveUp = this.gaveUp; this.gaveUp = false; sv.money -= lost; sv.party.forEach(m => ADVP.heal(m)); ADVF.note(sv, 'lose'); sv.pos = at; this.room = null; ADV.closeRoom(); this.heal = this.warpTo = null; this.endClaim('lost', []); if (typeof ADVSTORY !== 'undefined') ADVSTORY.abort();
     B = null; this.inB = false; this.back = false; this.mode = 'walk'; this.dismount(); this.wh = null; this.cs = this.iu = null; this.step = null; this.tr = this.sp = this.dlg = this.bang = null; this.net.N.reset(); ADVN.load();
     this.spawn(at); this.skillSync(); this.cam = { x: this.p.x, y: this.p.y - 16 }; this.ready = false; this.key = this.leadKey(); ADV.stream(this.cx(), this.cy());
     this.persist();   // what the fight earned is kept (a reload after a lost gym fight undid a level)
-    this.wake = [gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
+    this.wake = [L ? (gaveUp ? `You gave up the battle and caught your breath by the ${L.name.replace(/^the /i, '')}.` : `Your team fainted. A passing ranger patched everyone up by the ${L.name.replace(/^the /i, '')}.`) : gaveUp ? `You gave up the battle and headed back to the Pokemon Center in ${t.name}.` : `Your team fainted, and you hurried back to the Pokemon Center in ${t.name}.`, lost ? `Everyone is healed. You dropped ${ADVUI.money(lost)} on the way.` : 'Everyone is healed and ready to go again.'];   // said once you are back on your feet (a toast during the fade was never seen)
     const cool = typeof ADVSTORY !== 'undefined' && ADVSTORY.cool; if (cool?.who && !cool.said) { cool.said = 1; this.wake.push(`${cool.who} won't be going anywhere. Train up a little, then go back.`); }
   },
   // out-of-battle item use from the bag (target = party index): { ok, s, ev? }
